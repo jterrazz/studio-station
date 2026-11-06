@@ -1,4 +1,4 @@
-package power_test
+package calls_test
 
 import (
 	"context"
@@ -10,9 +10,12 @@ import (
 
 	"github.com/jterrazz/studio-station/src/awake"
 	"github.com/jterrazz/studio-station/src/awake/contract"
-	"github.com/jterrazz/studio-station/src/domain/power"
-	"github.com/jterrazz/studio-station/src/platform/local/localtest"
+	"github.com/jterrazz/studio-station/src/awake/calls"
 )
+
+type clock struct{ At time.Time }
+
+func (c *clock) Now() time.Time { return c.At }
 
 type port struct {
 	r     awake.Reading
@@ -59,9 +62,9 @@ func (p *port) count(call string) int {
 type world struct {
 	t       *testing.T
 	port    *port
-	clock   *localtest.Clock
-	m       *power.Machine
-	notices []power.End
+	clock   *clock
+	m       *calls.Keeper
+	notices []awake.End
 }
 
 func laptop() awake.Reading {
@@ -69,12 +72,12 @@ func laptop() awake.Reading {
 }
 
 func newWorld(t *testing.T, r awake.Reading) *world {
-	w := &world{t: t, port: &port{r: r}, clock: &localtest.Clock{At: time.Date(2026, 11, 3, 10, 0, 0, 0, time.UTC)}}
-	w.m = power.New(w.port, w.clock, power.Options{Notice: func(e power.End) { w.notices = append(w.notices, e) }})
+	w := &world{t: t, port: &port{r: r}, clock: &clock{At: time.Date(2026, 11, 3, 10, 0, 0, 0, time.UTC)}}
+	w.m = calls.NewKeeper(w.port, w.clock, calls.KeeperOptions{Notice: func(e awake.End) { w.notices = append(w.notices, e) }})
 	return w
 }
 
-func (w *world) awake(req power.Request) {
+func (w *world) awake(req awake.Request) {
 	w.t.Helper()
 	if req.By == "" {
 		req.By = "station power awake"
@@ -120,20 +123,20 @@ func (w *world) held() {
 func TestEachGuardPastItsThresholdRefusesTheStart(t *testing.T) {
 	for name, c := range map[string]struct {
 		r     func(*awake.Reading)
-		req   power.Request
+		req   awake.Request
 		guard string
 	}{
-		"battery":   {func(r *awake.Reading) { r.Source, r.Percent = "battery", 18 }, power.Request{}, power.ReasonBattery},
-		"low power": {func(r *awake.Reading) { r.LowPower = true }, power.Request{}, power.ReasonLowPower},
-		"thermal":   {func(r *awake.Reading) { r.Thermal = 3 }, power.Request{}, power.ReasonThermal},
-		"lid":       {func(r *awake.Reading) { r.Source, r.Lid = "battery", "closed" }, power.Request{Lid: true}, power.ReasonLid},
+		"battery":   {func(r *awake.Reading) { r.Source, r.Percent = "battery", 18 }, awake.Request{}, awake.ReasonBattery},
+		"low power": {func(r *awake.Reading) { r.LowPower = true }, awake.Request{}, awake.ReasonLowPower},
+		"thermal":   {func(r *awake.Reading) { r.Thermal = 3 }, awake.Request{}, awake.ReasonThermal},
+		"lid":       {func(r *awake.Reading) { r.Source, r.Lid = "battery", "closed" }, awake.Request{Lid: true}, awake.ReasonLid},
 	} {
 		t.Run(name, func(t *testing.T) {
 			r := laptop()
 			c.r(&r)
 			w := newWorld(t, r)
 			_, _, err := w.m.Awake(c.req)
-			var g *power.GuardError
+			var g *awake.GuardError
 			if !errors.As(err, &g) || g.Guard != c.guard {
 				t.Fatalf("awake = %v, want the %s guard's refusal", err, c.guard)
 			}
@@ -148,21 +151,21 @@ func TestBatteryLetsTheLidCloseOnBattery(t *testing.T) {
 	r := laptop()
 	r.Source, r.Lid = "battery", "closed"
 	w := newWorld(t, r)
-	w.awake(power.Request{Lid: true, Battery: true})
+	w.awake(awake.Request{Lid: true, Battery: true})
 	w.event("lid")
 	w.held()
-	if g := power.Guards(w.m.View().Reading, w.m.View().Session); g[3].State != power.GuardNear {
+	if g := awake.GuardStates(w.m.View().Reading, w.m.View().Session); g[3].State != awake.GuardNear {
 		t.Fatalf("the lid guard reads %+v, want near while allowed", g[3])
 	}
 }
 
 func TestARefreshKeepsOneAssertionAndOnlyTheLidTouchesTheClamshell(t *testing.T) {
 	w := newWorld(t, laptop())
-	w.awake(power.Request{})
+	w.awake(awake.Request{})
 	if w.port.count("clamshell disabled") != 0 {
 		t.Fatalf("a session without --lid disabled the clamshell: %v", w.port.calls)
 	}
-	_, refreshed, err := w.m.Awake(power.Request{Lid: true, For: time.Hour, By: "station power awake --lid --for 1h"})
+	_, refreshed, err := w.m.Awake(awake.Request{Lid: true, For: time.Hour, By: "station power awake --lid --for 1h"})
 	if err != nil || !refreshed {
 		t.Fatalf("the second awake = %v, refreshed %v", err, refreshed)
 	}
@@ -176,35 +179,35 @@ func TestARefreshKeepsOneAssertionAndOnlyTheLidTouchesTheClamshell(t *testing.T)
 
 func TestEveryEndResetsTheClamshellAndRecordsWhy(t *testing.T) {
 	for reason, end := range map[string]func(w *world){
-		power.ReasonUntil: func(w *world) { w.pass(time.Hour) },
-		power.ReasonSleep: func(w *world) {
+		awake.ReasonUntil: func(w *world) { w.pass(time.Hour) },
+		awake.ReasonSleep: func(w *world) {
 			if s := w.m.Sleep(); !s.Ended || s.After != 0 {
 				t.Fatalf("sleep = %+v", s)
 			}
 		},
-		power.ReasonStop: func(w *world) { w.m.Stop() },
-		power.ReasonQuit: func(w *world) { w.m.Quit() },
-		power.ReasonBattery: func(w *world) {
+		awake.ReasonStop: func(w *world) { w.m.Stop() },
+		awake.ReasonQuit: func(w *world) { w.m.Quit() },
+		awake.ReasonBattery: func(w *world) {
 			w.port.r.Source, w.port.r.Percent = "battery", 20
 			w.event("source")
 		},
-		power.ReasonLowPower: func(w *world) {
+		awake.ReasonLowPower: func(w *world) {
 			w.port.r.LowPower = true
 			w.pass(29 * time.Second)
 			w.held()
 			w.pass(time.Second)
 		},
-		power.ReasonThermal: func(w *world) {
+		awake.ReasonThermal: func(w *world) {
 			w.port.r.Thermal = 3
 			w.event("thermal")
 		},
 	} {
 		t.Run(reason, func(t *testing.T) {
 			w := newWorld(t, laptop())
-			w.awake(power.Request{Lid: true, Battery: true, For: time.Hour})
+			w.awake(awake.Request{Lid: true, Battery: true, For: time.Hour})
 			end(w)
 			w.ended(reason)
-			if notified := len(w.notices) == 1; notified == (reason == power.ReasonSleep) {
+			if notified := len(w.notices) == 1; notified == (reason == awake.ReasonSleep) {
 				t.Fatalf("notices %v after %s: power sleep alone ends silently", w.notices, reason)
 			}
 		})
@@ -215,7 +218,7 @@ func TestHeavyThermalEndsOnlyAfterFiveContinuousMinutesLidClosedOnBattery(t *tes
 	r := laptop()
 	r.Lid, r.Source, r.Thermal = "closed", "battery", 2
 	w := newWorld(t, r)
-	w.awake(power.Request{Lid: true, Battery: true})
+	w.awake(awake.Request{Lid: true, Battery: true})
 	w.event("thermal")
 	w.pass(4*time.Minute + 59*time.Second)
 	w.held()
@@ -226,14 +229,14 @@ func TestHeavyThermalEndsOnlyAfterFiveContinuousMinutesLidClosedOnBattery(t *tes
 	w.pass(4*time.Minute + 59*time.Second)
 	w.held()
 	w.pass(31 * time.Second)
-	w.ended(power.ReasonThermal)
+	w.ended(awake.ReasonThermal)
 }
 
 func TestHeavyThermalOnACNeverEnds(t *testing.T) {
 	r := laptop()
 	r.Lid, r.Thermal = "closed", 2
 	w := newWorld(t, r)
-	w.awake(power.Request{Lid: true, For: time.Hour})
+	w.awake(awake.Request{Lid: true, For: time.Hour})
 	w.pass(30 * time.Minute)
 	w.held()
 }
@@ -245,20 +248,20 @@ func TestTheLidGuardTripsInEitherOrder(t *testing.T) {
 	} {
 		t.Run(name, func(t *testing.T) {
 			w := newWorld(t, laptop())
-			w.awake(power.Request{Lid: true})
+			w.awake(awake.Request{Lid: true})
 			order[0](&w.port.r)
 			w.event("lid")
 			w.held()
 			order[1](&w.port.r)
 			w.event("source")
-			w.ended(power.ReasonLid)
+			w.ended(awake.ReasonLid)
 		})
 	}
 }
 
 func TestTheMaskIsSetAgainOnEverySourceAndLidChangeWhileTheLidHolds(t *testing.T) {
 	w := newWorld(t, laptop())
-	w.awake(power.Request{Lid: true, Battery: true})
+	w.awake(awake.Request{Lid: true, Battery: true})
 	for _, kind := range []string{"source", "lid", "thermal", "lid"} {
 		w.event(kind)
 	}
@@ -271,7 +274,7 @@ func TestTheDisplaySleepsOnLidCloseUnderTheLidOnly(t *testing.T) {
 	for name, lid := range map[string]bool{"--lid": true, "without --lid": false} {
 		t.Run(name, func(t *testing.T) {
 			w := newWorld(t, laptop())
-			w.awake(power.Request{Lid: lid})
+			w.awake(awake.Request{Lid: lid})
 			w.port.r.Lid = "closed"
 			w.event("lid")
 			if slept := w.port.count("display sleep") == 1; slept != lid {
@@ -284,12 +287,12 @@ func TestTheDisplaySleepsOnLidCloseUnderTheLidOnly(t *testing.T) {
 func TestAHeldSessionLogsItsHeartbeatEvery30Seconds(t *testing.T) {
 	w := newWorld(t, laptop())
 	var beats []string
-	w.m = power.New(w.port, w.clock, power.Options{Log: func(line string) {
+	w.m = calls.NewKeeper(w.port, w.clock, calls.KeeperOptions{Log: func(line string) {
 		if strings.HasPrefix(line, "held ") {
 			beats = append(beats, line)
 		}
 	}})
-	w.awake(power.Request{})
+	w.awake(awake.Request{})
 	w.pass(65 * time.Second)
 	want := []string{"held lid=open source=ac battery=80% thermal=0", "held lid=open source=ac battery=80% thermal=0"}
 	if !slices.Equal(beats, want) {

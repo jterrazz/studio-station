@@ -47,7 +47,7 @@ func unsafePower() []string {
 }
 
 func powerCode(rel string) bool {
-	for _, dir := range []string{"src/awake/", "src/domain/power/", "src/pages/power/", "src/surface/cli/awake/", "src/pages/awake/", "src/platform/local/power_", "src/platform/darwin/power_"} {
+	for _, dir := range []string{"src/awake/", "src/pages/power/", "src/surface/cli/awake/", "src/pages/awake/", "src/platform/local/power_", "src/platform/darwin/power_"} {
 		if strings.HasPrefix(rel, dir) {
 			return true
 		}
@@ -56,12 +56,12 @@ func powerCode(rel string) bool {
 }
 
 func powerPackages() []string {
-	return []string{"awake", "awake/contract", "awake/adapter/macos", "domain/power"}
+	return []string{"awake", "awake/contract", "awake/adapter/macos", "awake/calls"}
 }
 
 // invariant: rule 23: Power is safe by construction: no string under src/
 // asks for a display assertion or disablesleep, the power code holds no
-// sudo, and the awake family, its macOS adapter and domain/power reach no
+// sudo, and the awake family, its macOS adapter and its calls reach no
 // file system: no file is written for power.
 func rulePowerSafe(w *world) []finding {
 	var out []finding

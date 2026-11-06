@@ -8,9 +8,10 @@ import (
 	"strings"
 	"time"
 
+	awakecontract "github.com/jterrazz/studio-station/src/awake/contract"
+
 	"github.com/jterrazz/studio-station/src/catalog"
 	"github.com/jterrazz/studio-station/src/domain/machines"
-	"github.com/jterrazz/studio-station/src/domain/power"
 	"github.com/jterrazz/studio-station/src/platform/local"
 )
 
@@ -36,7 +37,7 @@ type Job interface {
 
 type ControlOptions struct {
 	// value: this Mac's power, whose clamshell a stop resets; nil is none.
-	Power    power.Port
+	Power    awakecontract.Power
 	HereName string
 	State    string
 	// value: this station's version, which a reading compares with the engine's.

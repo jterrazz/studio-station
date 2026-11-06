@@ -1,4 +1,4 @@
-package power
+package calls
 
 import (
 	"context"
@@ -11,81 +11,21 @@ import (
 	"github.com/jterrazz/studio-station/src/awake"
 	"github.com/jterrazz/studio-station/src/awake/contract"
 	"github.com/jterrazz/studio-station/src/core/machine"
-	"github.com/jterrazz/studio-station/src/platform/local"
 )
 
 const (
-	Default   = awake.DefaultFor
-	Longest   = 24 * time.Hour
-	Shortest  = time.Minute
 	pollEvery = 30 * time.Second
 	keepEnd   = 24 * time.Hour
 )
 
-const (
-	ReasonThermal  = awake.Thermal
-	ReasonBattery  = awake.Battery
-	ReasonLowPower = awake.LowPower
-	ReasonLid      = awake.Lid
-	ReasonUntil    = "until"
-	ReasonSleep    = "sleep"
-	ReasonStop     = "stop"
-	ReasonQuit     = "quit"
-)
-
-const (
-	GuardOK   = "ok"
-	GuardNear = "near"
-)
-
-type Reading = awake.Reading
-
-type Port = contract.Power
-
-type (
-	Request = awake.Request
-	Session = awake.Session
-	End     = awake.End
-	Guard   = awake.GuardState
-	View    = awake.View
-	Slept   = awake.Slept
-)
-
-type RangeError struct{ Long bool }
-
-func (e *RangeError) Error() string {
-	if e.Long {
-		return "a Power session lasts at most 24h"
-	}
-	return "a Power session lasts at least 1m"
+type Clock interface {
+	// value: the time the keeper reads, handed by wire.
+	Now() time.Time
 }
-
-type GuardError struct {
-	Guard string
-	Words string
-}
-
-func (e *GuardError) Error() string { return "Awake stays off: " + e.Words }
-
-type UnsupportedError struct{}
-
-func (*UnsupportedError) Error() string { return "Power runs on a macOS host" }
-
-func CheckFor(d time.Duration) error {
-	switch {
-	case d > Longest:
-		return &RangeError{Long: true}
-	case d < Shortest:
-		return &RangeError{}
-	}
-	return nil
-}
-
-func Level(n int) string { return awake.Level(n) }
 
 // invariant: the first active guard past its threshold names the end; a
 // guard is active only when this Mac reports the capability it reads.
-func trip(c machine.Capabilities, r Reading, s *Session, heavyFor time.Duration) (reason, detail, words string) {
+func trip(c machine.Capabilities, r awake.Reading, s *awake.Session, heavyFor time.Duration) (reason, detail, words string) {
 	held := awake.Held{}
 	if s != nil {
 		held = awake.Held{Lid: s.Lid, Battery: s.Battery}
@@ -97,44 +37,29 @@ func trip(c machine.Capabilities, r Reading, s *Session, heavyFor time.Duration)
 	return v.Trip.Guard, v.Trip.Detail, v.Trip.Words
 }
 
-func Guards(r Reading, s *Session) []Guard {
-	state := func(near bool) string {
-		if near {
-			return GuardNear
-		}
-		return GuardOK
-	}
-	return []Guard{
-		{Name: ReasonBattery, State: state(r.OnBattery() && r.Percent <= awake.BatteryWarns)},
-		{Name: ReasonLowPower, State: state(false)},
-		{Name: ReasonThermal, State: state(r.Thermal == awake.ThermalHeavy)},
-		{Name: ReasonLid, State: state(s != nil && s.Lid && s.Battery && r.LidClosedOnBattery())},
-	}
-}
-
-type Options struct {
+type KeeperOptions struct {
 	Log func(message string)
 	// value: a session a guard, its term or a stop ended; never power sleep.
-	Notice func(End)
+	Notice func(awake.End)
 	// value: what Never sleeps tells the owner: a guard it only notifies, or
 	// the battery guard letting it go.
 	Told   func(text string)
 	Change func()
 }
 
-type Machine struct {
-	port  Port
-	clock local.Clock
-	o     Options
+type Keeper struct {
+	port  contract.Power
+	clock Clock
+	o     KeeperOptions
 
 	mu      sync.Mutex
-	session *Session
+	session *awake.Session
 	release func()
 	// value: the name the session's assertion was taken under: the first
 	// command's, kept while a later one refreshes the session.
 	held       string
-	lastEnd    *End
-	reading    Reading
+	lastEnd    *awake.End
+	reading    awake.Reading
 	heavySince time.Time
 	polled     time.Time
 	unreset    bool
@@ -143,23 +68,6 @@ type Machine struct {
 	neverRelease func()
 	neverSince   time.Time
 	neverTrip    string
-}
-
-type Kept struct {
-	// value: what an engine keeps of Awake between two commands of a
-	// stepped engine, as a real one keeps it in its memory.
-	Session    *Session  `json:"session,omitempty"`
-	LastEnd    *End      `json:"last_end,omitempty"`
-	NeverSince time.Time `json:"never_since,omitzero"`
-	NeverTrip  string    `json:"never_trip,omitempty"`
-	HeavySince time.Time `json:"heavy_since,omitzero"`
-	// value: the lid as the last tick read it, so a close is seen once.
-	Lid string `json:"lid,omitempty"`
-	// value: the policy's assertion was held when the engine paused.
-	NeverHeld bool `json:"never_held,omitempty"`
-	// value: the name the session's assertion is held under, which a
-	// refresh keeps: the next engine takes the same one again.
-	Held string `json:"held,omitempty"`
 }
 
 const neverSleepsHold = "station: never sleeps"
@@ -179,24 +87,24 @@ func (absent) Watch(context.Context) <-chan awake.Event {
 	return out
 }
 
-func New(port Port, clock local.Clock, o Options) *Machine {
+func NewKeeper(port contract.Power, clock Clock, o KeeperOptions) *Keeper {
 	if port == nil {
 		port = absent{}
 	}
-	return &Machine{port: port, clock: clock, o: o}
+	return &Keeper{port: port, clock: clock, o: o}
 }
 
-func (m *Machine) caps() machine.Capabilities {
+func (m *Keeper) caps() machine.Capabilities {
 	return m.port.Capabilities().Onto(machine.Capabilities{})
 }
 
-func (m *Machine) log(message string) {
+func (m *Keeper) log(message string) {
 	if m.o.Log != nil {
 		m.o.Log(message)
 	}
 }
 
-func (m *Machine) changed() {
+func (m *Keeper) changed() {
 	if m.o.Change != nil {
 		m.o.Change()
 	}
@@ -207,7 +115,7 @@ func unsupported(err error) bool { return errors.Is(err, contract.ErrUnsupported
 // invariant: resetting the clamshell is the safe direction, so a reset that
 // fails is retried at every poll until it passes; a Mac with no power
 // management has nothing to reset.
-func (m *Machine) resetLocked() {
+func (m *Keeper) resetLocked() {
 	err := m.port.Clamshell(false)
 	switch {
 	case err == nil:
@@ -220,24 +128,24 @@ func (m *Machine) resetLocked() {
 	}
 }
 
-func (m *Machine) Reset() {
+func (m *Keeper) Reset() {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	m.resetLocked()
 }
 
-func (m *Machine) Held() bool {
+func (m *Keeper) Held() bool {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	return m.session != nil
 }
 
-func (m *Machine) View() View {
+func (m *Keeper) View() awake.View {
 	r, _ := m.port.Read()
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	m.reading = r
-	v := View{Reading: r, Guards: Guards(r, m.session), NeverSleeps: m.never, NeverSince: m.neverSince, NeverHeld: m.neverRelease != nil}
+	v := awake.View{Reading: r, Guards: awake.GuardStates(r, m.session), NeverSleeps: m.never, NeverSince: m.neverSince, NeverHeld: m.neverRelease != nil}
 	if m.session != nil {
 		s := *m.session
 		v.Session = &s
@@ -249,7 +157,7 @@ func (m *Machine) View() View {
 	return v
 }
 
-func flags(s Session) string {
+func flags(s awake.Session) string {
 	var on []string
 	if s.Lid {
 		on = append(on, "lid")
@@ -263,23 +171,23 @@ func flags(s Session) string {
 	return " (" + strings.Join(on, ", ") + ")"
 }
 
-func (m *Machine) Awake(req Request) (held Session, refreshed bool, err error) {
+func (m *Keeper) Awake(req awake.Request) (held awake.Session, refreshed bool, err error) {
 	if req.For == 0 {
-		req.For = Default
+		req.For = awake.DefaultFor
 	}
-	if bad := CheckFor(req.For); bad != nil {
-		return Session{}, false, bad
+	if bad := awake.CheckFor(req.For); bad != nil {
+		return awake.Session{}, false, bad
 	}
 	r, err := m.port.Read()
 	if unsupported(err) {
-		return Session{}, false, &UnsupportedError{}
+		return awake.Session{}, false, &awake.UnsupportedError{}
 	}
 	if err != nil {
-		return Session{}, false, err
+		return awake.Session{}, false, err
 	}
-	want := Session{Lid: req.Lid, Battery: req.Battery, By: req.By}
+	want := awake.Session{Lid: req.Lid, Battery: req.Battery, By: req.By}
 	if reason, _, words := trip(m.caps(), r, &want, 0); reason != "" {
-		return Session{}, false, &GuardError{Guard: reason, Words: words}
+		return awake.Session{}, false, &awake.GuardError{Guard: reason, Words: words}
 	}
 	m.mu.Lock()
 	defer m.changed()
@@ -302,9 +210,9 @@ func (m *Machine) Awake(req Request) (held Session, refreshed bool, err error) {
 		release, err := m.port.Hold(m.held)
 		if err != nil {
 			if unsupported(err) {
-				return Session{}, false, &UnsupportedError{}
+				return awake.Session{}, false, &awake.UnsupportedError{}
 			}
-			return Session{}, false, err
+			return awake.Session{}, false, err
 		}
 		m.release, m.session = release, &want
 		m.heavySince, m.polled = time.Time{}, now
@@ -321,7 +229,7 @@ func (m *Machine) Awake(req Request) (held Session, refreshed bool, err error) {
 // invariant: every end releases the assertion and sets the clamshell back
 // to normal, --lid or not, so whatever way a session ends the Mac sleeps as
 // macOS decides.
-func (m *Machine) endLocked(reason, detail string) (End, time.Duration) {
+func (m *Keeper) endLocked(reason, detail string) (awake.End, time.Duration) {
 	now := m.clock.Now().UTC().Truncate(time.Second)
 	after := now.Sub(m.session.StartedAt)
 	if m.release != nil {
@@ -329,13 +237,13 @@ func (m *Machine) endLocked(reason, detail string) (End, time.Duration) {
 	}
 	m.release, m.session, m.heavySince, m.held = nil, nil, time.Time{}, ""
 	m.resetLocked()
-	e := End{At: now, Reason: reason, Detail: detail}
+	e := awake.End{At: now, Reason: reason, Detail: detail}
 	m.lastEnd = &e
 	m.log("ended (" + reason + ": " + detail + ")")
 	return e, after
 }
 
-func (m *Machine) finish(reason, detail string) bool {
+func (m *Keeper) finish(reason, detail string) bool {
 	m.mu.Lock()
 	if m.session == nil {
 		m.mu.Unlock()
@@ -343,32 +251,32 @@ func (m *Machine) finish(reason, detail string) bool {
 	}
 	e, _ := m.endLocked(reason, detail)
 	m.mu.Unlock()
-	if reason != ReasonSleep && m.o.Notice != nil {
+	if reason != awake.ReasonSleep && m.o.Notice != nil {
 		m.o.Notice(e)
 	}
 	m.changed()
 	return true
 }
 
-func (m *Machine) Sleep() Slept {
+func (m *Keeper) Sleep() awake.Slept {
 	m.mu.Lock()
 	if m.session == nil {
 		m.mu.Unlock()
-		return Slept{}
+		return awake.Slept{}
 	}
-	_, after := m.endLocked(ReasonSleep, "station awake off")
+	_, after := m.endLocked(awake.ReasonSleep, "station awake off")
 	m.mu.Unlock()
 	m.changed()
-	return Slept{Ended: true, After: after}
+	return awake.Slept{Ended: true, After: after}
 }
 
-func (m *Machine) Stop() bool { return m.finish(ReasonStop, "station engine stop") }
+func (m *Keeper) Stop() bool { return m.finish(awake.ReasonStop, "station engine stop") }
 
-func (m *Machine) Quit() {
+func (m *Keeper) Quit() {
 	m.mu.Lock()
 	m.releaseNeverLocked()
 	m.mu.Unlock()
-	if !m.finish(ReasonQuit, "the engine stopped") {
+	if !m.finish(awake.ReasonQuit, "the engine stopped") {
 		m.Reset()
 	}
 }
@@ -384,7 +292,7 @@ func term(d time.Duration) string {
 	return strconv.Itoa(mins) + "m"
 }
 
-func (m *Machine) evaluateLocked(r Reading) (reason, detail string) {
+func (m *Keeper) evaluateLocked(r awake.Reading) (reason, detail string) {
 	now := m.clock.Now()
 	m.reading = r
 	if m.session == nil {
@@ -405,7 +313,7 @@ func (m *Machine) evaluateLocked(r Reading) (reason, detail string) {
 	return reason, detail
 }
 
-func (m *Machine) Observe(ctx context.Context, ev awake.Event) {
+func (m *Keeper) Observe(ctx context.Context, ev awake.Event) {
 	r, err := m.port.Read()
 	if err != nil {
 		return
@@ -438,13 +346,13 @@ func (m *Machine) Observe(ctx context.Context, ev awake.Event) {
 	m.changed()
 }
 
-func (m *Machine) sleepDisplay(ctx context.Context) {
+func (m *Keeper) sleepDisplay(ctx context.Context) {
 	if err := m.port.DisplaySleepNow(ctx); err != nil {
 		m.log("display: " + err.Error())
 	}
 }
 
-func (m *Machine) Tick() {
+func (m *Keeper) Tick() {
 	// value: called every second by the daemon: the term is checked each time;
 	// the guards, Low Power Mode's poll, the heartbeat and a pending reset every
 	// 30 s.
@@ -453,7 +361,7 @@ func (m *Machine) Tick() {
 	if m.session != nil && !now.Before(m.session.Until) {
 		detail := "its " + term(m.session.Until.Sub(m.session.StartedAt)) + " ended"
 		m.mu.Unlock()
-		m.finish(ReasonUntil, detail)
+		m.finish(awake.ReasonUntil, detail)
 		return
 	}
 	due := now.Sub(m.polled) >= pollEvery
@@ -500,7 +408,7 @@ func (m *Machine) Tick() {
 	}
 }
 
-func heartbeat(r Reading) string {
+func heartbeat(r awake.Reading) string {
 	lid := r.Lid
 	if lid == "" {
 		lid = "none"
@@ -512,7 +420,7 @@ func heartbeat(r Reading) string {
 	return "lid=" + lid + " source=" + r.Source + " battery=" + battery + " thermal=" + strconv.Itoa(r.Thermal)
 }
 
-func (m *Machine) Policy(never bool, since time.Time) {
+func (m *Keeper) Policy(never bool, since time.Time) {
 	// invariant: Never sleeps is the engine's one assertion of the policy: held
 	// while the preference says so, except while the battery guard of a Mac
 	// that reports a battery trips; every other guard only tells the owner, once
@@ -527,7 +435,7 @@ func (m *Machine) Policy(never bool, since time.Time) {
 	m.after(told, changed)
 }
 
-func (m *Machine) after(told string, changed bool) {
+func (m *Keeper) after(told string, changed bool) {
 	if told != "" && m.o.Told != nil {
 		m.o.Told(told)
 	}
@@ -536,7 +444,7 @@ func (m *Machine) after(told string, changed bool) {
 	}
 }
 
-func (m *Machine) policyLocked(since time.Time) (told string, changed bool) {
+func (m *Keeper) policyLocked(since time.Time) (told string, changed bool) {
 	if !m.never {
 		if m.neverRelease == nil && m.neverSince.IsZero() {
 			return "", false
@@ -592,23 +500,23 @@ func (m *Machine) policyLocked(since time.Time) (told string, changed bool) {
 	return told, changed
 }
 
-func (m *Machine) releaseNeverLocked() {
+func (m *Keeper) releaseNeverLocked() {
 	if m.neverRelease != nil {
 		m.neverRelease()
 		m.neverRelease = nil
 	}
 }
 
-func (m *Machine) NeverSleeps() bool {
+func (m *Keeper) NeverSleeps() bool {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	return m.never
 }
 
-func (m *Machine) Kept() Kept {
+func (m *Keeper) Kept() awake.Kept {
 	m.mu.Lock()
 	defer m.mu.Unlock()
-	k := Kept{NeverSince: m.neverSince, NeverTrip: m.neverTrip, HeavySince: m.heavySince, Lid: m.reading.Lid, NeverHeld: m.neverRelease != nil, Held: m.held}
+	k := awake.Kept{NeverSince: m.neverSince, NeverTrip: m.neverTrip, HeavySince: m.heavySince, Lid: m.reading.Lid, NeverHeld: m.neverRelease != nil, Held: m.held}
 	if m.session != nil {
 		s := *m.session
 		k.Session = &s
@@ -620,7 +528,7 @@ func (m *Machine) Kept() Kept {
 	return k
 }
 
-func (m *Machine) Restore(k Kept) {
+func (m *Keeper) Restore(k awake.Kept) {
 	// invariant: Restore follows Begin's reset: a kept keep-awake is held again
 	// with its lid as it was, so a stepped engine is the one long engine it
 	// stands for.
@@ -654,7 +562,7 @@ func (m *Machine) Restore(k Kept) {
 	}
 }
 
-func (m *Machine) Suspend() {
+func (m *Keeper) Suspend() {
 	// invariant: Suspend is a stepped engine's pause between two commands: its
 	// holds stay as the long engine keeps them, only forgotten by this one.
 	m.mu.Lock()

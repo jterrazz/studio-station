@@ -18,7 +18,6 @@ import (
 	"github.com/jterrazz/studio-station/src/core/call"
 	coremachine "github.com/jterrazz/studio-station/src/core/machine"
 	diskcalls "github.com/jterrazz/studio-station/src/disk/calls"
-	"github.com/jterrazz/studio-station/src/domain/power"
 	enginecalls "github.com/jterrazz/studio-station/src/engine/calls"
 	imagescalls "github.com/jterrazz/studio-station/src/images/calls"
 	machinescalls "github.com/jterrazz/studio-station/src/machines/calls"
@@ -107,7 +106,7 @@ func (l *localCalls) Watch(ctx context.Context, _ coremachine.Ref, name string, 
 	return l.registry.Stream(ctx, l.profile, name, in, p)
 }
 
-type awakePower struct{ *power.Service }
+type awakePower struct{ *awakecalls.Service }
 
 // invariant: the history a Mac's engine keeps, asked over its socket.
 func engineKept(api engineAPI) func(ctx context.Context, name string) (activity.Kept, time.Time, bool, error) {

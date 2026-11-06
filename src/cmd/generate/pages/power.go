@@ -3,23 +3,24 @@ package pages
 import (
 	"time"
 
-	"github.com/jterrazz/studio-station/src/domain/power"
+	"github.com/jterrazz/studio-station/src/awake"
+
 	pagepower "github.com/jterrazz/studio-station/src/pages/power"
 )
 
 var powerNow = time.Date(2026, 11, 3, 11, 30, 0, 0, time.UTC)
 
-func thisMacReading() power.Reading {
-	return power.Reading{Lid: "open", Source: "ac", HasBattery: true, Percent: 80}
+func thisMacReading() awake.Reading {
+	return awake.Reading{Lid: "open", Source: "ac", HasBattery: true, Percent: 80}
 }
 
-func powerReport(daemon string, s *power.Session, r power.Reading) power.Report {
-	return power.Report{Now: powerNow, Daemon: daemon, Reading: r, Session: s, Guards: power.Guards(r, s)}
+func powerReport(daemon string, s *awake.Session, r awake.Reading) awake.Report {
+	return awake.Report{Now: powerNow, Daemon: daemon, Reading: r, Session: s, Guards: awake.GuardStates(r, s)}
 }
 
-func heldSession() *power.Session {
+func heldSession() *awake.Session {
 	start := powerNow.Add(-48 * time.Minute)
-	return &power.Session{Lid: true, StartedAt: start, Until: start.Add(4 * time.Hour), By: "station awake 4h --lid"}
+	return &awake.Session{Lid: true, StartedAt: start, Until: start.Add(4 * time.Hour), By: "station awake 4h --lid"}
 }
 
 func powerPages() []Fixture {
@@ -27,15 +28,15 @@ func powerPages() []Fixture {
 	low.Source, low.Percent = "battery", 28
 	held := heldSession()
 	out := states("power",
-		pagepower.Page(powerReport(power.DaemonPending, nil, thisMacReading()), here()),
-		pagepower.Page(powerReport(power.DaemonRunning, nil, thisMacReading()), here()),
-		pagepower.Page(powerReport(power.DaemonStopped, nil, thisMacReading()), here()),
-		pagepower.Page(powerReport(power.DaemonRunning, held, low), here()),
+		pagepower.Page(powerReport(awake.DaemonPending, nil, thisMacReading()), here()),
+		pagepower.Page(powerReport(awake.DaemonRunning, nil, thisMacReading()), here()),
+		pagepower.Page(powerReport(awake.DaemonStopped, nil, thisMacReading()), here()),
+		pagepower.Page(powerReport(awake.DaemonRunning, held, low), here()),
 	)
-	awoken := power.Awoken{Session: *held}
+	awoken := awake.Awoken{Session: *held}
 	return append(out, states("outcome-power",
 		pending(pagepower.Awake(awoken, nil, here())),
-		pagepower.Slept(power.Slept{}, here()),
+		pagepower.Slept(awake.Slept{}, here()),
 		failure("outcome", "awake", "Awake stays off: the battery is at 18 % on battery", "station awake"),
 		pagepower.Awake(awoken, nil, here()),
 	)...)

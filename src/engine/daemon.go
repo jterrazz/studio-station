@@ -13,10 +13,13 @@ import (
 	"sync"
 	"time"
 
+	"github.com/jterrazz/studio-station/src/awake"
+	awakecontract "github.com/jterrazz/studio-station/src/awake/contract"
+
 	"github.com/jterrazz/studio-station/src/activity"
+	awakecalls "github.com/jterrazz/studio-station/src/awake/calls"
 	"github.com/jterrazz/studio-station/src/catalog"
 	"github.com/jterrazz/studio-station/src/domain/machines"
-	"github.com/jterrazz/studio-station/src/domain/power"
 	"github.com/jterrazz/studio-station/src/domain/services"
 	model "github.com/jterrazz/studio-station/src/machines"
 	"github.com/jterrazz/studio-station/src/platform/local"
@@ -62,11 +65,11 @@ type Options struct {
 	Tick      time.Duration
 	GuestPort int
 	// value: this Mac's power, whose sessions the daemon holds; nil is none.
-	Power power.Port
+	Power awakecontract.Power
 	// value: the never_sleeps preference, read at start and every 30 ticks.
 	NeverSleeps func() bool
 	// value: the power page a subscription streams, built by the caller's pages.
-	PowerPage func(power.View) any
+	PowerPage func(awake.View) any
 	// value: the other pages a subscription streams (the menu bar's), by id.
 	Feeds map[string]Feed
 	// value: the station binary hello names, the one a terminal opens.
@@ -120,8 +123,8 @@ type Daemon struct {
 	issuing   bool
 	started   time.Time
 	note      func(line string)
-	power     *power.Machine
-	awake     *power.Kept
+	power     *awakecalls.Keeper
+	awake     *awake.Kept
 	hub       hub
 	history   *activity.History
 	watchers  watchers

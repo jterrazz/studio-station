@@ -8,7 +8,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/jterrazz/studio-station/src/domain/power"
+	"github.com/jterrazz/studio-station/src/awake"
 )
 
 const (
@@ -32,7 +32,7 @@ type FeedInput struct {
 	// value: the daemon's own state moved (VMs, guests, leases, Power).
 	Changed <-chan struct{}
 	Refresh <-chan struct{}
-	Power   func() power.View
+	Power   func() awake.View
 	// value: what a page is of, after its page's name (`menubar.machine:infra`,
 	// `menubar.ports:jterrazz-mac-mini`); empty for every other page.
 	Subject string

@@ -7,8 +7,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/jterrazz/studio-station/src/awake"
+
 	"github.com/jterrazz/studio-station/src/catalog"
-	"github.com/jterrazz/studio-station/src/domain/power"
 	"github.com/jterrazz/studio-station/src/domain/services"
 	model "github.com/jterrazz/studio-station/src/machines"
 )
@@ -45,7 +46,7 @@ type Peer interface {
 	Hello(ctx context.Context) (Hello, error)
 	VMs(ctx context.Context) ([]VMView, error)
 	StopAll(ctx context.Context) (StopAll, error)
-	Power(ctx context.Context) (power.View, error)
+	Power(ctx context.Context) (awake.View, error)
 }
 
 type DownError struct{}
@@ -178,7 +179,7 @@ func (d *Daemon) StopAll(ctx context.Context) StopAll {
 	return all
 }
 
-func (d *Daemon) Power() power.View { return d.power.View() }
+func (d *Daemon) Power() awake.View { return d.power.View() }
 
 type AwakeIn struct {
 	Lid     bool `json:"lid,omitempty"`
@@ -188,7 +189,7 @@ type AwakeIn struct {
 	By  string `json:"by,omitempty"`
 }
 
-func (d *Daemon) Awake(r AwakeIn) (power.Awoken, error) { return d.powerAwake(r) }
+func (d *Daemon) Awake(r AwakeIn) (awake.Awoken, error) { return d.powerAwake(r) }
 
 func (d *Daemon) Sleep() PowerSlept { return d.powerSleep() }
 

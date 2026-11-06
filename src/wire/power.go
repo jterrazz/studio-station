@@ -4,8 +4,10 @@ import (
 	"context"
 	"time"
 
+	"github.com/jterrazz/studio-station/src/awake"
+
+	awakecalls "github.com/jterrazz/studio-station/src/awake/calls"
 	"github.com/jterrazz/studio-station/src/catalog"
-	"github.com/jterrazz/studio-station/src/domain/power"
 	"github.com/jterrazz/studio-station/src/engine"
 	"github.com/jterrazz/studio-station/src/engine/process"
 	"github.com/jterrazz/studio-station/src/overview"
@@ -13,49 +15,49 @@ import (
 	pagepower "github.com/jterrazz/studio-station/src/pages/power"
 )
 
-func (m machine) powerPage(v power.View) any {
-	r := power.Report{Now: m.host.Clock.Now(), Zone: time.Local, Daemon: power.DaemonRunning, Reading: v.Reading, Session: v.Session, LastEnd: v.LastEnd, Guards: v.Guards}
+func (m machine) powerPage(v awake.View) any {
+	r := awake.Report{Now: m.host.Clock.Now(), Zone: time.Local, Daemon: awake.DaemonRunning, Reading: v.Reading, Session: v.Session, LastEnd: v.LastEnd, Guards: v.Guards}
 	return page.Document{Schema: page.Schema, Page: pagepower.Page(r, m.where)}
 }
 
-func powerDown(err error) error { return downAs(err, power.ErrDaemonDown) }
+func powerDown(err error) error { return downAs(err, awake.ErrDaemonDown) }
 
-func (m machine) power() *power.Service {
+func (m machine) power() *awakecalls.Service {
 	c := m.engineAPI()
-	return power.NewService(m.host, power.Ports{
-		View: func(ctx context.Context) (power.View, error) {
-			var v power.View
+	return awakecalls.NewService(m.host.Clock, awakecalls.ServicePorts{
+		View: func(ctx context.Context) (awake.View, error) {
+			var v awake.View
 			err := c.do(ctx, process.Power, nil, &v)
 			return v, powerDown(err)
 		},
-		Awake: func(ctx context.Context, r power.Request) (power.Awoken, error) {
-			var a power.Awoken
+		Awake: func(ctx context.Context, r awake.Request) (awake.Awoken, error) {
+			var a awake.Awoken
 			err := c.do(ctx, process.Awake, engine.AwakeIn{Lid: r.Lid, Battery: r.Battery, For: int(r.For / time.Second), By: r.By}, &a)
 			return a, powerDown(err)
 		},
-		Sleep: func(ctx context.Context) (power.Slept, error) {
+		Sleep: func(ctx context.Context) (awake.Slept, error) {
 			var s engine.PowerSlept
 			err := c.do(ctx, process.Sleep, nil, &s)
-			return power.Slept{Ended: s.Ended, After: time.Duration(s.After) * time.Second}, powerDown(err)
+			return awake.Slept{Ended: s.Ended, After: time.Duration(s.After) * time.Second}, powerDown(err)
 		},
 		Installed: func() bool {
 			_, err := m.host.FS.Stat(catalog.EnginePlist(m.host.Env.Home()))
 			return err == nil
 		},
-	}, power.ServiceOptions{Power: m.powerPort, Here: m.kind, HereName: m.where.Machine, Zone: time.Local})
+	}, awakecalls.ServiceOptions{Power: m.powerPort, Here: m.kind, HereName: m.where.Machine, Zone: time.Local})
 }
 
-type statusPower struct{ s *power.Service }
+type statusPower struct{ s *awakecalls.Service }
 
 func (p statusPower) Session(ctx context.Context) (overview.PowerState, bool) {
 	if p.s.Check() != nil {
 		return overview.PowerState{}, false
 	}
-	var last power.Report
+	var last awake.Report
 	for r := range p.s.Read(ctx) {
 		last = r
 	}
-	if last.Daemon != power.DaemonRunning {
+	if last.Daemon != awake.DaemonRunning {
 		return overview.PowerState{}, false
 	}
 	if last.Session == nil {

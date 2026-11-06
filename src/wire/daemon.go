@@ -8,6 +8,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/jterrazz/studio-station/src/awake"
+
 	"github.com/jterrazz/studio-station/src/accounts"
 	accountscalls "github.com/jterrazz/studio-station/src/accounts/calls"
 	"github.com/jterrazz/studio-station/src/activity"
@@ -21,7 +23,6 @@ import (
 	"github.com/jterrazz/studio-station/src/background/contract"
 	"github.com/jterrazz/studio-station/src/catalog"
 	"github.com/jterrazz/studio-station/src/domain/machines"
-	"github.com/jterrazz/studio-station/src/domain/power"
 	"github.com/jterrazz/studio-station/src/domain/services"
 	"github.com/jterrazz/studio-station/src/domain/setup"
 	"github.com/jterrazz/studio-station/src/engine"
@@ -53,8 +54,8 @@ func (m machine) daemon(env kit.Env) *engine.Daemon {
 	if calls == nil {
 		calls = remote.NewRouter(registry, m.profile, remote.Reach{})
 	}
-	menubar := feeds.Menubar{Calls: calls, Clock: m.host.Clock, Here: m.where, Report: func(v power.View) *power.Report {
-		return &power.Report{Now: m.host.Clock.Now(), Zone: time.Local, Daemon: power.DaemonRunning, Reading: v.Reading, Session: v.Session, LastEnd: v.LastEnd, Guards: v.Guards}
+	menubar := feeds.Menubar{Calls: calls, Clock: m.host.Clock, Here: m.where, Report: func(v awake.View) *awake.Report {
+		return &awake.Report{Now: m.host.Clock.Now(), Zone: time.Local, Daemon: awake.DaemonRunning, Reading: v.Reading, Session: v.Session, LastEnd: v.LastEnd, Guards: v.Guards}
 	}, EveryMac: func(ctx context.Context) (pageawake.Fleet, error) {
 		inside := env
 		inside.Calls = calls

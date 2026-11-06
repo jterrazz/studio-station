@@ -6,7 +6,9 @@ import (
 	"errors"
 	"time"
 
-	"github.com/jterrazz/studio-station/src/domain/power"
+	"github.com/jterrazz/studio-station/src/awake"
+
+	awakecalls "github.com/jterrazz/studio-station/src/awake/calls"
 )
 
 const (
@@ -38,10 +40,10 @@ type Event struct {
 	Notice *Notice         `json:"notice,omitempty"`
 }
 
-func (d *Daemon) newPower() *power.Machine {
-	return power.New(d.o.Power, d.h.Clock, power.Options{
+func (d *Daemon) newPower() *awakecalls.Keeper {
+	return awakecalls.NewKeeper(d.o.Power, d.h.Clock, awakecalls.KeeperOptions{
 		Log:    func(m string) { d.logf("power", m) },
-		Notice: func(e power.End) { d.told(NoticeEnded, AwakeStopped(e.Detail)) },
+		Notice: func(e awake.End) { d.told(NoticeEnded, AwakeStopped(e.Detail)) },
 		Told:   func(text string) { d.told(NoticeNeverSleeps, text) },
 		Change: d.hub.changed,
 	})
@@ -68,15 +70,15 @@ func (d *Daemon) neverSleeps(since time.Time) {
 	}
 }
 
-type AwakeKept = power.Kept
+type AwakeKept = awake.Kept
 
-func (d *Daemon) AwakeKept() power.Kept {
+func (d *Daemon) AwakeKept() awake.Kept {
 	// value: what this engine keeps of Awake, for the stepped engine that
 	// follows it.
 	return d.power.Kept()
 }
 
-func (d *Daemon) RememberAwake(k power.Kept) { d.awake = &k }
+func (d *Daemon) RememberAwake(k awake.Kept) { d.awake = &k }
 
 func (d *Daemon) Suspend() {
 	d.power.Suspend()
@@ -92,18 +94,18 @@ func (d *Daemon) watchPower(ctx context.Context) {
 	}
 }
 
-func (d *Daemon) powerAwake(r AwakeIn) (power.Awoken, error) {
-	session, refreshed, err := d.power.Awake(power.Request{Lid: r.Lid, Battery: r.Battery, For: time.Duration(r.For) * time.Second, By: r.By})
-	s := power.Awoken{Session: session, Refreshed: refreshed}
-	var rng *power.RangeError
-	var guard *power.GuardError
-	var none *power.UnsupportedError
+func (d *Daemon) powerAwake(r AwakeIn) (awake.Awoken, error) {
+	session, refreshed, err := d.power.Awake(awake.Request{Lid: r.Lid, Battery: r.Battery, For: time.Duration(r.For) * time.Second, By: r.By})
+	s := awake.Awoken{Session: session, Refreshed: refreshed}
+	var rng *awake.RangeError
+	var guard *awake.GuardError
+	var none *awake.UnsupportedError
 	switch {
 	case errors.As(err, &rng):
 		return s, fault("power_range", rng.Error(), "station awake 4h")
 	case errors.As(err, &guard):
 		hint := "station awake"
-		if guard.Guard == power.ReasonLid {
+		if guard.Guard == awake.ReasonLid {
 			hint = "station awake 4h --lid --battery"
 		}
 		return s, fault("power_guard", guard.Error(), hint)

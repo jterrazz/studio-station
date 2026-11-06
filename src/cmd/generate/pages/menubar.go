@@ -12,7 +12,6 @@ import (
 	"github.com/jterrazz/studio-station/src/catalog"
 	coremachine "github.com/jterrazz/studio-station/src/core/machine"
 	"github.com/jterrazz/studio-station/src/domain/machines"
-	"github.com/jterrazz/studio-station/src/domain/power"
 	"github.com/jterrazz/studio-station/src/domain/services"
 	"github.com/jterrazz/studio-station/src/engine"
 	"github.com/jterrazz/studio-station/src/overview"
@@ -115,7 +114,7 @@ func twoMacsReading(updates bool) pagemenubar.Reading {
 }
 
 func menubarReadings() (frame, quiet, full pagemenubar.Reading) {
-	off := powerReport(power.DaemonRunning, nil, thisMacReading())
+	off := powerReport(awake.DaemonRunning, nil, thisMacReading())
 	off.Daemon, off.Here, off.Mac = awake.EngineRunning, true, thisMacName
 	calm := overviewOf(false)
 	calm.Lines = calm.Lines[:1]

@@ -5,10 +5,11 @@ import (
 	"errors"
 	"io"
 
+	"github.com/jterrazz/studio-station/src/awake"
+
 	"github.com/jterrazz/studio-station/src/core/call"
 	"github.com/jterrazz/studio-station/src/core/fail"
 	coremachine "github.com/jterrazz/studio-station/src/core/machine"
-	"github.com/jterrazz/studio-station/src/domain/power"
 	"github.com/jterrazz/studio-station/src/engine"
 	"github.com/jterrazz/studio-station/src/engine/process"
 	"github.com/jterrazz/studio-station/src/platform/local"
@@ -56,8 +57,8 @@ func (e engineAPI) StopAll(ctx context.Context) (engine.StopAll, error) {
 	return all, err
 }
 
-func (e engineAPI) Power(ctx context.Context) (power.View, error) {
-	var v power.View
+func (e engineAPI) Power(ctx context.Context) (awake.View, error) {
+	var v awake.View
 	err := e.do(ctx, process.Power, nil, &v)
 	return v, err
 }
