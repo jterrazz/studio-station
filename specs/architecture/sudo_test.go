@@ -7,10 +7,14 @@ import (
 	"testing"
 )
 
-// invariant: rule no-sudo-literal (SC-03): station never runs sudo on a
-// Mac; the word is spelled only in a home of values: the owner's hints, and
-// catalog.AsRoot, which every line a VM of station's runs as root is
-// composed with.
+// invariant: rule no-sudo-literal (SC-03, decision O3): station runs sudo
+// inside a VM it owns alone, as that VM's own admin (its first boot, its
+// image build, its poweroff), and on another Mac only for the planned
+// restart's fdesetup authrestart, run on the owner's explicit action, its
+// password asked by macOS at the terminal and never stored; a check never
+// runs sudo, it names the line for the owner to type (decision 17). Every
+// such line is composed with catalog.AsRoot, every hint's in a home of
+// values: the word is spelled nowhere else.
 func ruleNoSudoLiteral(w *world) []finding {
 	var out []finding
 	for _, f := range w.files {

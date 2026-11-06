@@ -35,6 +35,7 @@ import (
 	appsremove "github.com/jterrazz/studio-station/src/surface/cli/apps/remove"
 	appsupdate "github.com/jterrazz/studio-station/src/surface/cli/apps/update"
 	"github.com/jterrazz/studio-station/src/surface/cli/kit"
+	"github.com/jterrazz/studio-station/src/surface/cli/words"
 )
 
 func appsCommand(env kit.Env, m machine) *cobra.Command {
@@ -141,7 +142,7 @@ func (c configurer) Configure(ctx context.Context, item string, interactive bool
 	change, err := c.settings.Install(ctx, item, values, interactive)
 	var root *settings.NeedsRootError
 	if errors.As(err, &root) {
-		return apps.Step{Item: item, Result: catalog.StateAbsent, Detail: "needs root: " + catalog.AsRoot("station settings apply "+item)}, nil
+		return apps.Step{Item: item, Result: catalog.StateAbsent, Detail: "needs root: " + words.SettingsAsRoot("apply", item)}, nil
 	}
 	if err != nil {
 		return apps.Step{}, err
