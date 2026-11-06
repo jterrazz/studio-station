@@ -26,8 +26,8 @@ runs:
           │  Servers             │┃   ◐ Firewall: off                 System Settings > Network > Firewall             ┃
           │  └ ● infra always on │┃   ◐ ~/.tart is misplaced          station disk move ~/.tart                        ┃
           │                      │┃   ◐ com.bjango.istatmenus.insta…  sudo launchctl bootout system/com.bjango.istatm… ┃
-          │ THIS MAC             │┃   ◐ com.docker.socket is an orp…  sudo launchctl bootout system/com.docker.socket… ┃
-          │▸Overview           9 │┃   ◐ com.docker.vmnetd is an orp…  sudo launchctl bootout system/com.docker.vmnetd… ┃
+          │ THIS MAC             │┃   ◐ com.docker.socket is left o…  sudo launchctl bootout system/com.docker.socket… ┃
+          │▸Overview           9 │┃   ◐ com.docker.vmnetd is left o…  sudo launchctl bootout system/com.docker.vmnetd… ┃
           │ Activity             │┃                                                                                    ┃
           │ Apps               ◐ │┃     Activity    memory 12.4 of 16 GB · 388 GB free                                 ┃
           │ Settings             │┃     Apps        ● 5 ok · ◐ 3 updates · ○ 100 not installed                         ┃
