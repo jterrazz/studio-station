@@ -22,11 +22,11 @@ func engineFailure(err error) (*fail.Error, bool) {
 	case errors.As(err, &running):
 		return usage(running.Error(), "station overview shows it"), true
 	case errors.As(err, &hostOnly):
-		return usage(hostOnly.Error(), "run it on a host: station setup installs it"), true
+		return usage(hostOnly.Error(), "run it on a Mac: station setup installs it"), true
 	case errors.As(err, &down):
 		return failed(down.Error(), "station setup", err), true
 	case errors.As(err, &guestHost):
-		return usage(guestHost.Error(), "the host's engine runs it inside each VM"), true
+		return usage(guestHost.Error(), "its Mac's engine runs it inside each VM"), true
 	}
 	return servicesFailure(err)
 }

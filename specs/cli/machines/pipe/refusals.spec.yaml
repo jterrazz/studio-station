@@ -23,4 +23,4 @@ runs:
       exit: 2
       stderr: |
           Error: only a host does this; here is a linux VM
-          Hint: run it on a host
+          Hint: run it on a Mac

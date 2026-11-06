@@ -61,7 +61,7 @@ func (e *RunningError) Error() string {
 type HostOnlyError struct{ Here catalog.MachineKind }
 
 func (e *HostOnlyError) Error() string {
-	return "the engine runs only on a host; here is " + e.Here.Article()
+	return "the engine runs only on a Mac; this machine is " + e.Here.Article()
 }
 
 func SocketPath(state string) string { return path.Join(state, "engine.sock") }

@@ -30,7 +30,7 @@ func settingsFailure(err error) (*fail.Error, bool) {
 	case errors.As(err, &unwritable):
 		return failed("cannot write \""+unwritable.Path+"\": "+unwritable.Cause.Error(), "check the permissions of \""+unwritable.Path+"\"", err), true
 	case errors.Is(err, accounts.ErrNoVault):
-		return usage(accounts.ErrNoVault.Error(), "run it on the host: station <command> --on <host>"), true
+		return usage(accounts.ErrNoVault.Error(), "run it on its Mac: station <command> --on <mac>"), true
 	case errors.As(err, &vault):
 		return failed("keychain account \""+vault.Name+"\": "+vault.Cause.Error(), "open Keychain Access and check the station items", err), true
 	}

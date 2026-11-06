@@ -108,7 +108,7 @@ func (d *Engine) powerAwake(r AwakeIn) (power.Awoken, error) {
 		}
 		return s, fault("power_guard", guard.Error(), hint)
 	case errors.As(err, &none):
-		return s, fault("power_unsupported", none.Error(), "ssh <host> station power")
+		return s, fault("power_unsupported", none.Error(), "station awake --on <mac>")
 	}
 	return s, err
 }

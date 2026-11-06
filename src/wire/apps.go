@@ -130,7 +130,7 @@ func (c configurer) Configure(ctx context.Context, item string, interactive bool
 	}
 	it := found[0]
 	if c.config.NeedsInput(it) && !interactive {
-		return tools.Step{Item: item, Result: catalog.StateAbsent, Detail: "needs a terminal: station config install " + item}, nil
+		return tools.Step{Item: item, Result: catalog.StateAbsent, Detail: "needs a terminal: station settings apply " + item}, nil
 	}
 	var values map[string]string
 	if len(it.Inputs) > 0 && c.ask != nil {
@@ -141,7 +141,7 @@ func (c configurer) Configure(ctx context.Context, item string, interactive bool
 	change, err := c.config.Install(ctx, item, values, interactive)
 	var root *config.NeedsRootError
 	if errors.As(err, &root) {
-		return tools.Step{Item: item, Result: catalog.StateAbsent, Detail: "needs root: sudo station config install " + item}, nil
+		return tools.Step{Item: item, Result: catalog.StateAbsent, Detail: "needs root: sudo station settings apply " + item}, nil
 	}
 	if err != nil {
 		return tools.Step{}, err

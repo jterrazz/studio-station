@@ -376,14 +376,14 @@ func (d *Engine) refreshSelf(ctx context.Context) {
 	}
 	switch {
 	case self.On && !first:
-		d.logf("tailnet", "Serve is on: every lease is served on the tailnet")
+		d.logf("tailnet", "Serve is on: every reserved port is shared")
 		d.serveAll(ctx)
 		d.reconcileServe(ctx)
 	case !self.On && self.Backend != ports.Running:
-		d.logf("tailnet", catalog.SignedOutDetail+": services are local only")
+		d.logf("tailnet", catalog.SignedOutDetail+": ports are local only")
 		d.unserveAll()
 	case !self.On:
-		d.logf("tailnet", catalog.ServeOffDetail+": services are local only")
+		d.logf("tailnet", catalog.ServeOffDetail+": ports are local only")
 		d.unserveAll()
 	}
 }

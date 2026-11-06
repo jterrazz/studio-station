@@ -32,11 +32,11 @@ func machinesFailure(err error) (*fail.Error, bool) {
 	case errors.As(err, &thisMac) && thisMac.Verb == "forget":
 		return usage(thisMac.Error(), "station machines"), true
 	case errors.As(err, &thisMac):
-		return usage(thisMac.Error(), "pick another machine: run station machines for the fleet"), true
+		return usage(thisMac.Error(), "pick another machine: station machines lists them all"), true
 	case errors.As(err, &notHost):
 		return usage(notHost.Error(), notAHostHint(notHost)), true
 	case errors.As(err, &onlyHost):
-		return usage(onlyHost.Error(), "run it on a host"), true
+		return usage(onlyHost.Error(), "run it on a Mac"), true
 	case errors.As(err, &taken):
 		return usage(taken.Error(), takenHint(taken)), true
 	case errors.As(err, &bad):

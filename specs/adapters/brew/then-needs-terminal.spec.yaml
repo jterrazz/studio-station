@@ -7,4 +7,4 @@ runs:
       exit: 0
       stdout: |
           ●	gpg	2.4.8	brew
-          ○	git-signing			needs a terminal: station config install git-signing
+          ○	git-signing			needs a terminal: station settings apply git-signing

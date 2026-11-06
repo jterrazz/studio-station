@@ -20,9 +20,9 @@ func powerFailure(err error) (*fail.Error, bool) {
 		}
 		return usage(rng.Error(), "station awake 1h"), true
 	case errors.As(err, &off):
-		return usage(off.Error(), "ssh <host> station power"), true
+		return usage(off.Error(), "station awake --on <mac>"), true
 	case errors.As(err, &none):
-		return usage(none.Error(), "run it on a Mac host"), true
+		return usage(none.Error(), "run it on a Mac"), true
 	case errors.As(err, &guard):
 		if guard.Guard == power.ReasonLid {
 			return failed(guard.Error(), "station awake 4h --lid --battery", err), true
