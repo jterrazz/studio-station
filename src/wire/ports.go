@@ -10,6 +10,7 @@ import (
 	"github.com/jterrazz/studio-station/src/core/fail"
 	coremachine "github.com/jterrazz/studio-station/src/core/machine"
 	"github.com/jterrazz/studio-station/src/domain/guest"
+	"github.com/jterrazz/studio-station/src/platform/local"
 	"github.com/jterrazz/studio-station/src/ports"
 	portscalls "github.com/jterrazz/studio-station/src/ports/calls"
 
@@ -17,7 +18,6 @@ import (
 
 	"github.com/jterrazz/studio-station/src/catalog"
 	"github.com/jterrazz/studio-station/src/domain/machines"
-	"github.com/jterrazz/studio-station/src/domain/services"
 	"github.com/jterrazz/studio-station/src/surface/cli/kit"
 	portscmd "github.com/jterrazz/studio-station/src/surface/cli/ports"
 	portsdeclare "github.com/jterrazz/studio-station/src/surface/cli/ports/declare"
@@ -26,9 +26,9 @@ import (
 	portsundeclare "github.com/jterrazz/studio-station/src/surface/cli/ports/undeclare"
 )
 
-func (m machine) services(_ kit.Env) *services.Service {
-	o := services.Options{Here: m.kind, State: m.paths.State, HereName: m.here(), Ask: m.askServices, ReleaseOn: m.releaseOn, Exposure: m.exposure,
-		Listening: m.listeners("/").Read, Routes: m.routes()}
+func (m machine) services(_ kit.Env) *portscalls.Service {
+	o := portscalls.ServiceOptions{Here: m.kind, State: m.paths.State, HereName: m.here(), Ask: m.askServices, ReleaseOn: m.releaseOn, Exposure: m.exposure,
+		Listening: listedOrNone(m.listeners("/").Read), Routes: m.routes(), EngineInstalled: m.engineInstalled}
 	d := servicesDaemon{c: m.engineAPI()}
 	if m.kind != catalog.Host {
 		g := m.guest()
@@ -53,9 +53,9 @@ func (m machine) services(_ kit.Env) *services.Service {
 		if _, err := fleet.Lookup(ctx, vm); err != nil && !errors.As(err, &unknown) {
 			return "", false, err
 		}
-		return "", false, &services.UnknownVMError{Name: vm}
+		return "", false, &ports.UnknownVMError{Name: vm}
 	}
-	return services.New(m.host, services.Stores{Services: m.stores.services(), Name: m.stores.name(), Hosts: m.stores.hosts(), Reservations: m.stores.reservations, Declarations: m.stores.declarations}, d, o)
+	return portscalls.NewService(portscalls.Stores{Services: m.stores.services(), Name: m.stores.name(), Hosts: m.stores.hosts(), Reservations: m.stores.reservations, Declarations: m.stores.declarations}, d, o)
 }
 
 // value: what listens on this Mac, read by lsof, the world's in a world.
@@ -105,4 +105,20 @@ func (p settingsPublic) Undeclare(ctx context.Context, d catalog.Declares) error
 		return nil
 	}
 	return err
+}
+
+// invariant: a Mac with nothing to list its listeners with lists none.
+func listedOrNone(read func(ctx context.Context) ([]ports.Listener, error)) func(ctx context.Context) ([]ports.Listener, error) {
+	return func(ctx context.Context) ([]ports.Listener, error) {
+		listed, err := read(ctx)
+		if errors.Is(err, local.ErrNotFound) {
+			return nil, nil
+		}
+		return listed, err
+	}
+}
+
+func (m machine) engineInstalled() bool {
+	_, err := m.host.FS.Stat(catalog.EnginePlist(m.host.Env.Home()))
+	return err == nil
 }

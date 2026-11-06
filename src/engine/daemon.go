@@ -20,10 +20,10 @@ import (
 	awakecalls "github.com/jterrazz/studio-station/src/awake/calls"
 	"github.com/jterrazz/studio-station/src/catalog"
 	"github.com/jterrazz/studio-station/src/domain/machines"
-	"github.com/jterrazz/studio-station/src/domain/services"
 	model "github.com/jterrazz/studio-station/src/machines"
 	"github.com/jterrazz/studio-station/src/platform/local"
 	"github.com/jterrazz/studio-station/src/ports"
+	portscalls "github.com/jterrazz/studio-station/src/ports/calls"
 )
 
 const (
@@ -117,7 +117,7 @@ type Daemon struct {
 	exposedAt time.Time
 	scanned   map[string][]ports.Listener
 	red       []string
-	leases    []services.Lease
+	leases    []ports.Reservation
 	self      ports.SharingState
 	read      bool
 	issuing   bool
@@ -195,7 +195,7 @@ func (d *Daemon) policy() ports.Policy {
 }
 
 func (d *Daemon) saveLeases() {
-	_ = services.SaveLeases(context.Background(), d.st.Reservations, append([]services.Lease(nil), d.leases...))
+	_ = portscalls.SaveLeases(context.Background(), d.st.Reservations, append([]ports.Reservation(nil), d.leases...))
 }
 
 func (d *Daemon) Run(ctx context.Context, note func(line string)) error {

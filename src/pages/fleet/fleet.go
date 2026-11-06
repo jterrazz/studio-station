@@ -4,7 +4,6 @@ import (
 	"github.com/jterrazz/studio-station/src/catalog"
 	"github.com/jterrazz/studio-station/src/domain/images"
 	"github.com/jterrazz/studio-station/src/domain/machines"
-	"github.com/jterrazz/studio-station/src/domain/services"
 	"github.com/jterrazz/studio-station/src/page"
 	"github.com/jterrazz/studio-station/src/pages"
 	pageimages "github.com/jterrazz/studio-station/src/pages/images"
@@ -23,7 +22,7 @@ const (
 type Reading struct {
 	Machines *machines.Fleet
 	Images   *[]images.Report
-	Services *services.Fleet
+	Services *ports.Fleet
 	Tailnet  *ports.Status
 	Failed   map[string]page.Error
 }
@@ -61,7 +60,7 @@ func part(r Reading, id, title string, ready bool, build func() []page.Section) 
 	return build()
 }
 
-func links(f *services.Fleet) func(host, vm string) []page.Link {
+func links(f *ports.Fleet) func(host, vm string) []page.Link {
 	if f == nil {
 		return nil
 	}

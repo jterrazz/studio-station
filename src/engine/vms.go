@@ -5,7 +5,6 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	model "github.com/jterrazz/studio-station/src/machines"
 	"io"
 	"maps"
 	"net/netip"
@@ -16,9 +15,10 @@ import (
 	"sync"
 	"time"
 
+	model "github.com/jterrazz/studio-station/src/machines"
+
 	"github.com/jterrazz/studio-station/src/catalog"
 	"github.com/jterrazz/studio-station/src/domain/machines"
-	"github.com/jterrazz/studio-station/src/domain/services"
 	"github.com/jterrazz/studio-station/src/ports"
 )
 
@@ -559,7 +559,7 @@ func (d *Daemon) hello(v *vmState) {
 	keys := d.hostKeys()
 	d.mu.Lock()
 	v.keys = strings.Join(keys, "\n")
-	public := services.ExposureOf(d.self.On, d.self.Host).PublicHost
+	public := ports.ExposureOf(d.self.On, d.self.Host).PublicHost
 	d.mu.Unlock()
 	env := v.rec.Env
 	if env == nil {
@@ -710,8 +710,8 @@ func (d *Daemon) renderEnv(v *vmState) {
 	e := d.exposureLocked()
 	var reserved []machines.Reserved
 	for _, pr := range catalog.Profiles {
-		if l, i := services.Find(d.leases, v.rec.Name, pr.Port); i >= 0 {
-			view := services.ViewOf(l, e, p.HTTPS, services.Waiting)
+		if l, i := ports.Find(d.leases, v.rec.Name, pr.Port); i >= 0 {
+			view := ports.ViewOf(l, e, p.HTTPS, ports.PhaseWaiting)
 			reserved = append(reserved, machines.Reserved{GuestPort: l.GuestPort, HostPort: l.HostPort, Profile: pr.Name, URL: view.URLs.Public, PublicHost: e.PublicHost})
 		}
 	}

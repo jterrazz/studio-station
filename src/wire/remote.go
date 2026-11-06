@@ -8,6 +8,8 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/jterrazz/studio-station/src/ports"
+
 	"github.com/spf13/cobra"
 
 	"github.com/jterrazz/studio-station/src/catalog"
@@ -16,7 +18,6 @@ import (
 	"github.com/jterrazz/studio-station/src/core/fail"
 	coremachine "github.com/jterrazz/studio-station/src/core/machine"
 	"github.com/jterrazz/studio-station/src/domain/machines"
-	"github.com/jterrazz/studio-station/src/domain/services"
 	machinescalls "github.com/jterrazz/studio-station/src/machines/calls"
 	"github.com/jterrazz/studio-station/src/platform/local"
 	portscalls "github.com/jterrazz/studio-station/src/ports/calls"
@@ -139,13 +140,13 @@ func (m machine) askFleet(ctx context.Context, macs []string, answered func(stri
 	}
 }
 
-func (m machine) askServices(ctx context.Context, hosts []string) map[string]services.HostView {
+func (m machine) askServices(ctx context.Context, hosts []string) map[string]ports.HostServices {
 	r := m.far.router
-	answers := map[string]services.HostView{}
-	for host, got := range each.All(ctx, hosts, func(ctx context.Context, host string) (services.HostView, error) {
+	answers := map[string]ports.HostServices{}
+	for host, got := range each.All(ctx, hosts, func(ctx context.Context, host string) (ports.HostServices, error) {
 		out, err := call.Invoke(ctx, r, coremachine.Ref{Name: host}, portscalls.List, portscalls.ListIn{}, nil)
 		if err != nil || len(out.Fleet.Hosts) == 0 {
-			return services.HostView{}, orNone(err)
+			return ports.HostServices{}, orNone(err)
 		}
 		return out.Fleet.Hosts[0], nil
 	}) {
@@ -156,7 +157,7 @@ func (m machine) askServices(ctx context.Context, hosts []string) map[string]ser
 	return answers
 }
 
-func (m machine) releaseOn(ctx context.Context, host string, t services.Target, yes bool) (services.Lease, error) {
+func (m machine) releaseOn(ctx context.Context, host string, t ports.Target, yes bool) (ports.Reservation, error) {
 	in := portscalls.StopSharingIn{VM: t.VM, Port: strconv.Itoa(t.Port)}
 	if yes {
 		in.Confirm = confirm.Yes

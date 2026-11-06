@@ -2,11 +2,11 @@ package kit
 
 import (
 	"errors"
+
 	"github.com/jterrazz/studio-station/src/ports"
 
 	"github.com/jterrazz/studio-station/src/core/fail"
 	"github.com/jterrazz/studio-station/src/domain/guest"
-	"github.com/jterrazz/studio-station/src/domain/services"
 	"github.com/jterrazz/studio-station/src/engine"
 )
 
@@ -34,10 +34,10 @@ func daemonFailure(err error) (*fail.Error, bool) {
 func servicesFailure(err error) (*fail.Error, bool) {
 	var full *ports.RangeFull
 	var perVM *ports.VMFull
-	var badPort *services.BadPortError
-	var ignored *services.IgnoredPortError
-	var away *services.HostAwayError
-	var unknown *services.UnknownVMError
+	var badPort *ports.BadPortError
+	var ignored *ports.IgnoredPortError
+	var away *ports.HostAwayError
+	var unknown *ports.UnknownVMError
 	switch {
 	case errors.As(err, &full):
 		return failed(full.Error(), "station ports stop-sharing <vm> <port>", err), true

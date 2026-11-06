@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/jterrazz/studio-station/src/domain/machines"
-	"github.com/jterrazz/studio-station/src/domain/services"
 	"github.com/jterrazz/studio-station/src/ports"
 	"github.com/jterrazz/studio-station/src/ports/adapter/cloudflare"
 	"github.com/jterrazz/studio-station/src/ports/adapter/funnel"
@@ -13,12 +12,12 @@ import (
 	"github.com/jterrazz/studio-station/src/ports/contract"
 )
 
-func (m machine) exposure(ctx context.Context) services.Exposure {
+func (m machine) exposure(ctx context.Context) ports.Exposure {
 	ready, err := m.tailnet().Ready(ctx)
 	if err != nil {
-		return services.ExposureOf(false, "")
+		return ports.ExposureOf(false, "")
 	}
-	return services.ExposureOf(ready.On, ready.Host)
+	return ports.ExposureOf(ready.On, ready.Host)
 }
 
 func (m machine) tailnet() contract.Tailnet {

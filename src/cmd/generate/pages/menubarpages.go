@@ -7,7 +7,6 @@ import (
 	"github.com/jterrazz/studio-station/src/awake"
 	"github.com/jterrazz/studio-station/src/catalog"
 	coremachine "github.com/jterrazz/studio-station/src/core/machine"
-	"github.com/jterrazz/studio-station/src/domain/services"
 	"github.com/jterrazz/studio-station/src/page"
 	pageactivity "github.com/jterrazz/studio-station/src/pages/activity"
 	pageawake "github.com/jterrazz/studio-station/src/pages/awake"
@@ -20,7 +19,7 @@ import (
 // mini's Screen Sharing and infra's API private.
 func miniPorts() ports.Listing {
 	mini, infra := coremachine.Ref{Name: "mac-mini"}, coremachine.Ref{Name: "infra", On: "mac-mini"}
-	host := services.HostView{Name: "mac-mini", Reachable: true, Daemon: services.DaemonInfo{Running: true}, Services: []services.View{},
+	host := ports.HostServices{Name: "mac-mini", Reachable: true, Daemon: ports.EngineInfo{Running: true}, Services: []ports.ServiceView{},
 		Ports: []ports.Port{
 			{Machine: mini, Port: 5000, Process: "ControlCenter", Binds: []string{"*"}, Reach: ports.Outside},
 			{Machine: infra, Port: 10250, Process: "kubelet", Binds: []string{"0.0.0.0"}, Reach: ports.Outside},
@@ -29,7 +28,7 @@ func miniPorts() ports.Listing {
 			{Machine: mini, Port: 5900, Process: "screensharingd", Binds: []string{"100.98.133.20"}, Reach: ports.Tailnet},
 			{Machine: infra, Port: 6443, Process: "kube-apiserver", Binds: []string{"0.0.0.0"}, Reach: ports.Tailnet, Device: true},
 		}}
-	return ports.Listing{Fleet: services.Fleet{Schema: "station.services/v1", Hosts: []services.HostView{host}}}
+	return ports.Listing{Fleet: ports.Fleet{Schema: "station.services/v1", Hosts: []ports.HostServices{host}}}
 }
 
 // value: the ports of This Mac's VMs, as linux-1's Ports reads them: Vite
@@ -37,7 +36,7 @@ func miniPorts() ports.Listing {
 func linuxPorts() ports.Listing {
 	host := serviceFleet().Hosts[0]
 	host.Ports = nil
-	return ports.Listing{Fleet: services.Fleet{Schema: "station.services/v1", Hosts: []services.HostView{host}}}
+	return ports.Listing{Fleet: ports.Fleet{Schema: "station.services/v1", Hosts: []ports.HostServices{host}}}
 }
 
 func twoMacsAwake() pageawake.Fleet {

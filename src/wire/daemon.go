@@ -23,7 +23,6 @@ import (
 	"github.com/jterrazz/studio-station/src/background/contract"
 	"github.com/jterrazz/studio-station/src/catalog"
 	"github.com/jterrazz/studio-station/src/domain/machines"
-	"github.com/jterrazz/studio-station/src/domain/services"
 	"github.com/jterrazz/studio-station/src/domain/setup"
 	"github.com/jterrazz/studio-station/src/engine"
 	enginelog "github.com/jterrazz/studio-station/src/engine/adapter/log"
@@ -204,7 +203,7 @@ func (d hostDaemon) Do(ctx context.Context, op, vm string) error {
 }
 
 func (d hostDaemon) Reserve(ctx context.Context, vm string, port int, profile string) (machines.Reserved, error) {
-	var v services.View
+	var v ports.ServiceView
 	if err := d.c.do(ctx, process.Reserve, process.ReserveIn{VM: vm, GuestPort: port, Pinned: true, Profile: profile}, &v); err != nil {
 		return machines.Reserved{}, downAs(err, machines.ErrDaemonDown)
 	}
@@ -236,22 +235,22 @@ func hostOf(url string) string {
 
 type servicesDaemon struct{ c engineAPI }
 
-func (d servicesDaemon) Services(ctx context.Context) (services.HostView, error) {
-	var v services.HostView
+func (d servicesDaemon) Services(ctx context.Context) (ports.HostServices, error) {
+	var v ports.HostServices
 	err := d.c.do(ctx, process.Services, nil, &v)
-	return v, downAs(err, services.ErrDaemonDown)
+	return v, downAs(err, ports.ErrDaemonDown)
 }
 
-func (d servicesDaemon) Reserve(ctx context.Context, vm string, port int, pinned bool) (services.View, error) {
-	var v services.View
+func (d servicesDaemon) Reserve(ctx context.Context, vm string, port int, pinned bool) (ports.ServiceView, error) {
+	var v ports.ServiceView
 	err := d.c.do(ctx, process.Reserve, process.ReserveIn{VM: vm, GuestPort: port, Pinned: pinned}, &v)
-	return v, downAs(err, services.ErrDaemonDown)
+	return v, downAs(err, ports.ErrDaemonDown)
 }
 
-func (d servicesDaemon) Release(ctx context.Context, vm string, port int) (services.Lease, error) {
-	var l services.Lease
+func (d servicesDaemon) Release(ctx context.Context, vm string, port int) (ports.Reservation, error) {
+	var l ports.Reservation
 	err := d.c.do(ctx, process.Release, process.ReserveIn{VM: vm, GuestPort: port}, &l)
-	return l, downAs(err, services.ErrDaemonDown)
+	return l, downAs(err, ports.ErrDaemonDown)
 }
 
 type leaseReleaser struct{ m machine }
@@ -267,7 +266,7 @@ func (r leaseReleaser) ReleaseVM(ctx context.Context, vm string) error {
 	if err != nil {
 		return err
 	}
-	kept, gone := services.Without(leases, func(l services.Lease) bool { return l.VM != vm })
+	kept, gone := ports.Without(leases, func(l ports.Reservation) bool { return l.VM != vm })
 	if len(gone) == 0 {
 		return nil
 	}
@@ -276,10 +275,10 @@ func (r leaseReleaser) ReleaseVM(ctx context.Context, vm string) error {
 	tn := r.m.tailnet()
 	if ready, err := tn.Ready(ctx); err == nil && ready.On {
 		for _, l := range gone {
-			_ = tn.Unshare(ctx, services.ShareOf(l, mode))
+			_ = tn.Unshare(ctx, ports.ShareOf(l, mode))
 		}
 	}
-	return services.SaveLeases(ctx, store, kept)
+	return portscalls.SaveLeases(ctx, store, kept)
 }
 
 func (r leaseReleaser) forgetDeclarations(ctx context.Context, vm string) error {

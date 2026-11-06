@@ -12,7 +12,6 @@ import (
 	"github.com/jterrazz/studio-station/src/catalog"
 	coremachine "github.com/jterrazz/studio-station/src/core/machine"
 	"github.com/jterrazz/studio-station/src/domain/machines"
-	"github.com/jterrazz/studio-station/src/domain/services"
 	"github.com/jterrazz/studio-station/src/engine"
 	"github.com/jterrazz/studio-station/src/overview"
 	"github.com/jterrazz/studio-station/src/page"
@@ -72,15 +71,15 @@ func twoMacs() machines.Fleet {
 	}}
 }
 
-func twoMacsServices() services.Fleet {
+func twoMacsServices() ports.Fleet {
 	public := "jterrazz-macbook-pro.tail77a797.ts.net"
-	return services.Fleet{Schema: "station.services/v1", Hosts: []services.HostView{
-		{Name: thisMacName, Here: true, Reachable: true, Daemon: services.DaemonInfo{Running: true}, PublicHost: public, Serve: "on", HTTPS: "port",
-			Services: []services.View{
-				{VM: "linux-1", GuestPort: 5173, HostPort: 40001, State: services.Published, Process: "node", HTTP: true, Profile: "vite", URLs: services.URLSet{Public: "https://" + public + ":40001"}},
-				{VM: "linux-1", GuestPort: 7000, HostPort: 40002, State: services.Published, Process: "nc"},
+	return ports.Fleet{Schema: "station.services/v1", Hosts: []ports.HostServices{
+		{Name: thisMacName, Here: true, Reachable: true, Daemon: ports.EngineInfo{Running: true}, PublicHost: public, Serve: "on", HTTPS: "port",
+			Services: []ports.ServiceView{
+				{VM: "linux-1", GuestPort: 5173, HostPort: 40001, State: ports.PhasePublished, Process: "node", HTTP: true, Profile: "vite", URLs: ports.URLSet{Public: "https://" + public + ":40001"}},
+				{VM: "linux-1", GuestPort: 7000, HostPort: 40002, State: ports.PhasePublished, Process: "nc"},
 			}},
-		{Name: miniName, Reachable: true, Daemon: services.DaemonInfo{Running: true}},
+		{Name: miniName, Reachable: true, Daemon: ports.EngineInfo{Running: true}},
 	}}
 }
 

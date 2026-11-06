@@ -12,7 +12,6 @@ import (
 
 	"github.com/jterrazz/studio-station/src/catalog"
 	"github.com/jterrazz/studio-station/src/domain/machines"
-	"github.com/jterrazz/studio-station/src/domain/services"
 	"github.com/jterrazz/studio-station/src/platform/local"
 	"github.com/jterrazz/studio-station/src/ports"
 )
@@ -28,7 +27,7 @@ type svc struct {
 	port      int
 	ip        string
 	process   string
-	st        services.State
+	st        ports.State
 	listeners []local.Listener
 	served    bool
 	detail    string
@@ -40,7 +39,7 @@ type svc struct {
 func key(vm string, port int) string { return vm + ":" + strconv.Itoa(port) }
 
 func (d *Daemon) leaseIndex(vm string, port int) int {
-	_, i := services.Find(d.leases, vm, port)
+	_, i := ports.Find(d.leases, vm, port)
 	return i
 }
 
@@ -72,21 +71,21 @@ func (d *Daemon) svcOf(vm string, port int) *svc {
 		if i := d.leaseIndex(vm, port); i >= 0 {
 			s.st.Pinned = d.leases[i].Pinned
 			s.st.LastSeenAt = cmp.Or(d.leases[i].LastSeenAt, d.leases[i].ReservedAt)
-			s.st.Phase = services.Waiting
+			s.st.Phase = ports.PhaseWaiting
 		}
 		d.svcs[key(vm, port)] = s
 	}
 	return s
 }
 
-func (d *Daemon) apply(ctx context.Context, s *svc, acts []services.Action) {
+func (d *Daemon) apply(ctx context.Context, s *svc, acts []ports.Action) {
 	for _, a := range acts {
 		switch a {
-		case services.ActPublish:
+		case ports.ActPublish:
 			d.publish(ctx, s)
-		case services.ActUnpublish:
+		case ports.ActUnpublish:
 			d.unpublish(ctx, s)
-		case services.ActRelease:
+		case ports.ActRelease:
 			if i := d.leaseIndex(s.vm, s.port); i >= 0 {
 				d.leases = append(d.leases[:i:i], d.leases[i+1:]...)
 				d.saveLeases()
@@ -111,11 +110,11 @@ func (d *Daemon) listen(ctx context.Context, vm string, port int, ip, process st
 	s := d.svcOf(vm, port)
 	s.ip, s.process = ip, process
 	now := d.h.Clock.Now().UTC().Truncate(time.Second)
-	if s.st.Phase == services.Refused {
-		s.st.Phase = services.None
+	if s.st.Phase == ports.PhaseRefused {
+		s.st.Phase = ports.PhaseNone
 	}
-	var acts []services.Action
-	s.st, acts = services.Next(s.st, services.EvListen, now)
+	var acts []ports.Action
+	s.st, acts = ports.Next(s.st, ports.EvListen, now)
 	if i := d.leaseIndex(vm, port); i >= 0 && now.Sub(d.leases[i].LastSeenAt) >= seenEvery {
 		d.leases[i].LastSeenAt = now
 		d.saveLeases()
@@ -127,7 +126,7 @@ func (d *Daemon) unlisten(vm string, port int) {
 	d.mu.Lock()
 	defer d.mu.Unlock()
 	if s, ok := d.svcs[key(vm, port)]; ok {
-		s.st, _ = services.Next(s.st, services.EvUnlisten, d.h.Clock.Now())
+		s.st, _ = ports.Next(s.st, ports.EvUnlisten, d.h.Clock.Now())
 	}
 }
 
@@ -156,14 +155,14 @@ func (d *Daemon) tickServices(ctx context.Context) {
 		d.svcOf(l.VM, l.GuestPort)
 	}
 	for _, s := range d.svcs {
-		var acts []services.Action
-		s.st, acts = services.Next(s.st, services.EvTick, now)
+		var acts []ports.Action
+		s.st, acts = ports.Next(s.st, ports.EvTick, now)
 		d.apply(ctx, s, acts)
 		_, told := d.heard[s.vm]
-		if v := d.vms[s.vm]; s.st.Phase == services.Waiting && s.served && (told || v == nil || v.state != StateRunning) {
+		if v := d.vms[s.vm]; s.st.Phase == ports.PhaseWaiting && s.served && (told || v == nil || v.state != StateRunning) {
 			d.unpublish(ctx, s)
 		}
-		if s.st.Phase == services.Published && len(s.listeners) == 0 && !s.retryAt.IsZero() && !now.Before(s.retryAt) {
+		if s.st.Phase == ports.PhasePublished && len(s.listeners) == 0 && !s.retryAt.IsZero() && !now.Before(s.retryAt) {
 			d.publish(ctx, s)
 		}
 	}
@@ -175,8 +174,8 @@ func (d *Daemon) vmStopped(ctx context.Context, vm string) {
 	delete(d.heard, vm)
 	for _, s := range d.svcs {
 		if s.vm == vm {
-			var acts []services.Action
-			s.st, acts = services.Next(s.st, services.EvVMStopped, d.h.Clock.Now())
+			var acts []ports.Action
+			s.st, acts = ports.Next(s.st, ports.EvVMStopped, d.h.Clock.Now())
 			d.apply(ctx, s, acts)
 		}
 	}
@@ -192,10 +191,10 @@ func (d *Daemon) releaseVM(ctx context.Context, vm string) {
 		}
 	}
 	httpsMode := d.policy().HTTPS
-	kept, gone := services.Without(d.leases, func(l services.Lease) bool { return l.VM != vm })
+	kept, gone := ports.Without(d.leases, func(l ports.Reservation) bool { return l.VM != vm })
 	if d.self.On {
 		for _, l := range gone {
-			_ = d.tn.Unshare(ctx, services.ShareOf(l, httpsMode))
+			_ = d.tn.Unshare(ctx, ports.ShareOf(l, httpsMode))
 		}
 	}
 	if len(gone) > 0 {
@@ -215,7 +214,7 @@ func (d *Daemon) publish(ctx context.Context, s *svc) {
 	if i < 0 {
 		l, err := ports.Reserve(p, d.leases, s.vm, s.port, d.busy)
 		if err != nil {
-			s.st.Phase, s.refused, s.detail = services.Refused, true, err.Error()
+			s.st.Phase, s.refused, s.detail = ports.PhaseRefused, true, err.Error()
 			return
 		}
 		l.ReservedAt = d.h.Clock.Now().UTC().Truncate(time.Second)
@@ -228,7 +227,7 @@ func (d *Daemon) publish(ctx context.Context, s *svc) {
 		d.saveLeases()
 	}
 	lease := d.leases[i]
-	held, err := d.h.Sockets.ListenTCP(services.LocalHost, lease.HostPort)
+	held, err := d.h.Sockets.ListenTCP(ports.LocalHost, lease.HostPort)
 	if err != nil {
 		if lease.Pinned {
 			s.detail, s.retryAt = "host port "+strconv.Itoa(lease.HostPort)+" is busy", d.h.Clock.Now().Add(busyRetry)
@@ -236,16 +235,16 @@ func (d *Daemon) publish(ctx context.Context, s *svc) {
 			return
 		}
 		was := lease.HostPort
-		others := append(append([]services.Lease(nil), d.leases[:i]...), d.leases[i+1:]...)
+		others := append(append([]ports.Reservation(nil), d.leases[:i]...), d.leases[i+1:]...)
 		moved, allocErr := ports.Reserve(p, others, s.vm, s.port, func(hp int) bool { return hp == was || d.busy(hp) })
 		if allocErr != nil {
-			s.st.Phase, s.refused, s.detail = services.Refused, true, allocErr.Error()
+			s.st.Phase, s.refused, s.detail = ports.PhaseRefused, true, allocErr.Error()
 			return
 		}
 		lease.HostPort = moved.HostPort
 		d.leases[i] = lease
 		d.saveLeases()
-		if held, err = d.h.Sockets.ListenTCP(services.LocalHost, lease.HostPort); err != nil {
+		if held, err = d.h.Sockets.ListenTCP(ports.LocalHost, lease.HostPort); err != nil {
 			s.detail = err.Error()
 			return
 		}
@@ -265,12 +264,12 @@ func (d *Daemon) publish(ctx context.Context, s *svc) {
 // invariant: with Serve off no serve runs: the app would block waiting for the
 // admin; a serve refused while Serve is on leaves the service local, its
 // public URL unchanged, and says the tailnet's own line.
-func (d *Daemon) expose(ctx context.Context, s *svc, lease services.Lease, httpsMode string) {
+func (d *Daemon) expose(ctx context.Context, s *svc, lease ports.Reservation, httpsMode string) {
 	s.serveNote = ""
 	if !d.self.On {
 		return
 	}
-	if _, err := d.tn.Share(ctx, services.ShareOf(lease, httpsMode)); err != nil {
+	if _, err := d.tn.Share(ctx, ports.ShareOf(lease, httpsMode)); err != nil {
 		s.serveNote = "serve: " + err.Error()
 		if refused := (*ports.Refused)(nil); errors.As(err, &refused) {
 			s.serveNote = "serve: " + refused.Detail
@@ -285,7 +284,7 @@ func (d *Daemon) serveAll(ctx context.Context) {
 	d.mu.Lock()
 	defer d.mu.Unlock()
 	for _, s := range d.svcs {
-		if i := d.leaseIndex(s.vm, s.port); i >= 0 && s.st.Phase == services.Published && len(s.listeners) > 0 {
+		if i := d.leaseIndex(s.vm, s.port); i >= 0 && s.st.Phase == ports.PhasePublished && len(s.listeners) > 0 {
 			d.expose(ctx, s, d.leases[i], p.HTTPS)
 		}
 	}
@@ -306,7 +305,7 @@ func (d *Daemon) unpublish(ctx context.Context, s *svc) {
 	s.listeners = nil
 	if s.served && d.self.On {
 		if i := d.leaseIndex(s.vm, s.port); i >= 0 {
-			_ = d.tn.Unshare(ctx, services.ShareOf(d.leases[i], d.policy().HTTPS))
+			_ = d.tn.Unshare(ctx, ports.ShareOf(d.leases[i], d.policy().HTTPS))
 		}
 	}
 	s.served, s.serveNote = false, ""
@@ -337,7 +336,7 @@ func (d *Daemon) carry(ctx context.Context, s *svc, l local.Listener) {
 				_ = conn.Close()
 				return
 			}
-			remote, err := client.Forward(ctx, services.Dialed(s.ip), s.port)
+			remote, err := client.Forward(ctx, ports.Dialed(s.ip), s.port)
 			if err != nil {
 				_ = conn.Close()
 				return
@@ -359,7 +358,7 @@ func (d *Daemon) detectHTTP(ctx context.Context, s *svc) bool {
 	if client == nil {
 		return false
 	}
-	conn, err := client.Forward(ctx, services.Dialed(s.ip), s.port)
+	conn, err := client.Forward(ctx, ports.Dialed(s.ip), s.port)
 	if err != nil {
 		return false
 	}
@@ -394,47 +393,47 @@ func (d *Daemon) detectHTTP(ctx context.Context, s *svc) bool {
 // value: how this Mac shares, and why it shares nothing when it is off: a
 // Mac signed out of the tailnet says so, not that Serve is off; the caller
 // holds d.mu.
-func (d *Daemon) exposureLocked() services.Exposure {
-	e := services.ExposureOf(d.self.On, d.self.Host)
+func (d *Daemon) exposureLocked() ports.Exposure {
+	e := ports.ExposureOf(d.self.On, d.self.Host)
 	if !e.On && d.self.Backend != ports.Running {
 		e.Off = catalog.SignedOutDetail
 	}
 	return e
 }
 
-func (d *Daemon) view(l services.Lease, s *svc, httpsMode string) services.View {
-	v := services.ViewOf(l, d.exposureLocked(), httpsMode, services.Waiting)
+func (d *Daemon) view(l ports.Reservation, s *svc, httpsMode string) ports.ServiceView {
+	v := ports.ViewOf(l, d.exposureLocked(), httpsMode, ports.PhaseWaiting)
 	if s != nil {
 		switch s.st.Phase {
-		case services.Published, services.Closing:
-			v.State = services.Published
-		case services.Refused:
-			v.State = services.Refused
-		case services.None, services.Waiting, services.Gone, services.Unknown:
+		case ports.PhasePublished, ports.PhaseClosing:
+			v.State = ports.PhasePublished
+		case ports.PhaseRefused:
+			v.State = ports.PhaseRefused
+		case ports.PhaseNone, ports.PhaseWaiting, ports.PhaseGone, ports.PhaseUnknown:
 		}
 		v.Process, v.Bind = s.process, s.ip
-		v.Detail = services.JoinDetail(services.JoinDetail(s.detail, s.serveNote), v.Detail)
+		v.Detail = ports.JoinDetail(ports.JoinDetail(s.detail, s.serveNote), v.Detail)
 		if d.issuing && s.served && l.HTTP != nil && *l.HTTP {
-			v.Detail = services.JoinDetail(v.Detail, catalog.IssuingDetail)
+			v.Detail = ports.JoinDetail(v.Detail, catalog.IssuingDetail)
 		}
 		if s.refused {
-			v.State = services.Refused
+			v.State = ports.PhaseRefused
 		}
 	}
-	if vs := d.vms[l.VM]; v.State == services.Waiting && vs != nil && vs.state != StateRunning {
-		v.Detail = services.JoinDetail(catalog.StoppedDetail(l.VM), v.Detail)
+	if vs := d.vms[l.VM]; v.State == ports.PhaseWaiting && vs != nil && vs.state != StateRunning {
+		v.Detail = ports.JoinDetail(catalog.StoppedDetail(l.VM), v.Detail)
 	}
 	return v
 }
 
-func (d *Daemon) hostView(vm string) services.HostView {
+func (d *Daemon) hostView(vm string) ports.HostServices {
 	p := d.policy()
 	d.mu.Lock()
 	defer d.mu.Unlock()
 	e := d.exposureLocked()
-	out := services.HostView{
-		Name: d.m.HereName(), Here: true, Reachable: true, Daemon: services.DaemonInfo{Running: true, Version: d.o.Version},
-		PublicHost: e.PublicHost, Serve: e.Word(), HTTPS: p.HTTPS, Services: []services.View{},
+	out := ports.HostServices{
+		Name: d.m.HereName(), Here: true, Reachable: true, Daemon: ports.EngineInfo{Running: true, Version: d.o.Version},
+		PublicHost: e.PublicHost, Serve: e.Word(), HTTPS: p.HTTPS, Services: []ports.ServiceView{},
 	}
 	if vm == "" {
 		out.Listening = d.listeningLocked()
@@ -449,8 +448,8 @@ func (d *Daemon) hostView(vm string) services.HostView {
 		}
 	}
 	for _, s := range d.svcs {
-		if s.st.Phase == services.Refused && d.leaseIndex(s.vm, s.port) < 0 && (vm == "" || s.vm == vm) {
-			out.Services = append(out.Services, services.View{VM: s.vm, GuestPort: s.port, State: services.Refused, Process: s.process, Detail: services.JoinDetail(s.detail, off)})
+		if s.st.Phase == ports.PhaseRefused && d.leaseIndex(s.vm, s.port) < 0 && (vm == "" || s.vm == vm) {
+			out.Services = append(out.Services, ports.ServiceView{VM: s.vm, GuestPort: s.port, State: ports.PhaseRefused, Process: s.process, Detail: ports.JoinDetail(s.detail, off)})
 		}
 	}
 	sort.Slice(out.Services, func(i, j int) bool {
@@ -466,16 +465,16 @@ func (d *Daemon) hostView(vm string) services.HostView {
 // invariant: a Mac signed out of the tailnet refuses a share the owner asks
 // for, but a workspace's profile ports are reserved local only, so its create
 // goes on.
-func (d *Daemon) reserve(ctx context.Context, vm string, port int, pinned bool, profile string) (services.View, error) {
+func (d *Daemon) reserve(ctx context.Context, vm string, port int, pinned bool, profile string) (ports.ServiceView, error) {
 	if _, err := d.find(vm); err != nil {
-		return services.View{}, err
+		return ports.ServiceView{}, err
 	}
 	p := d.policy()
 	d.mu.Lock()
 	defer d.mu.Unlock()
 	l, err := ports.Reserve(p, d.leases, vm, port, d.busy)
 	if err != nil {
-		return services.View{}, asOp(err)
+		return ports.ServiceView{}, asOp(err)
 	}
 	if i := d.leaseIndex(vm, port); i < 0 {
 		l.ReservedAt = d.h.Clock.Now().UTC().Truncate(time.Second)
@@ -487,24 +486,24 @@ func (d *Daemon) reserve(ctx context.Context, vm string, port int, pinned bool, 
 		d.saveLeases()
 	}
 	s := d.svcs[key(vm, port)]
-	if s != nil && (s.st.Phase == services.Refused || s.refused) {
-		s.st.Phase = services.None
-		var acts []services.Action
-		s.st, acts = services.Next(s.st, services.EvListen, d.h.Clock.Now())
+	if s != nil && (s.st.Phase == ports.PhaseRefused || s.refused) {
+		s.st.Phase = ports.PhaseNone
+		var acts []ports.Action
+		s.st, acts = ports.Next(s.st, ports.EvListen, d.h.Clock.Now())
 		d.apply(ctx, s, acts)
 	}
 	if d.self.Backend != ports.Running && profile == "" {
-		return services.View{}, ports.SignedOut(d.m.HereName())
+		return ports.ServiceView{}, ports.SignedOut(d.m.HereName())
 	}
 	return d.view(l, s, p.HTTPS), nil
 }
 
-func (d *Daemon) release(ctx context.Context, vm string, port int) (services.Lease, error) {
+func (d *Daemon) release(ctx context.Context, vm string, port int) (ports.Reservation, error) {
 	d.mu.Lock()
 	defer d.mu.Unlock()
 	i := d.leaseIndex(vm, port)
 	if i < 0 {
-		return services.Lease{}, services.NotFound(services.Target{VM: vm, Port: port})
+		return ports.Reservation{}, ports.NotFoundAt(ports.Target{VM: vm, Port: port})
 	}
 	l := d.leases[i]
 	if s, ok := d.svcs[key(vm, port)]; ok {
@@ -533,7 +532,7 @@ func (d *Daemon) reconcileServe(ctx context.Context) {
 	}
 	p := d.policy()
 	d.mu.Lock()
-	leases := append([]services.Lease(nil), d.leases...)
+	leases := append([]ports.Reservation(nil), d.leases...)
 	vms := map[string]bool{}
 	for name := range d.vms {
 		vms[name] = true
@@ -572,7 +571,7 @@ func (d *Daemon) servedBefore(hostPort int) {
 	defer d.mu.Unlock()
 	for _, l := range d.leases {
 		if l.HostPort == hostPort {
-			if s := d.svcOf(l.VM, l.GuestPort); s.st.Phase != services.Published {
+			if s := d.svcOf(l.VM, l.GuestPort); s.st.Phase != ports.PhasePublished {
 				s.served = true
 			}
 		}

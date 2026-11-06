@@ -7,10 +7,11 @@ import (
 	"strings"
 	"time"
 
+	"github.com/jterrazz/studio-station/src/ports"
+
 	"github.com/jterrazz/studio-station/src/awake"
 
 	"github.com/jterrazz/studio-station/src/catalog"
-	"github.com/jterrazz/studio-station/src/domain/services"
 	model "github.com/jterrazz/studio-station/src/machines"
 )
 
@@ -95,28 +96,28 @@ func (d *Daemon) Hello() Hello {
 
 func (d *Daemon) VMs() []VMView { return d.vmViews() }
 
-func (d *Daemon) Services(vm string) services.HostView { return d.hostView(vm) }
+func (d *Daemon) Services(vm string) ports.HostServices { return d.hostView(vm) }
 
-func (d *Daemon) Reserve(ctx context.Context, vm string, port int, pinned bool, profile string) (services.View, error) {
+func (d *Daemon) Reserve(ctx context.Context, vm string, port int, pinned bool, profile string) (ports.ServiceView, error) {
 	return d.shareOf(ctx, vm, port, pinned, profile)
 }
 
-func (d *Daemon) Release(ctx context.Context, vm string, port int) (services.Lease, error) {
+func (d *Daemon) Release(ctx context.Context, vm string, port int) (ports.Reservation, error) {
 	return d.stopSharing(ctx, vm, port)
 }
 
 // invariant: a share takes back a stop of sharing, and a stop of sharing is
 // remembered, on this Mac whoever asked: a command here or a VM's guest.
-func (d *Daemon) shareOf(ctx context.Context, vm string, port int, pinned bool, profile string) (services.View, error) {
+func (d *Daemon) shareOf(ctx context.Context, vm string, port int, pinned bool, profile string) (ports.ServiceView, error) {
 	if d.o.Remember != nil {
 		if err := d.o.Remember(vm, port, false); err != nil {
-			return services.View{}, err
+			return ports.ServiceView{}, err
 		}
 	}
 	return d.reserve(ctx, vm, port, pinned, profile)
 }
 
-func (d *Daemon) stopSharing(ctx context.Context, vm string, port int) (services.Lease, error) {
+func (d *Daemon) stopSharing(ctx context.Context, vm string, port int) (ports.Reservation, error) {
 	l, err := d.release(ctx, vm, port)
 	if err != nil || d.o.Remember == nil {
 		return l, err

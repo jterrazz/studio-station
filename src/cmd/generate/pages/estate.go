@@ -13,7 +13,6 @@ import (
 	"github.com/jterrazz/studio-station/src/disk"
 	"github.com/jterrazz/studio-station/src/domain/images"
 	"github.com/jterrazz/studio-station/src/domain/machines"
-	"github.com/jterrazz/studio-station/src/domain/services"
 	"github.com/jterrazz/studio-station/src/domain/setup"
 	"github.com/jterrazz/studio-station/src/overview"
 	"github.com/jterrazz/studio-station/src/page"
@@ -382,24 +381,24 @@ func tailnetStatus() ports.Status {
 	}
 }
 
-func serviceFleet() services.Fleet {
+func serviceFleet() ports.Fleet {
 	seen := built
-	return services.Fleet{Schema: "station.services/v1", Hosts: []services.HostView{
-		{Name: "macbook", Here: true, Reachable: true, Daemon: services.DaemonInfo{Running: true}, PublicHost: "jterrazz-macbook-pro.tail1234.ts.net", Serve: "on", HTTPS: "port",
-			Range: &services.Range{Low: 40000, High: 40999, Leased: 2, Free: 998, MaxPerVM: 20},
-			Services: []services.View{
-				{VM: "linux-1", GuestPort: 5173, HostPort: 40001, State: services.Published, Process: "node", HTTP: true, Profile: "vite", URLs: services.URLSet{Public: "https://jterrazz-macbook-pro.tail1234.ts.net:40001"}, LastSeenAt: &seen},
-				{VM: "linux-1", GuestPort: 5432, HostPort: 40002, State: services.Waiting, Process: "postgres"},
+	return ports.Fleet{Schema: "station.services/v1", Hosts: []ports.HostServices{
+		{Name: "macbook", Here: true, Reachable: true, Daemon: ports.EngineInfo{Running: true}, PublicHost: "jterrazz-macbook-pro.tail1234.ts.net", Serve: "on", HTTPS: "port",
+			Range: &ports.Range{Low: 40000, High: 40999, Leased: 2, Free: 998, MaxPerVM: 20},
+			Services: []ports.ServiceView{
+				{VM: "linux-1", GuestPort: 5173, HostPort: 40001, State: ports.PhasePublished, Process: "node", HTTP: true, Profile: "vite", URLs: ports.URLSet{Public: "https://jterrazz-macbook-pro.tail1234.ts.net:40001"}, LastSeenAt: &seen},
+				{VM: "linux-1", GuestPort: 5432, HostPort: 40002, State: ports.PhaseWaiting, Process: "postgres"},
 			}},
 		{Name: "mac-mini", Reachable: false},
 	}}
 }
 
-func stoppedServices() services.Fleet {
+func stoppedServices() ports.Fleet {
 	f := serviceFleet()
-	f.Hosts[0].Daemon = services.DaemonInfo{Installed: true}
+	f.Hosts[0].Daemon = ports.EngineInfo{Installed: true}
 	for i := range f.Hosts[0].Services {
-		f.Hosts[0].Services[i].State = services.Unknown
+		f.Hosts[0].Services[i].State = ports.PhaseUnknown
 	}
 	return f
 }
@@ -417,15 +416,15 @@ func portLists() []Fixture {
 // value: the reference estate's ports in their two classes: the mini's AirPlay
 // Receiver red, infra's API on its own tailnet device, a database on This
 // Mac's loopback folded.
-func estatePorts() services.Fleet {
+func estatePorts() ports.Fleet {
 	f := serviceFleet()
 	mini, infra := coremachine.Ref{Name: "mac-mini"}, coremachine.Ref{Name: "infra", On: "mac-mini"}
 	f.Hosts[0].Ports = []ports.Port{
 		{Machine: coremachine.Ref{Name: "macbook"}, Port: 5432, Process: "postgres", Binds: []string{"127.0.0.1"}, Reach: ports.ThisMachine},
 		{Machine: coremachine.Ref{Name: "linux-1", On: "macbook"}, Port: 5173, Process: "node", Binds: []string{"0.0.0.0"}, Reach: ports.Tailnet},
 	}
-	f.Hosts[1] = services.HostView{Name: "mac-mini", Reachable: true, Daemon: services.DaemonInfo{Running: true}, Services: []services.View{},
-		Range: &services.Range{Low: 40000, High: 40999, Free: 1000, MaxPerVM: 20},
+	f.Hosts[1] = ports.HostServices{Name: "mac-mini", Reachable: true, Daemon: ports.EngineInfo{Running: true}, Services: []ports.ServiceView{},
+		Range: &ports.Range{Low: 40000, High: 40999, Free: 1000, MaxPerVM: 20},
 		Ports: []ports.Port{
 			{Machine: mini, Port: 5000, Process: "ControlCenter", Binds: []string{"*"}, Reach: ports.Outside},
 			{Machine: mini, Port: 22, Process: "sshd", Binds: []string{"*"}, Reach: ports.Outside, Declared: &ports.Declaration{Machine: mini.Name, Port: 22, Via: catalog.RouteLAN, By: "sshd"}, Verified: &ports.Verified{Seen: true}},
