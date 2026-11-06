@@ -9,7 +9,7 @@ import (
 
 var (
 	// value: no published version of that image.
-	ErrNotPublished = errors.New("not published")
+	ErrNotShared = errors.New("not published")
 	// value: the image is published, never for that hypervisor.
 	ErrNotForHypervisor = errors.New("not published for this hypervisor")
 )

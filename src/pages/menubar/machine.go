@@ -220,7 +220,7 @@ func sharedSection(m Machine, h machines.HostView, vm machines.VM) page.Section 
 	from := machines.Label(*m.Fleet, h)
 	s := page.Section{ID: SectionShared, Title: "Accounts shared from " + from, Columns: columns()}
 	for _, a := range lent(m, vm.Name) {
-		left := a.Lent.Until.Sub(m.Now)
+		left := a.Shared.Until.Sub(m.Now)
 		row := page.Row{ID: a.Provider, Label: accounts.Label(a.Provider), Mark: page.OK, Cells: []page.Value{page.List(page.Text(hours(left) + " left"))}}
 		s.Items = append(s.Items, page.Item{Row: &row})
 	}
@@ -240,7 +240,7 @@ func lent(m Machine, vm string) []accounts.Account {
 			continue
 		}
 		for _, a := range mc.Accounts {
-			if a.Lent != nil {
+			if a.Shared != nil {
 				out = append(out, a)
 			}
 		}

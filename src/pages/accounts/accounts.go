@@ -91,10 +91,10 @@ func identity(a accounts.Account) page.Value {
 }
 
 func until(a accounts.Account, now time.Time) page.Value {
-	if a.Lent == nil {
+	if a.Shared == nil {
 		return page.None()
 	}
-	return page.Until(a.Lent.Until, now)
+	return page.Until(a.Shared.Until, now)
 }
 
 func row(m accounts.Machine, a accounts.Account, now time.Time) page.Row {
@@ -109,7 +109,7 @@ func row(m accounts.Machine, a accounts.Account, now time.Time) page.Row {
 	if len(a.Identity) > 1 {
 		id, last = page.Identity(a.Identity[0]), detail(a, a.Identity[1:]...)
 	}
-	if a.Lent != nil {
+	if a.Shared != nil {
 		last = until(a, now)
 	}
 	scope := page.Texts(a.Scopes...)
@@ -175,7 +175,7 @@ func head(m accounts.Machine, rows []page.Row) page.Row {
 // value: a VM lists the rows that say something (a right read, a lend, a
 // fault); the providers merely absent there fold away under one heading.
 func shown(m accounts.Machine, a accounts.Account) bool {
-	return m.Kind != accounts.KindVM || a.State != catalog.StateAbsent || a.Lent != nil
+	return m.Kind != accounts.KindVM || a.State != catalog.StateAbsent || a.Shared != nil
 }
 
 func group(m accounts.Machine, now time.Time) page.Item {
@@ -270,7 +270,7 @@ func firstLine(r accounts.Report, here page.Context) page.Section {
 	for _, m := range r.Machines {
 		if !m.Here {
 			for _, a := range m.Accounts {
-				if a.Lent != nil {
+				if a.Shared != nil {
 					shared++
 					break
 				}

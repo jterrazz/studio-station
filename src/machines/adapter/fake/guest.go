@@ -200,12 +200,12 @@ func (c *guest) snapshot() []byte {
 	c.w.Unlock()
 	found := make([]reported, 0, len(listening))
 	for _, l := range listening {
-		if !slices.ContainsFunc(containers, func(k world.Container) bool { return slices.Contains(k.Published, l.Port) }) {
+		if !slices.ContainsFunc(containers, func(k world.Container) bool { return slices.Contains(k.Shared, l.Port) }) {
 			found = append(found, reported{Port: l.Port, IP: l.Bind, Process: l.Process})
 		}
 	}
 	for _, k := range containers {
-		for _, port := range k.Published {
+		for _, port := range k.Shared {
 			found = append(found, reported{Port: port, IP: "0.0.0.0", Process: k.Name})
 		}
 	}
@@ -362,7 +362,7 @@ func (c *guest) answers(port int) (string, bool) {
 			return "HTTP/1.1 200 OK", true
 		}
 	}
-	if slices.ContainsFunc(c.w.Containers(c.name), func(k world.Container) bool { return slices.Contains(k.Published, port) }) {
+	if slices.ContainsFunc(c.w.Containers(c.name), func(k world.Container) bool { return slices.Contains(k.Shared, port) }) {
 		return "HTTP/1.1 200 OK", true
 	}
 	return "", false

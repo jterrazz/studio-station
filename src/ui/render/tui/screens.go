@@ -11,12 +11,12 @@ import (
 )
 
 const (
-	Ellipsis  = token.Ellipsis
-	Arrow     = token.Arrow
+	Ellipsis        = token.Ellipsis
+	Arrow           = token.Arrow
 	AllMachinesMark = token.AllMachines
-	label     = 12
-	graphMax  = 30
-	graphMin  = 4
+	label           = 12
+	graphMax        = 30
+	graphMin        = 4
 )
 
 func Keyed(text, key string, width int) string {

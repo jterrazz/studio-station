@@ -173,11 +173,11 @@ func linux1Page() pagemenubar.Machine {
 		{Section: "settings", Parts: []overview.Part{overview.Count(catalog.StateDegraded, 2, "need a look", "attention")}},
 		{Section: "disk", Parts: []overview.Part{{Word: "2.4 of 20 GB"}}},
 	}}
-	lends := accounts.Report{Now: powerNow, Daemon: accounts.DaemonRunning, Machines: []accounts.Machine{{Name: "linux-1", Kind: accounts.KindVM, Lifetime: "throwaway", Running: true, Accounts: []accounts.Account{
-		{Provider: catalog.ProviderGitHub, State: catalog.StateOK, Origin: accounts.OriginLent, Scopes: []string{"read only"}, Lent: &accounts.Lend{Name: "github", At: powerNow.Add(-8 * time.Hour), Until: powerNow.Add(4 * time.Hour)}},
-		{Provider: catalog.ProviderClaude, State: catalog.StateOK, Origin: accounts.OriginLent, Lent: &accounts.Lend{Name: catalog.ClaudeTokenName, At: powerNow, Until: powerNow.Add(12 * time.Hour)}},
+	shares := accounts.Report{Now: powerNow, Daemon: accounts.DaemonRunning, Machines: []accounts.Machine{{Name: "linux-1", Kind: accounts.KindVM, Lifetime: "throwaway", Running: true, Accounts: []accounts.Account{
+		{Provider: catalog.ProviderGitHub, State: catalog.StateOK, Origin: accounts.OriginLent, Scopes: []string{"read only"}, Shared: &accounts.Lend{Name: "github", At: powerNow.Add(-8 * time.Hour), Until: powerNow.Add(4 * time.Hour)}},
+		{Provider: catalog.ProviderClaude, State: catalog.StateOK, Origin: accounts.OriginLent, Shared: &accounts.Lend{Name: catalog.ClaudeTokenName, At: powerNow, Until: powerNow.Add(12 * time.Hour)}},
 	}}}}
-	return pagemenubar.Machine{Asks: Levels, Name: "linux-1", Fleet: &f, Summary: &inside, Samples: readings(4*gb, 20*gb, 17_600_000_000), Services: &svc, Accounts: &lends, Now: powerNow}
+	return pagemenubar.Machine{Asks: Levels, Name: "linux-1", Fleet: &f, Summary: &inside, Samples: readings(4*gb, 20*gb, 17_600_000_000), Services: &svc, Accounts: &shares, Now: powerNow}
 }
 
 // value: infra's page from This Mac: up 12 days, its four health steps

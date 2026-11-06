@@ -5,13 +5,13 @@ import "time"
 type Phase string
 
 const (
-	PhaseNone      Phase = ""
-	PhasePublished Phase = "published"
-	PhaseClosing   Phase = "closing"
-	PhaseWaiting   Phase = "waiting"
-	PhaseRefused   Phase = "refused"
-	PhaseGone      Phase = "gone"
-	PhaseUnknown   Phase = "unknown"
+	PhaseNone    Phase = ""
+	PhaseShared  Phase = "published"
+	PhaseClosing Phase = "closing"
+	PhaseWaiting Phase = "waiting"
+	PhaseRefused Phase = "refused"
+	PhaseGone    Phase = "gone"
+	PhaseUnknown Phase = "unknown"
 )
 
 type URLSet struct {
@@ -67,7 +67,7 @@ type HostServices struct {
 type Range struct {
 	Low      int `json:"low"`
 	High     int `json:"high"`
-	Leased   int `json:"leased"`
+	Reserved int `json:"leased"`
 	Free     int `json:"free"`
 	MaxPerVM int `json:"max_per_vm"`
 }

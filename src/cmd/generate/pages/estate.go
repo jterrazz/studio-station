@@ -18,9 +18,9 @@ import (
 	"github.com/jterrazz/studio-station/src/overview"
 	"github.com/jterrazz/studio-station/src/page"
 	allpages "github.com/jterrazz/studio-station/src/pages"
+	pageallmachines "github.com/jterrazz/studio-station/src/pages/allmachines"
 	pageapps "github.com/jterrazz/studio-station/src/pages/apps"
 	pagedisk "github.com/jterrazz/studio-station/src/pages/disk"
-	pageallmachines "github.com/jterrazz/studio-station/src/pages/allmachines"
 	pagehome "github.com/jterrazz/studio-station/src/pages/home"
 	pageimages "github.com/jterrazz/studio-station/src/pages/images"
 	pagemachines "github.com/jterrazz/studio-station/src/pages/machines"
@@ -386,7 +386,7 @@ func serviceAllMachines() services.Fleet {
 	seen := built
 	return services.Fleet{Schema: "station.services/v1", Hosts: []services.HostView{
 		{Name: "macbook", Here: true, Reachable: true, Engine: services.DaemonInfo{Running: true}, PublicHost: "jterrazz-macbook-pro.tail1234.ts.net", Serve: "on", HTTPS: "port",
-			Range: &services.Range{Low: 40000, High: 40999, Leased: 2, Free: 998, MaxPerVM: 20},
+			Range: &services.Range{Low: 40000, High: 40999, Reserved: 2, Free: 998, MaxPerVM: 20},
 			Services: []services.View{
 				{VM: "linux-1", GuestPort: 5173, HostPort: 40001, State: services.Published, Process: "node", HTTP: true, Profile: "vite", URLs: services.URLSet{Public: "https://jterrazz-macbook-pro.tail1234.ts.net:40001"}, LastSeenAt: &seen},
 				{VM: "linux-1", GuestPort: 5432, HostPort: 40002, State: services.Waiting, Process: "postgres"},

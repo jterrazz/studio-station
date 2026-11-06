@@ -176,7 +176,7 @@ func unlockWorld(f *os.File) {
 
 // invariant: the TUI's own process reads every page through a child, so it
 // writes its world back once, before its first child, and lets go of it.
-func (m *worldMac) lend(ctx context.Context) error {
+func (m *worldMac) handOver(ctx context.Context) error {
 	if m == nil {
 		return nil
 	}

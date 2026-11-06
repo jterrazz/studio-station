@@ -49,21 +49,21 @@ func Command(env kit.Env) *cobra.Command {
 	}, env)
 }
 
-type RecallInput struct {
+type TakeBackInput struct {
 	From  string
 	Names []string
 }
 
-func Recall(env kit.Env) *cobra.Command {
+func RecallAlias(env kit.Env) *cobra.Command {
 	// value: secrets recall, the v2 words of take-back: each secret named
 	// (every one the VM holds, when none is) is the account it carries.
-	return kit.Command(kit.Leaf[RecallInput]{
+	return kit.Command(kit.Leaf[TakeBackInput]{
 		Use:  "recall --from <vm> [<name...>]",
 		Args: cobra.ArbitraryArgs,
-		Declare: func(f *pflag.FlagSet, in *RecallInput) {
+		Declare: func(f *pflag.FlagSet, in *TakeBackInput) {
 			f.StringVar(&in.From, "from", "", "the VM that holds the copies")
 		},
-		Bind: func(in *RecallInput, args []string) error {
+		Bind: func(in *TakeBackInput, args []string) error {
 			in.Names = args
 			if in.From == "" {
 				return kit.Refuse("station accounts take-back needs a VM", "station accounts take-back <account> --from <vm>")
@@ -71,8 +71,8 @@ func Recall(env kit.Env) *cobra.Command {
 			return nil
 		},
 		Asks:    true,
-		Confirm: func(in *RecallInput) string { return "Take the shares back from " + in.From + "?" },
-		Run: func(ctx context.Context, in *RecallInput, io kit.IO) error {
+		Confirm: func(in *TakeBackInput) string { return "Take the shares back from " + in.From + "?" },
+		Run: func(ctx context.Context, in *TakeBackInput, io kit.IO) error {
 			names := in.Names
 			if len(names) == 0 {
 				r, err := call.Read(ctx, env.Calls, env.Target(), accountscalls.List, accountscalls.ListIn{}, nil)

@@ -14,10 +14,10 @@ func own(provider string, identity, scopes []string, source, detail string) acco
 	return accounts.Account{Provider: provider, State: catalog.StateOK, Origin: accounts.OriginOwn, Identity: identity, Scopes: scopes, Source: source, Detail: detail}
 }
 
-func lent(provider, name string, left time.Duration, state catalog.State, reason, hint string) accounts.Account {
+func shared(provider, name string, left time.Duration, state catalog.State, reason, hint string) accounts.Account {
 	return accounts.Account{
 		Provider: provider, State: state, Reason: reason, Origin: accounts.OriginLent, Identity: []string{"admin@jterrazz.com"}, Scopes: []string{name}, Hint: hint,
-		Lent: &accounts.Lend{Name: name, At: accountsNow.Add(left - 12*time.Hour), Until: accountsNow.Add(left)},
+		Shared: &accounts.Lend{Name: name, At: accountsNow.Add(left - 12*time.Hour), Until: accountsNow.Add(left)},
 	}
 }
 
@@ -44,13 +44,13 @@ func accountsReport() accounts.Report {
 		{Name: "linux-1", Kind: accounts.KindVM, Lifetime: "throwaway", Running: true, Guest: accounts.GuestConnected, Accounts: []accounts.Account{
 			{Provider: catalog.ProviderGitHub, State: catalog.StateAbsent, Reason: accounts.ReasonUnset, Detail: "not logged in", Hint: "ssh linux-1 gh auth login"},
 			{Provider: catalog.ProviderNPM, State: catalog.StateAbsent, Reason: accounts.ReasonMissing, Detail: "npm not on PATH"},
-			lent(catalog.ProviderClaude, catalog.ClaudeTokenName, 11*time.Hour+40*time.Minute, catalog.StateOK, "", ""),
+			shared(catalog.ProviderClaude, catalog.ClaudeTokenName, 11*time.Hour+40*time.Minute, catalog.StateOK, "", ""),
 			own(catalog.ProviderGit, []string{"Jean-Baptiste Terrazzoni", "admin@jterrazz.com"}, nil, "", ""),
 			{Provider: catalog.ProviderSSH, State: catalog.StateAbsent, Reason: accounts.ReasonUnset, Detail: "no key in the agent"},
 			entryAccount(),
 		}},
 		{Name: "api", Kind: accounts.KindVM, Lifetime: "permanent", Running: true, Guest: accounts.GuestConnected, Accounts: []accounts.Account{
-			lent(catalog.ProviderClaude, catalog.ClaudeTokenName, 42*time.Minute, catalog.StateDegraded, accounts.ReasonExpiring, "station accounts share claude --with api"),
+			shared(catalog.ProviderClaude, catalog.ClaudeTokenName, 42*time.Minute, catalog.StateDegraded, accounts.ReasonExpiring, "station accounts share claude --with api"),
 			entryAccount(),
 		}},
 	}}

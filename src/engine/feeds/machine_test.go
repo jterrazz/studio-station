@@ -317,7 +317,7 @@ func lentTo(vm string, providers ...string) accounts.Report {
 	until := time.Date(2026, 11, 4, 6, 30, 0, 0, time.UTC)
 	m := accounts.Machine{Name: vm, Kind: accounts.KindVM}
 	for _, p := range providers {
-		m.Accounts = append(m.Accounts, accounts.Account{Provider: p, Lent: &accounts.Lend{Name: p, Until: until}})
+		m.Accounts = append(m.Accounts, accounts.Account{Provider: p, Shared: &accounts.Lend{Name: p, Until: until}})
 	}
 	return accounts.Report{Machines: []accounts.Machine{m}}
 }

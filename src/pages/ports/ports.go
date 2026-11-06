@@ -261,7 +261,7 @@ func reserved(h ports.HostServices, here page.Context) string {
 		mac = "This Mac"
 	}
 	size := r.High - r.Low + 1
-	return "Reserved on " + mac + ": " + strconv.Itoa(r.Leased) + " of " + strconv.Itoa(size) +
+	return "Reserved on " + mac + ": " + strconv.Itoa(r.Reserved) + " of " + strconv.Itoa(size) +
 		" (" + strconv.Itoa(r.Low) + "-" + strconv.Itoa(r.High) + "), " + strconv.Itoa(r.Free) + " free"
 }
 

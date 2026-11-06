@@ -437,7 +437,9 @@ func missingPages(packages, families, fixtures []string) []finding {
 	}
 	var out []finding
 	for _, pkg := range packages {
-		if !slices.ContainsFunc(families, func(f string) bool { return f == pkg || strings.ReplaceAll(f, "-", "") == pkg || strings.HasPrefix(f, pkg+"-") }) {
+		if !slices.ContainsFunc(families, func(f string) bool {
+			return f == pkg || strings.ReplaceAll(f, "-", "") == pkg || strings.HasPrefix(f, pkg+"-")
+		}) {
 			out = append(out, finding{"fixtures", "src/pages/" + pkg, "a page package with no fixture family in UI-SPEC §17"})
 		}
 	}

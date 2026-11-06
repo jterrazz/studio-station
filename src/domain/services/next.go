@@ -11,7 +11,7 @@ type Phase = ports.Phase
 
 const (
 	None      = ports.PhaseNone
-	Published = ports.PhasePublished
+	Published = ports.PhaseShared
 	Closing   = ports.PhaseClosing
 	Waiting   = ports.PhaseWaiting
 	Refused   = ports.PhaseRefused

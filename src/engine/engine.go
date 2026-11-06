@@ -74,7 +74,7 @@ type Options struct {
 	// value: this engine as a client sees it: a second engine asks it first.
 	Peer Peer
 	// value: the lend records and the recall a lend past its until goes through.
-	Lends Lends
+	Lends Shares
 	// value: the Notifier the engine tells, built over the engine's own log.
 	Notifier func(log func(subject, text string)) Notifier
 	// value: what runs a server's health check from this Mac; nil runs none.
@@ -111,21 +111,21 @@ type Engine struct {
 	heard map[string][]ports.Listener
 	// value: when the exposure job last read, what each VM listened on
 	// then, and the red ports it told.
-	exposedAt time.Time
-	scanned   map[string][]ports.Listener
-	red       []string
-	leases    []services.Lease
-	self      ports.SharingState
-	read      bool
-	issuing   bool
-	started   time.Time
-	note      func(line string)
-	power     *power.Machine
-	awake     *power.Kept
-	hub       hub
-	history   *activity.History
-	watchers  watchers
-	settings  SettingsKept
+	exposedAt    time.Time
+	scanned      map[string][]ports.Listener
+	red          []string
+	reservations []services.Lease
+	self         ports.SharingState
+	read         bool
+	issuing      bool
+	started      time.Time
+	note         func(line string)
+	power        *power.Machine
+	awake        *power.Kept
+	hub          hub
+	history      *activity.History
+	watchers     watchers
+	settings     SettingsKept
 
 	notifier Notifier
 	serve    func(ctx context.Context, conn io.ReadWriteCloser)
@@ -134,9 +134,9 @@ type Engine struct {
 	// holds live in it, never in the request that started a VM.
 	life context.Context
 
-	lendMu       sync.Mutex
-	lendsAt      time.Time
-	recallFailed map[string]time.Time
+	shareMu        sync.Mutex
+	sharesAt       time.Time
+	takeBackFailed map[string]time.Time
 }
 
 type Stores struct {
@@ -164,7 +164,7 @@ func New(h system.Host, hv Hypervisor, guests Guests, m Machines, tn Tailnet, st
 	if o.GuestPort == 0 {
 		o.GuestPort = 22
 	}
-	d := &Engine{h: h, hv: hv, guests: guests, m: m, tn: tn, st: st, o: o, vms: map[string]*vmState{}, svcs: map[string]*svc{}, heard: map[string][]ports.Listener{}, recallFailed: map[string]time.Time{}}
+	d := &Engine{h: h, hv: hv, guests: guests, m: m, tn: tn, st: st, o: o, vms: map[string]*vmState{}, svcs: map[string]*svc{}, heard: map[string][]ports.Listener{}, takeBackFailed: map[string]time.Time{}}
 	d.power = d.newPower()
 	if o.Notifier != nil {
 		d.notifier = o.Notifier(d.logf)
@@ -191,8 +191,8 @@ func (d *Engine) policy() ports.Policy {
 	return ports.PolicyOf(g)
 }
 
-func (d *Engine) saveLeases() {
-	_ = services.SaveLeases(context.Background(), d.st.Reservations, append([]services.Lease(nil), d.leases...))
+func (d *Engine) saveReservations() {
+	_ = services.SaveLeases(context.Background(), d.st.Reservations, append([]services.Lease(nil), d.reservations...))
 }
 
 func (d *Engine) Run(ctx context.Context, note func(line string)) error {
@@ -262,10 +262,10 @@ func (d *Engine) Begin(ctx context.Context, note func(line string)) error {
 	d.history = activity.NewHistory(d.started)
 	d.mu.Unlock()
 	d.neverSleeps(d.started)
-	d.leases, _ = d.st.Reservations.List(ctx)
+	d.reservations, _ = d.st.Reservations.List(ctx)
 	d.refreshSelf(ctx)
 	d.adopt(ctx)
-	d.sweepLends(ctx)
+	d.sweepShares(ctx)
 	d.reconcileServe(ctx)
 	return nil
 }
@@ -341,7 +341,7 @@ func (d *Engine) step(ctx context.Context, tick int) {
 		d.neverSleeps(time.Time{})
 	}
 	d.tick(ctx)
-	d.sweepLends(ctx)
+	d.sweepShares(ctx)
 	d.watchExposure(ctx)
 	d.power.Tick()
 	d.watchState()
@@ -538,7 +538,7 @@ func (d *Engine) sharedVMs() map[string]bool {
 	d.mu.Lock()
 	defer d.mu.Unlock()
 	out := map[string]bool{}
-	for _, l := range d.leases {
+	for _, l := range d.reservations {
 		out[l.VM] = true
 	}
 	return out

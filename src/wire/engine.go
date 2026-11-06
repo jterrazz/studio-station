@@ -46,7 +46,7 @@ func (m machine) guestPort() int { return m.port(22, "STATION_GUEST_SSH_PORT") }
 // rides the engine's own connections, never its socket: the lends are bound
 // to the engine they serve.
 func (m machine) engine(env kit.Env) *engine.Engine {
-	lends := &engineLends{}
+	shares := &engineShares{}
 	registry := m.registry(env)
 	calls := env.Calls
 	if calls == nil {
@@ -93,14 +93,14 @@ func (m machine) engine(env kit.Env) *engine.Engine {
 		State: m.paths.State, Here: m.kind, Version: m.engineVersion(), StartedAt: m.engineStarted(), PID: os.Getpid(), GuestPort: m.guestPort(),
 		Power: m.powerPort, PowerPage: m.powerPage, Executable: m.host.Env.Executable(),
 		NeverSleeps: func() bool { on, _ := m.stores.neverSleeps().Get(); return on },
-		Lends:       lends, Peer: m.engineAPI(),
+		Lends:       shares, Peer: m.engineAPI(),
 		Feeds: map[string]engine.Feed{engine.PageMenubar: menubar.Feed(), engine.PageSwitcher: menubar.Switcher(), engine.PageMachine: menubar.Machine(),
 			engine.PagePorts: menubar.Ports(), engine.PageAwake: menubar.Awake(), engine.PageActivity: menubar.Activity()},
 		Notifier: notifier, Checks: checks, Join: func(parts ...string) string { return strings.Join(parts, token.Sep) },
 		Listening: m.listeners("/").Read, Declarations: m.stores.declarations.List,
 		Jobs: []engine.Tick{sample.Run},
 	})
-	lends.s = m.secretsVia(d, func(_ context.Context, vm string) (bool, error) {
+	shares.s = m.secretsVia(d, func(_ context.Context, vm string) (bool, error) {
 		for _, v := range d.VMs() {
 			if v.Name == vm {
 				return v.State == engine.StateRunning, nil
@@ -147,17 +147,17 @@ func retiredEngineCommand(env kit.Env, m machine) *cobra.Command {
 	return cmd
 }
 
-type engineLends struct{ s *secrets.Service }
+type engineShares struct{ s *secrets.Service }
 
-func (l *engineLends) Held() (map[string][]accounts.Share, error) {
+func (l *engineShares) Held() (map[string][]accounts.Share, error) {
 	return l.s.Shares(context.Background())
 }
 
-func (l *engineLends) Expire(ctx context.Context, vm string, names []string) error {
+func (l *engineShares) Expire(ctx context.Context, vm string, names []string) error {
 	return l.s.Expire(ctx, vm, names)
 }
 
-func (l *engineLends) Forget(ctx context.Context, vm string) error { return l.s.Forget(ctx, vm) }
+func (l *engineShares) Forget(ctx context.Context, vm string) error { return l.s.Forget(ctx, vm) }
 
 type hostEngine struct{ c engineAPI }
 
@@ -252,20 +252,20 @@ func (d servicesEngine) Release(ctx context.Context, vm string, port int) (servi
 	return l, downAs(err, services.ErrDaemonDown)
 }
 
-type leaseReleaser struct{ m machine }
+type reservationReleaser struct{ m machine }
 
-func (r leaseReleaser) ReleaseVM(ctx context.Context, vm string) error {
+func (r reservationReleaser) ReleaseVM(ctx context.Context, vm string) error {
 	// invariant: a VM leaves nothing of its ports on its Mac: its ports
 	// declared public, its reserved ports and their shares.
 	if err := r.forgetDeclarations(ctx, vm); err != nil {
 		return err
 	}
 	store := r.m.stores.reservations
-	leases, err := store.List(ctx)
+	reservations, err := store.List(ctx)
 	if err != nil {
 		return err
 	}
-	kept, gone := services.Without(leases, func(l services.Lease) bool { return l.VM != vm })
+	kept, gone := services.Without(reservations, func(l services.Lease) bool { return l.VM != vm })
 	if len(gone) == 0 {
 		return nil
 	}
@@ -280,7 +280,7 @@ func (r leaseReleaser) ReleaseVM(ctx context.Context, vm string) error {
 	return services.SaveLeases(ctx, store, kept)
 }
 
-func (r leaseReleaser) forgetDeclarations(ctx context.Context, vm string) error {
+func (r reservationReleaser) forgetDeclarations(ctx context.Context, vm string) error {
 	declared, err := r.m.stores.declarations.List(ctx)
 	if err != nil {
 		return err

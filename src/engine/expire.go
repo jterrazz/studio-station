@@ -13,7 +13,7 @@ const (
 	expireRetell = time.Hour
 )
 
-type Lends interface {
+type Shares interface {
 	// value: the account shares of this Mac, by VM; Expire deletes a VM's
 	// copies and their shares, Forget the shares of a VM that is gone.
 	Held() (map[string][]accounts.Share, error)
@@ -25,42 +25,42 @@ type Lends interface {
 // expireEvery; a share past its until on a running VM is taken back, with no
 // notification. A take-back that fails keeps its share and is told once per
 // expireRetell.
-func (d *Engine) lendsDue() bool {
+func (d *Engine) sharesDue() bool {
 	now := d.h.Clock.Now()
 	d.mu.Lock()
 	defer d.mu.Unlock()
-	if !d.lendsAt.IsZero() && now.Sub(d.lendsAt) < expireEvery {
+	if !d.sharesAt.IsZero() && now.Sub(d.sharesAt) < expireEvery {
 		return false
 	}
-	d.lendsAt = now
+	d.sharesAt = now
 	return true
 }
 
-func (d *Engine) sweepLends(ctx context.Context) {
-	if d.o.Lends == nil || !d.lendsDue() {
+func (d *Engine) sweepShares(ctx context.Context) {
+	if d.o.Lends == nil || !d.sharesDue() {
 		return
 	}
 	go func() {
-		if !d.lendMu.TryLock() {
+		if !d.shareMu.TryLock() {
 			return
 		}
-		defer d.lendMu.Unlock()
-		d.recallExpired(ctx, "")
+		defer d.shareMu.Unlock()
+		d.takeBackExpired(ctx, "")
 	}()
 }
 
 // invariant: a VM stopped past a share's until has it taken back at its
 // next start, before its guest is reported connected.
-func (d *Engine) recallBeforeReady(ctx context.Context, vm string) {
+func (d *Engine) takeBackBeforeReady(ctx context.Context, vm string) {
 	if d.o.Lends == nil {
 		return
 	}
-	d.lendMu.Lock()
-	defer d.lendMu.Unlock()
-	d.recallExpired(ctx, vm)
+	d.shareMu.Lock()
+	defer d.shareMu.Unlock()
+	d.takeBackExpired(ctx, vm)
 }
 
-func (d *Engine) recallExpired(ctx context.Context, only string) {
+func (d *Engine) takeBackExpired(ctx context.Context, only string) {
 	held, err := d.o.Lends.Held()
 	if err != nil {
 		return
@@ -80,7 +80,7 @@ func (d *Engine) recallExpired(ctx context.Context, only string) {
 			names = append(names, s.Name)
 		}
 		if len(names) > 0 {
-			d.recall(ctx, vm, names)
+			d.takeBack(ctx, vm, names)
 		}
 	}
 }
@@ -94,25 +94,25 @@ func (d *Engine) isConnected(vm string) bool {
 	return v != nil && v.state == StateRunning && v.guest == GuestConnected
 }
 
-func (d *Engine) recall(ctx context.Context, vm string, names []string) {
+func (d *Engine) takeBack(ctx context.Context, vm string, names []string) {
 	err := d.o.Lends.Expire(ctx, vm, names)
 	now := d.h.Clock.Now()
 	for _, n := range names {
 		key := vm + " " + n
 		d.mu.Lock()
 		if err == nil {
-			delete(d.recallFailed, key)
+			delete(d.takeBackFailed, key)
 			d.mu.Unlock()
 			continue
 		}
-		last, told := d.recallFailed[key]
+		last, told := d.takeBackFailed[key]
 		retell := !told || now.Sub(last) >= expireRetell
 		if retell {
-			d.recallFailed[key] = now
+			d.takeBackFailed[key] = now
 		}
 		d.mu.Unlock()
 		if retell {
-			d.notify(ctx, Notification{Kind: NoticeRecallFailed, Subject: vm + " share", Text: "taking " + accounts.Label(accounts.AccountOf(n)) + " back failed: " + err.Error()})
+			d.notify(ctx, Notification{Kind: NoticeTakeBackFailed, Subject: vm + " share", Text: "taking " + accounts.Label(accounts.AccountOf(n)) + " back failed: " + err.Error()})
 		}
 	}
 }

@@ -140,7 +140,7 @@ func ListContract(l ports.Listing) ListJSON {
 			}
 		}
 		if r := h.Range; r != nil {
-			body.Range = append(body.Range, RangeJSON{Mac: h.Name, From: r.Low, To: r.High, Reserved: r.Leased, Free: r.Free})
+			body.Range = append(body.Range, RangeJSON{Mac: h.Name, From: r.Low, To: r.High, Reserved: r.Reserved, Free: r.Free})
 		}
 	}
 	body.Ports = append(append(append(body.Ports, red...), public...), private...)

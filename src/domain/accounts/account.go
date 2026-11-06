@@ -52,10 +52,10 @@ func Redact(a Account) Account {
 	}
 	a.Identity, a.Scopes = cleanAll(a.Identity), cleanAll(a.Scopes)
 	a.Source, a.Detail, a.Notes = clean(a.Source), clean(a.Detail), cleanAll(a.Notes)
-	if a.Lent != nil {
-		l := *a.Lent
+	if a.Shared != nil {
+		l := *a.Shared
 		l.Name = clean(l.Name)
-		a.Lent = &l
+		a.Shared = &l
 	}
 	return a
 }

@@ -308,7 +308,7 @@ func lentRows(v VM, own []Account, unreachable bool, now time.Time) []Account {
 		}
 		if lend != nil {
 			l := *lend
-			acc.Lent = &l
+			acc.Shared = &l
 			acc.Scopes = append([]string{l.Name}, acc.Scopes...)
 			switch left := l.Until.Sub(now); {
 			case left <= 0:
@@ -324,7 +324,7 @@ func lentRows(v VM, own []Account, unreachable bool, now time.Time) []Account {
 
 func lendFor(lends []Lend, provider string) *Lend {
 	for _, l := range lends {
-		for _, sc := range catalog.LendScopes {
+		for _, sc := range catalog.ShareScopes {
 			if sc.Name == l.Name && sc.Provider == provider {
 				return &l
 			}
@@ -348,12 +348,12 @@ func (s *Service) LendList() []string {
 
 func withHint(a Account, vm string) Account {
 	a.Hint = ""
-	if a.Lent != nil {
+	if a.Shared != nil {
 		switch a.Reason {
 		case ReasonExpiring:
-			a.Hint = "station accounts share " + accounts.AccountOf(a.Lent.Name) + " --with " + vm
+			a.Hint = "station accounts share " + accounts.AccountOf(a.Shared.Name) + " --with " + vm
 		case ReasonFailing:
-			a.Hint = "station accounts take-back " + accounts.AccountOf(a.Lent.Name) + " --from " + vm
+			a.Hint = "station accounts take-back " + accounts.AccountOf(a.Shared.Name) + " --from " + vm
 		}
 		return a
 	}

@@ -36,21 +36,21 @@ type Shared struct {
 	Until   time.Time `json:"until"`
 }
 
-type Lending struct {
+type Sharing struct {
 	LendList []string
 	Lent     map[string][]string
 	Lends    map[string][]Share
 	Kept     []string
 }
 
-type LendReport struct {
+type ShareReport struct {
 	To    string
 	Names []string
 	At    time.Time
 	Until time.Time
 }
 
-type RecallReport struct {
+type TakeBackReport struct {
 	From     map[string][]string
 	Warnings []string
 }
@@ -84,15 +84,15 @@ func Shareable(name string, shareList []string) bool {
 func SecretOf(account string) (string, bool) {
 	// value: the secret whose copy carries the account's right into a VM;
 	// an account with none is shared with no VM.
-	i := slices.IndexFunc(catalog.LendScopes, func(sc catalog.LendScope) bool { return sc.Provider == account })
+	i := slices.IndexFunc(catalog.ShareScopes, func(sc catalog.ShareScope) bool { return sc.Provider == account })
 	if i < 0 {
 		return "", false
 	}
-	return catalog.LendScopes[i].Name, true
+	return catalog.ShareScopes[i].Name, true
 }
 
 func AccountOf(secret string) string {
-	for _, sc := range catalog.LendScopes {
+	for _, sc := range catalog.ShareScopes {
 		if sc.Name == secret {
 			return sc.Provider
 		}

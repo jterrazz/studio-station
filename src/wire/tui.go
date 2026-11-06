@@ -21,7 +21,7 @@ import (
 // calls name their machine, never the terminal's.
 func tuiOpener(env kit.Env, m machine, noColor bool) func(context.Context) error {
 	return func(ctx context.Context) error {
-		if err := m.world.lend(ctx); err != nil {
+		if err := m.world.handOver(ctx); err != nil {
 			return err
 		}
 		b := binary{m: m}

@@ -30,8 +30,8 @@ func accountsCommand(env kit.Env, m machine) *cobra.Command {
 // refused, the share list being the owner's to write.
 func secretsAlias(env kit.Env, m machine) *cobra.Command {
 	return kit.Alias("secrets", accountscmd.Command(accountscmd.Deps{Here: m.where}, env,
-		kit.AliasArgs(kit.Alias("lend", accountsshare.Lend(accountsshare.Deps{Now: m.host.Clock.Now}, env), "share"), "<account>"),
-		kit.AliasArgs(kit.Alias("recall", accountstakeback.Recall(env), "take-back"), "<account>"),
+		kit.AliasArgs(kit.Alias("lend", accountsshare.LendAlias(accountsshare.Deps{Now: m.host.Clock.Now}, env), "share"), "<account>"),
+		kit.AliasArgs(kit.Alias("recall", accountstakeback.RecallAlias(env), "take-back"), "<account>"),
 		accountscmd.Retired("allow", env),
 		accountscmd.Retired("disallow", env),
 	), "accounts")

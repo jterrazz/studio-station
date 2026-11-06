@@ -53,7 +53,7 @@ func (s *Source) Latest(ctx context.Context, name string) (images.Ref, error) {
 	case err != nil:
 		return images.Ref{}, err
 	case status == 404:
-		return images.Ref{}, contract.ErrNotPublished
+		return images.Ref{}, contract.ErrNotShared
 	case status != 200:
 		return images.Ref{}, fmt.Errorf("the registry answered %d for %s", status, repo)
 	}
@@ -70,7 +70,7 @@ func (s *Source) Latest(ctx context.Context, name string) (images.Ref, error) {
 		}
 	}
 	if newest == "" {
-		return images.Ref{}, contract.ErrNotPublished
+		return images.Ref{}, contract.ErrNotShared
 	}
 	return images.Ref{Name: name, Version: newest}, nil
 }

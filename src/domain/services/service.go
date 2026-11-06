@@ -216,7 +216,7 @@ func (s *Service) rangeOf() *Range {
 			leased++
 		}
 	}
-	return &Range{Low: p.Low, High: p.High, Leased: leased, Free: p.High - p.Low + 1 - leased, MaxPerVM: p.MaxPerVM}
+	return &Range{Low: p.Low, High: p.High, Reserved: leased, Free: p.High - p.Low + 1 - leased, MaxPerVM: p.MaxPerVM}
 }
 
 func (s *Service) List(ctx context.Context, hereOnly bool) (Fleet, error) {

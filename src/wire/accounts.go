@@ -38,7 +38,7 @@ func (m machine) accounts() *accounts.Service {
 			if err != nil {
 				return nil, err
 			}
-			lends, _ := m.stores.shares.List(ctx)
+			shares, _ := m.stores.shares.List(ctx)
 			live, _ := d.VMs(ctx)
 			out := make([]accounts.VM, 0, len(recs))
 			for _, r := range recs {
@@ -48,7 +48,7 @@ func (m machine) accounts() *accounts.Service {
 						vm.Running = true
 					}
 				}
-				for _, l := range lends[r.Name] {
+				for _, l := range shares[r.Name] {
 					vm.Lends = append(vm.Lends, accounts.Lend(l))
 				}
 				out = append(out, vm)

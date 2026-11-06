@@ -43,7 +43,7 @@ func (*worldRun) command() *cobra.Command        { return nil }
 func (*worldRun) close(context.Context) error    { return nil }
 
 func (*worldMac) host(h system.Host) system.Host                        { return h }
-func (*worldMac) lend(context.Context) error                            { return nil }
+func (*worldMac) handOver(context.Context) error                        { return nil }
 func (*worldMac) watch([]string) func()                                 { return func() {} }
 func (*worldMac) stores(*stores)                                        {}
 func (*worldMac) self() corecontract.Self                               { return nil }

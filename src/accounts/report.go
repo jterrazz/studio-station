@@ -23,7 +23,7 @@ type Account struct {
 	Detail   string        `json:"detail,omitempty"`
 	Notes    []string      `json:"notes,omitempty"`
 	Hint     string        `json:"hint,omitempty"`
-	Lent     *Lend         `json:"lent,omitempty"`
+	Shared   *Lend         `json:"lent,omitempty"`
 	Redacted bool          `json:"-"`
 }
 
@@ -80,7 +80,7 @@ func (r Report) Resolved() Report {
 	out := r.Clone()
 	for i := range out.Machines {
 		for j, a := range out.Machines[i].Accounts {
-			if a.Lent != nil && len(a.Identity) == 1 && a.Identity[0] == Unknown && host[a.Provider] != nil {
+			if a.Shared != nil && len(a.Identity) == 1 && a.Identity[0] == Unknown && host[a.Provider] != nil {
 				out.Machines[i].Accounts[j].Identity = host[a.Provider]
 			}
 		}
@@ -92,7 +92,7 @@ func RowID(machine, provider string) string { return machine + "/" + provider }
 
 func Lendable(list []string, provider string) []string {
 	var out []string
-	for _, sc := range catalog.LendScopes {
+	for _, sc := range catalog.ShareScopes {
 		if Shareable(sc.Name, list) && (provider == "" || sc.Provider == provider) {
 			out = append(out, sc.Name)
 		}

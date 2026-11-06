@@ -22,7 +22,7 @@ type Record struct {
 	BuiltAt   time.Time `json:"built_at"`
 	SizeGB    int       `json:"size_gb"`
 	// value: fetched from where the image is published, not built here.
-	Published bool `json:"published,omitempty"`
+	Shared bool `json:"published,omitempty"`
 }
 
 func (r Record) Ref() Ref { return Ref{Name: r.Name, Version: r.Version} }

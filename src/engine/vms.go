@@ -605,7 +605,7 @@ func (d *Engine) fromGuest(ctx context.Context, v *vmState, line []byte) {
 	name := v.rec.Name
 	switch m.Type {
 	case "ready":
-		d.recallBeforeReady(ctx, name)
+		d.takeBackBeforeReady(ctx, name)
 		d.mu.Lock()
 		v.guest, v.lastErr = GuestConnected, ""
 		d.mu.Unlock()
@@ -710,7 +710,7 @@ func (d *Engine) renderEnv(v *vmState) {
 	e := d.exposureLocked()
 	var reserved []machines.Reserved
 	for _, pr := range catalog.Profiles {
-		if l, i := services.Find(d.leases, v.rec.Name, pr.Port); i >= 0 {
+		if l, i := services.Find(d.reservations, v.rec.Name, pr.Port); i >= 0 {
 			view := services.ViewOf(l, e, p.HTTPS, services.Waiting)
 			reserved = append(reserved, machines.Reserved{GuestPort: l.GuestPort, HostPort: l.HostPort, Profile: pr.Name, URL: view.URLs.Public, PublicHost: e.PublicHost})
 		}

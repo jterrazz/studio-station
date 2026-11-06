@@ -137,12 +137,12 @@ func TestServeIsReadEveryThirtyTicksAndOnlyServesWhileOn(t *testing.T) {
 	ready := certLines(h.d)
 	ctx := t.Context()
 	yes := true
-	h.d.leases = []services.Lease{{VM: "api", GuestPort: 8000, HostPort: 40000, HTTP: &yes}}
+	h.d.reservations = []services.Lease{{VM: "api", GuestPort: 8000, HostPort: 40000, HTTP: &yes}}
 	h.d.refreshSelf(ctx)
 	h.d.mu.Lock()
 	s := h.d.svcOf("api", 8000)
 	s.st.Phase = services.Published
-	h.d.publish(ctx, s)
+	h.d.share(ctx, s)
 	h.d.mu.Unlock()
 	defer h.d.closeAll()
 	row := func() services.View { return h.d.hostView("").Services[0] }
@@ -190,7 +190,7 @@ func TestARunRendersTheProfileEnvironmentAndAnAdoptionKeepsIt(t *testing.T) {
 	h := newHarness(t, machines.VMRecord{Name: "api", Lifetime: machines.Permanent, Want: machines.WantRunning, Env: kept})
 	h.d.tn = &fakeTailnet{sharing: ports.SharingState{Host: "x.tail1234.ts.net", Backend: ports.Running, On: true}}
 	yes := true
-	h.d.leases = []services.Lease{{VM: "api", GuestPort: catalog.Profiles[0].Port, HostPort: 40000, HTTP: &yes, Pinned: true, Profile: catalog.Profiles[0].Name}}
+	h.d.reservations = []services.Lease{{VM: "api", GuestPort: catalog.Profiles[0].Port, HostPort: 40000, HTTP: &yes, Pinned: true, Profile: catalog.Profiles[0].Name}}
 	h.d.refreshSelf(t.Context())
 	h.hv.outlived("api")
 	ctx := cancelled(t)
@@ -226,13 +226,13 @@ func TestTheCertificateIsWarmedWhenServeTurnsOnOneAtATime(t *testing.T) {
 	ready := certLines(h.d)
 	ctx := t.Context()
 	yes := true
-	h.d.leases = []services.Lease{{VM: "api", GuestPort: 8000, HostPort: 40000, HTTP: &yes}}
+	h.d.reservations = []services.Lease{{VM: "api", GuestPort: 8000, HostPort: 40000, HTTP: &yes}}
 	h.d.refreshSelf(ctx)
 	<-tn.entered
 	h.d.mu.Lock()
 	s := h.d.svcOf("api", 8000)
 	s.st.Phase = services.Published
-	h.d.publish(ctx, s)
+	h.d.share(ctx, s)
 	h.d.mu.Unlock()
 	defer h.d.closeAll()
 	if r := h.d.hostView("").Services[0]; r.Detail != catalog.IssuingDetail || r.URLs.Public != "https://x.tail1234.ts.net:40000" {
@@ -307,12 +307,12 @@ func TestAnEngineThatStopsLeavesItsRunningVMsPortsSharedOnTheTailnet(t *testing.
 	ctx := t.Context()
 	h.d.adopt(cancelled(t))
 	yes := true
-	h.d.leases = []services.Lease{{VM: "api", GuestPort: 5173, HostPort: 40001, HTTP: &yes, Pinned: true}}
+	h.d.reservations = []services.Lease{{VM: "api", GuestPort: 5173, HostPort: 40001, HTTP: &yes, Pinned: true}}
 	h.d.refreshSelf(ctx)
 	h.d.mu.Lock()
 	s := h.d.svcOf("api", 5173)
 	s.st.Phase = services.Published
-	h.d.publish(ctx, s)
+	h.d.share(ctx, s)
 	h.d.mu.Unlock()
 	tn.taken()
 	v, err := h.d.find("api")

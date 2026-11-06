@@ -83,15 +83,15 @@ func (s *Shares) Migrate(context.Context) error {
 	defer s.w.Unlock()
 	for _, vm := range slices.Sorted(maps.Keys(s.w.Mac(s.mac).VMs)) {
 		v := s.w.Mac(s.mac).VMs[vm]
-		if v.Kept == nil || len(v.Kept.Lent) == 0 {
+		if v.Kept == nil || len(v.Kept.Shared) == 0 {
 			continue
 		}
-		for _, name := range v.Kept.Lent {
+		for _, name := range v.Kept.Shared {
 			if !slices.ContainsFunc(s.kept()[vm], func(have accounts.Share) bool { return have.Name == name }) {
 				s.kept()[vm] = append(s.kept()[vm], accounts.Share{Name: name, At: s.w.Now, Until: s.w.Now.Add(accounts.DefaultShareTerm)})
 			}
 		}
-		v.Kept.Lent = nil
+		v.Kept.Shared = nil
 	}
 	return nil
 }

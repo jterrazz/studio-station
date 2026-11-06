@@ -270,8 +270,8 @@ type VM struct {
 }
 
 type Container struct {
-	Name      string `json:"name"`
-	Published []int  `json:"published"`
+	Name   string `json:"name"`
+	Shared []int  `json:"published"`
 }
 
 type Boot struct {
@@ -290,7 +290,7 @@ type Kept struct {
 	CreatedAt time.Time         `json:"created_at,omitzero"`
 	// value: the shares station v2 kept in the VM's record, by name, until
 	// the accounts' store moves them out once.
-	Lent []string `json:"lent,omitempty"`
+	Shared []string `json:"lent,omitempty"`
 }
 
 func (v *VM) Running() bool { return v.PID != 0 }

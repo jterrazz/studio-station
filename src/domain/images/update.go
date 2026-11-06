@@ -65,7 +65,7 @@ func (s *Service) Update(ctx context.Context, names []string, progress func(Step
 func (s *Service) updateOne(ctx context.Context, name string, progress func(Step)) (model.Update, error) {
 	latest, err := s.source.Latest(ctx, name)
 	switch {
-	case errors.Is(err, imagescontract.ErrNotPublished):
+	case errors.Is(err, imagescontract.ErrNotShared):
 		return model.Update{}, &NotPublishedError{Image: name}
 	case err != nil:
 		return model.Update{}, &RegistryError{Image: name, Cause: err}
@@ -98,7 +98,7 @@ func (s *Service) updateOne(ctx context.Context, name string, progress func(Step
 		return failed("keeping the fetched image", err)
 	}
 	_ = s.e.Discard(ctx, at)
-	rec := Record{Name: name, Version: latest.Version, BuiltAt: s.h.Clock.Now().UTC().Truncate(time.Second), Published: true}
+	rec := Record{Name: name, Version: latest.Version, BuiltAt: s.h.Clock.Now().UTC().Truncate(time.Second), Shared: true}
 	if img, err := s.image(name); err == nil {
 		rec.Base = img.Base
 	}
