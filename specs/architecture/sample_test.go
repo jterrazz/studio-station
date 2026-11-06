@@ -10,14 +10,7 @@ func samplePath() []string {
 }
 
 func spawning() []string {
-	return []string{"os/exec", module + "/src/platform/local", module + "/src/system"}
-}
-
-// invariant: the allowlist of no-subprocess-in-sample: the Meters that still
-// run a tool per sample. It only shrinks; a line no longer true fails the gate
-// until it is removed.
-func sampleTolerated() []string {
-	return nil
+	return []string{"os/exec", module + "/src/platform/local"}
 }
 
 // invariant: rule no-subprocess-in-sample (13.3 rule 10, SPEC §6.3): the
@@ -26,7 +19,6 @@ func sampleTolerated() []string {
 // way to run one.
 func ruleNoSubprocessInSample(w *world) []finding {
 	var out []finding
-	offends := map[string]bool{}
 	for _, f := range w.files {
 		if f.test || !slices.Contains(samplePath(), f.pkg) {
 			continue
@@ -35,15 +27,7 @@ func ruleNoSubprocessInSample(w *world) []finding {
 			if !slices.Contains(spawning(), ip) {
 				continue
 			}
-			offends[f.pkg] = true
-			if !slices.Contains(sampleTolerated(), f.pkg) {
-				out = append(out, finding{"no-subprocess-in-sample", f.at(f.syntax.Imports[i].Pos()), f.pkg + " samples without a process: it may not import " + ip})
-			}
-		}
-	}
-	for _, pkg := range sampleTolerated() {
-		if w.packages[pkg] && !offends[pkg] {
-			out = append(out, finding{"no-subprocess-in-sample", "specs/architecture/sample_test.go", pkg + " no longer runs a tool: remove its line"})
+			out = append(out, finding{"no-subprocess-in-sample", f.at(f.syntax.Imports[i].Pos()), f.pkg + " samples without a process: it may not import " + ip})
 		}
 	}
 	return out
