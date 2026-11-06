@@ -370,17 +370,16 @@ def hold(args, cols, rows):
         # the size never races the driver's and finds 0x0.
         fcntl.ioctl(0, termios.TIOCSWINSZ, struct.pack("HHHH", rows, cols, 0, 0))
         signal.signal(signal.SIGTTOU, signal.SIG_IGN)
+        # invariant: the job alone makes its process group and takes the
+        # terminal, before it runs COMMAND. A shell also calls setpgid from the
+        # parent; on macOS the two calls race, and under load the job's lost
+        # with EPERM, so COMMAND never ran and the run read exit 127.
         job = os.fork()
         if job == 0:
             os.setpgid(0, 0)
             os.tcsetpgrp(0, os.getpgrp())
             signal.signal(signal.SIGTTOU, signal.SIG_DFL)
             os.execvp(args[0], args)
-        try:
-            os.setpgid(job, job)
-            os.tcsetpgrp(0, job)
-        except OSError:
-            pass
         _, code = os.waitpid(job, 0)
         os.tcsetpgrp(0, os.getpgrp())
         os._exit(os.waitstatus_to_exitcode(code) & 0xFF)
