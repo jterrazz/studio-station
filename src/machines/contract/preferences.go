@@ -17,12 +17,12 @@ type MacsPrefs struct{ p core.Preferences }
 func Macs(p core.Preferences) MacsPrefs { return MacsPrefs{p: p} }
 
 func (h MacsPrefs) Get() (map[string]machines.MacRecord, error) {
-	var hosts map[string]machines.MacRecord
-	err := h.p.Read(GroupMacs, &hosts)
-	return hosts, err
+	var macs map[string]machines.MacRecord
+	err := h.p.Read(GroupMacs, &macs)
+	return macs, err
 }
 
-func (h MacsPrefs) Set(hosts map[string]machines.MacRecord) error { return h.p.Write(GroupMacs, hosts) }
+func (h MacsPrefs) Set(macs map[string]machines.MacRecord) error { return h.p.Write(GroupMacs, macs) }
 
 type VMUserPrefs struct{ p core.Preferences }
 

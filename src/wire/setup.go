@@ -28,7 +28,7 @@ func setupOf(env kit.Env, m machine) *setup.Service {
 	allMachines := m.machines(env.Interactive)
 	registrar := allMachinesRegistrar{name: m.stores.name(), machines: allMachines}
 	installer := engineInstaller{m: m, machines: allMachines}
-	return setup.New(m.sys, setup.Prefs{Name: m.stores.name(), Identity: m.stores.identity(), Hosts: m.stores.hosts(), VMUser: m.stores.vmUser(), ShareList: m.stores.shareList(), Services: m.stores.ports(), Stores: m.stores.migrators()}, m.vault(), registrar, installer, setup.Options{
+	return setup.New(m.sys, setup.Prefs{Name: m.stores.name(), Identity: m.stores.identity(), Hosts: m.stores.macs(), VMUser: m.stores.vmUser(), ShareList: m.stores.shareList(), Services: m.stores.ports(), Stores: m.stores.migrators()}, m.vault(), registrar, installer, setup.Options{
 		Kind:            m.kind,
 		Server:          m.profile.Kind == coremachine.Server,
 		PreferencesFile: m.stores.prefs.File(), State: m.paths.State, Bin: m.paths.Bin,

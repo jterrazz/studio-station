@@ -410,7 +410,7 @@ type MacChoice struct {
 	ThisMac      bool
 }
 
-func CreateForm(lifetime string, hosts []MacChoice) page.Form {
+func CreateForm(lifetime string, macs []MacChoice) page.Form {
 	var f page.Form
 	if lifetime == "" {
 		f.Fields = append(f.Fields, page.Field{Key: "lifetime", Label: "Will it last?", Kind: page.FieldSelect, Options: []page.Option{
@@ -418,9 +418,9 @@ func CreateForm(lifetime string, hosts []MacChoice) page.Form {
 			{Value: "permanent", Label: "Permanent: kept until you delete it"},
 		}})
 	}
-	if len(hosts) >= 2 {
+	if len(macs) >= 2 {
 		field := page.Field{Key: "mac", Label: "On which Mac?", Kind: page.FieldSelect}
-		for _, h := range hosts {
+		for _, h := range macs {
 			field.Options = append(field.Options, page.Option{Value: h.Name, Label: h.Name, Note: h.Detail})
 			if h.ThisMac {
 				field.Default = h.Name

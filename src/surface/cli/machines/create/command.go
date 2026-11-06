@@ -175,23 +175,23 @@ func nowWords(in *Input) string {
 }
 
 func ask(ctx context.Context, d Deps, in *Input) error {
-	var hosts []pagemachines.MacChoice
+	var macs []pagemachines.MacChoice
 	if allMachines, allMachinesErr := d.AllMachines(ctx); allMachinesErr == nil {
 		for _, h := range allMachines.Macs {
 			if h.Reachable {
-				hosts = append(hosts, pagemachines.MacChoice{Name: h.Name, ThisMac: h.ThisMac, Detail: vmCount(len(h.VMs))})
+				macs = append(macs, pagemachines.MacChoice{Name: h.Name, ThisMac: h.ThisMac, Detail: vmCount(len(h.VMs))})
 			}
 		}
 	}
 	answers := map[string]string{}
-	if form := pagemachines.CreateForm(string(in.request.Lifetime), hosts); len(form.Fields) > 0 {
+	if form := pagemachines.CreateForm(string(in.request.Lifetime), macs); len(form.Fields) > 0 {
 		asked, err := d.Ask.Form(form)
 		if err != nil {
 			return err
 		}
 		answers = asked
 	}
-	for _, h := range hosts {
+	for _, h := range macs {
 		if h.Name == answers["mac"] && !h.ThisMac {
 			in.mac = h.Name
 			return nil

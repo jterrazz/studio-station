@@ -39,7 +39,7 @@ func secretsAlias(env kit.Env, m machine) *cobra.Command {
 
 func (m machine) secretStores() secrets.Stores {
 	return secrets.Stores{
-		ShareList: m.stores.shareList(), Hosts: m.stores.hosts(), Name: m.stores.name(),
+		ShareList: m.stores.shareList(), Hosts: m.stores.macs(), Name: m.stores.name(),
 		Shares: m.stores.shares, Machines: m.stores.machines,
 	}
 }

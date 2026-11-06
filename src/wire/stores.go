@@ -103,7 +103,7 @@ func (s *stores) migrators() []store.Migrator {
 
 func (s *stores) name() setupcontract.NamePrefs         { return setupcontract.Name(s.prefs) }
 func (s *stores) identity() setupcontract.IdentityPrefs { return setupcontract.Identity(s.prefs) }
-func (s *stores) hosts() machinescontract.MacsPrefs     { return machinescontract.Macs(s.prefs) }
+func (s *stores) macs() machinescontract.MacsPrefs      { return machinescontract.Macs(s.prefs) }
 func (s *stores) vmUser() machinescontract.VMUserPrefs  { return machinescontract.VMUser(s.prefs) }
 func (s *stores) shareList() accountscontract.ShareListPrefs {
 	return accountscontract.ShareList(s.prefs)

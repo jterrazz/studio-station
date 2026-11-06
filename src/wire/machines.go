@@ -46,7 +46,7 @@ const (
 
 func (m machine) machines(_ bool) *machines.Service {
 	knownHosts := filepath.Join(m.paths.State, "known_hosts")
-	return machines.New(m.sys, m.hypervisor(), machines.Prefs{Name: m.stores.name(), Hosts: m.stores.hosts(), VMUser: m.stores.vmUser()}, m.stores.machines, macNodes{tailnet: m.tailnet()}, allMachinesImages{images: m.images()}, m.macEngine(), reservationReleaser{m: m}, machines.Options{
+	return machines.New(m.sys, m.hypervisor(), machines.Prefs{Name: m.stores.name(), Hosts: m.stores.macs(), VMUser: m.stores.vmUser()}, m.stores.machines, macNodes{tailnet: m.tailnet()}, allMachinesImages{images: m.images()}, m.macEngine(), reservationReleaser{m: m}, machines.Options{
 		Ports: machines.Ports{
 			OpenClaw: m.port(defaultOpenClawPort, "OPENCLAW_GATEWAY_PORT"),
 			Hermes:   m.port(defaultHermesPort, "HERMES_GATEWAY_PORT", "API_SERVER_PORT"),

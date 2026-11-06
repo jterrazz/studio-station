@@ -82,10 +82,10 @@ func links(f *services.Fleet) func(mac, vm string) []page.Link {
 }
 
 func Actions(r Reading) []page.Action {
-	var vms, remote, hosts []string
+	var vms, remote, macs []string
 	if r.Machines != nil {
 		for _, h := range r.Machines.Macs {
-			hosts = append(hosts, h.Name)
+			macs = append(macs, h.Name)
 			if !h.ThisMac {
 				remote = append(remote, h.Name)
 			}
@@ -103,7 +103,7 @@ func Actions(r Reading) []page.Action {
 		}
 	}
 	add(page.Action{Key: pagemachines.KeyDelete, Label: "delete", On: page.OnRow, Priority: 1, Mutates: true, Confirm: &page.Confirm{Yes: "delete", Danger: true}}, vms)
-	add(page.Action{Key: pagemachines.KeyRestart, Label: "restart", On: page.OnRow, Priority: 2, Mutates: true, Confirm: &page.Confirm{Yes: "restart", Danger: true}}, append(append([]string{}, hosts...), vms...))
+	add(page.Action{Key: pagemachines.KeyRestart, Label: "restart", On: page.OnRow, Priority: 2, Mutates: true, Confirm: &page.Confirm{Yes: "restart", Danger: true}}, append(append([]string{}, macs...), vms...))
 	add(page.Action{Key: pagemachines.KeyEnter, Label: "enter", On: page.OnRow, Priority: 3, Mutates: true}, remote)
 	add(page.Action{Key: pagemachines.KeyCreate, Label: "create", On: page.OnPage, Priority: 4, Mutates: true}, nil)
 	add(page.Action{Key: pagemachines.KeyStart, Label: "start/stop", On: page.OnRow, Priority: 5, Mutates: true}, vms)
