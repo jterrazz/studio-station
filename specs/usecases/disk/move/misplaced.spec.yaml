@@ -1,4 +1,4 @@
-description: 'disk move ~/.tart moves it where tart''s config says, asks nothing, and the row leaves'
+description: 'disk move ~/.tart moves it where tart''s own settings say, asks nothing, and the row leaves'
 env: two-macs
 runs:
     - command: 'disk move ~/.tart'

@@ -1,4 +1,4 @@
-description: 'an absent tool is ○ missing: gh with its install hint, wrangler with no hint (not a catalogue tool)'
+description: 'an absent app is ○ missing: gh with its install hint, wrangler with no hint (not a catalogue app)'
 fixture:
     - ./__fixtures__/accounts/
 env: engine

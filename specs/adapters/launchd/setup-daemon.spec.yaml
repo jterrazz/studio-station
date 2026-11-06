@@ -1,4 +1,4 @@
-description: 'setup installs the one daemon of a host under its launchd agent, and starts it'
+description: 'setup installs a Mac''s one engine under its launchd agent, and starts it'
 fixture: ../../__fixtures__/vms/
 runs:
     - command: 'setup </dev/null'

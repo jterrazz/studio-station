@@ -1,4 +1,4 @@
-description: 'a stray holding a file station does not own stays, its row still clean, and status still shows it'
+description: 'a misplaced folder holding a file station does not own stays, and the overview still shows it'
 fixture:
     - ./__fixtures__/disk-go/
     - ./__fixtures__/disk-relocated/

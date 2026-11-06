@@ -1,4 +1,4 @@
-description: 'tailscale installs as the app, the cask tailscale-app, on a host only'
+description: 'tailscale installs as the app, the cask tailscale-app, on a Mac only'
 fixture:
     - ../../__fixtures__/stubs/
     - ./__fixtures__/tailscale-app/

@@ -1,4 +1,4 @@
-description: 'in a VM the lent Claude token is exported from the VM''s file store, quoted for the shell'
+description: 'in a VM the shared Claude token is exported from the VM''s file store, quoted for the shell'
 fixture: ../../__fixtures__/studio-cli/
 env:
     - STATION_MACHINE_KIND=linux

@@ -1,4 +1,4 @@
-description: 'every checked setting reads its own macOS tool, on and off, its fix never a station command'
+description: 'every checked setting reads its own macOS command, on and off, its fix never a station command'
 fixture:
     - ./__fixtures__/inspector-every-check/
 runs:

@@ -1,4 +1,4 @@
-description: 'a Linux VM sizes docker with its own probe and has no host row; go reads its linux cache path'
+description: 'a Linux VM sizes docker with its own read and has no Mac row; go reads its linux cache path'
 fixture:
     - ./__fixtures__/disk-docker/
     - ./__fixtures__/disk-go/

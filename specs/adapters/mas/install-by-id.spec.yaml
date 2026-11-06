@@ -1,4 +1,4 @@
-description: 'an exploration dev app installs on a host by mas itself, outside the brew bundle'
+description: 'an exploration dev app installs on a Mac by mas itself, outside the brew bundle'
 fixture:
     - ../../__fixtures__/stubs/
     - ../__fixtures__/bundle-batch/

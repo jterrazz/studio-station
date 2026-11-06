@@ -1,4 +1,4 @@
-description: 'piped, setup installs no system tool and names the missing ones'
+description: 'piped, setup installs no system app and names the missing ones'
 runs:
     - command: 'setup --name m </dev/null'
       exit: 0

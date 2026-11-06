@@ -1,4 +1,4 @@
-description: 'the inventory is one call per method: no per-app version probe, no skills call'
+description: 'the inventory is one call per method: no per-app version read, no skills call'
 fixture:
     - ../../__fixtures__/stubs/
     - ./__fixtures__/bun-cli/

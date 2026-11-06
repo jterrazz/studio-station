@@ -1,4 +1,4 @@
-description: 'a port a container publishes is shared like any other, with or without Docker''s proxy'
+description: 'a port a container exposes is shared like any other, with or without Docker''s proxy'
 env: two-macs
 runs:
     - command: 'world container-run linux-1 8080:80 nginx-1'

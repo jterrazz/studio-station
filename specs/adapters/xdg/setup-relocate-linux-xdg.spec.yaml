@@ -1,4 +1,4 @@
-description: 'on a Linux VM with XDG_CONFIG_HOME, go''s env file and mise''s config move with it'
+description: 'on a Linux VM with XDG_CONFIG_HOME, go''s env file and mise''s settings file move with it'
 env:
     - STATION_MACHINE_KIND=linux
     - XDG_CONFIG_HOME=$WORKDIR/x

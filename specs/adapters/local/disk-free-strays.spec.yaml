@@ -1,4 +1,4 @@
-description: 'a stray is cleaned with its old location''s own command, then its emptied folders go'
+description: 'a misplaced folder is freed with its old location''s own command, then its emptied folders go'
 fixture:
     - ./__fixtures__/disk-go/
     - ./__fixtures__/disk-node/

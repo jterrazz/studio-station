@@ -1,4 +1,4 @@
-description: 'the host''s providers read as this Mac''s shapes, one record each, and Tailscale costs no second read'
+description: 'the providers of This Mac read as its shapes, one record each, and Tailscale costs no second read'
 fixture:
     - ./__fixtures__/accounts/
 env: engine

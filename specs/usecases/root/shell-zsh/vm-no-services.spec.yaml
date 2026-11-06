@@ -1,4 +1,4 @@
-description: 'in a VM without services.env the shell block exports no public URL'
+description: 'in a VM without its exports file the shell block exports no public URL'
 env:
     - STATION_MACHINE_KIND=linux
 runs:

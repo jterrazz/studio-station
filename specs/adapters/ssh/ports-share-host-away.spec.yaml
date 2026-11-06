@@ -1,4 +1,4 @@
-description: 'in a VM whose host is not connected, ports share names the host'
+description: 'in a VM whose Mac is not connected, ports share names the Mac'
 fixture: ./__fixtures__/ports-placed/
 env: engine
 runs:

@@ -1,4 +1,4 @@
-description: 'setup leaves a damaged VM record and leases file as they are, for the reading command to name'
+description: 'setup leaves a damaged VM record and reservations file as they are, for the reading command to name'
 fixture:
     - ../__fixtures__/setup-stubs/
     - ./__fixtures__/damaged-records/

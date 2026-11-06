@@ -1,4 +1,4 @@
-description: 'without tart a build is refused before anything runs, pointing at the tool'
+description: 'without tart a build is refused before anything runs, pointing at the app'
 runs:
     - command: 'images build linux --binary x'
       exit: 2

@@ -1,4 +1,4 @@
-description: 'a macOS VM lists the dev tools a host keeps as exploration'
+description: 'a macOS VM lists the dev apps a Mac keeps as exploration'
 fixture: ../../../__fixtures__/stubs/
 env:
     - STATION_MACHINE_KIND=macos

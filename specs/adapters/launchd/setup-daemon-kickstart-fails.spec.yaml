@@ -1,4 +1,4 @@
-description: 'a daemon launchd loads but cannot start is a failed step, never a running row'
+description: 'an engine launchd loads but cannot start is a failed step, never a running row'
 fixture:
     - ../../__fixtures__/vms/
     - ./__fixtures__/launchctl-fails-kickstart/
