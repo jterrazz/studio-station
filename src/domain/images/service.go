@@ -9,7 +9,7 @@ import (
 	"github.com/jterrazz/studio-station/src/machines/contract"
 
 	"github.com/jterrazz/studio-station/src/catalog"
-	"github.com/jterrazz/studio-station/src/system"
+	"github.com/jterrazz/studio-station/src/platform/local"
 )
 
 type Options struct {
@@ -23,7 +23,7 @@ type Options struct {
 }
 
 type Service struct {
-	h      system.Host
+	h      local.Host
 	e      contract.Hypervisor
 	guests contract.GuestDialer
 	store  imagescontract.ImageStore
@@ -41,7 +41,7 @@ type Contracts struct {
 	Machines   contract.MachineStore
 }
 
-func New(h system.Host, c Contracts, list []catalog.Image, o Options) *Service {
+func New(h local.Host, c Contracts, list []catalog.Image, o Options) *Service {
 	return &Service{h: h, e: c.Hypervisor, guests: c.Guests, store: c.Store, source: c.Source, vms: c.Machines, list: list, o: o}
 }
 

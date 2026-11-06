@@ -19,7 +19,7 @@ import (
 	"github.com/jterrazz/studio-station/src/catalog"
 	"github.com/jterrazz/studio-station/src/domain/shell"
 	"github.com/jterrazz/studio-station/src/domain/storage"
-	"github.com/jterrazz/studio-station/src/system"
+	"github.com/jterrazz/studio-station/src/platform/local"
 )
 
 const (
@@ -76,7 +76,7 @@ type Prefs struct {
 }
 
 type Service struct {
-	h      system.Host
+	h      local.Host
 	p      Prefs
 	vault  Vault
 	reg    Registrar
@@ -88,7 +88,7 @@ type Vault interface {
 	Forget(ctx context.Context, name string) error
 }
 
-func New(h system.Host, p Prefs, v Vault, reg Registrar, e EngineInstaller, o Options) *Service {
+func New(h local.Host, p Prefs, v Vault, reg Registrar, e EngineInstaller, o Options) *Service {
 	return &Service{h: h, p: p, vault: v, reg: reg, engine: e, o: o}
 }
 
@@ -145,7 +145,7 @@ func (s *Service) currentHere() string {
 
 func (s *Service) DefaultName(ctx context.Context) string {
 	raw := s.h.Env.Hostname()
-	if out, err := s.h.Run.Output(ctx, system.Cmd{Name: "scutil", Args: []string{"--get", "LocalHostName"}, Timeout: 2 * time.Second}); err == nil && out.ExitCode == 0 && strings.TrimSpace(out.Stdout) != "" {
+	if out, err := s.h.Run.Output(ctx, local.Cmd{Name: "scutil", Args: []string{"--get", "LocalHostName"}, Timeout: 2 * time.Second}); err == nil && out.ExitCode == 0 && strings.TrimSpace(out.Stdout) != "" {
 		raw = strings.TrimSpace(out.Stdout)
 	}
 	return sanitize(raw)

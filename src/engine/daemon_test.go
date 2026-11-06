@@ -12,8 +12,8 @@ import (
 
 	"github.com/jterrazz/studio-station/src/catalog"
 	"github.com/jterrazz/studio-station/src/domain/machines"
+	"github.com/jterrazz/studio-station/src/platform/local/localtest"
 	"github.com/jterrazz/studio-station/src/setup"
-	"github.com/jterrazz/studio-station/src/system/systemtest"
 )
 
 type fakeMachines struct {
@@ -106,17 +106,17 @@ func (*fakeHypervisor) Address(context.Context, string, time.Duration) (netip.Ad
 type harness struct {
 	d     *Daemon
 	hv    *fakeHypervisor
-	run   *systemtest.Runner
-	fs    *systemtest.FS
-	clock *systemtest.Clock
+	run   *localtest.Runner
+	fs    *localtest.FS
+	clock *localtest.Clock
 	m     *fakeMachines
 }
 
 func newHarness(t *testing.T, records ...machines.VMRecord) harness {
 	t.Helper()
-	run, files := systemtest.NewRunner(t), systemtest.NewFS()
-	clock := &systemtest.Clock{At: time.Date(2026, 11, 1, 10, 0, 0, 0, time.UTC)}
-	h := systemtest.Host(run, files, systemtest.Env{}, systemtest.NewNet(), clock)
+	run, files := localtest.NewRunner(t), localtest.NewFS()
+	clock := &localtest.Clock{At: time.Date(2026, 11, 1, 10, 0, 0, 0, time.UTC)}
+	h := localtest.Host(run, files, localtest.Env{}, localtest.NewNet(), clock)
 	m := &fakeMachines{records: records}
 	hv := newHypervisor()
 	paths := setup.Paths{Config: "/c", State: "/s"}

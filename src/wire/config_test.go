@@ -4,12 +4,12 @@ import (
 	"testing"
 
 	"github.com/jterrazz/studio-station/src/catalog"
+	"github.com/jterrazz/studio-station/src/platform/local/localtest"
 	settingscontract "github.com/jterrazz/studio-station/src/settings/contract"
-	"github.com/jterrazz/studio-station/src/system/systemtest"
 )
 
 func TestEverySettingOfTheCatalogueIsWrittenByAnApplierOnARealMac(t *testing.T) {
-	host := systemtest.Host(systemtest.NewRunner(t), systemtest.NewFS(), systemtest.Env{HomeDir: "/home/u", OS: "darwin"}, systemtest.NewNet(), &systemtest.Clock{})
+	host := localtest.Host(localtest.NewRunner(t), localtest.NewFS(), localtest.Env{HomeDir: "/home/u", OS: "darwin"}, localtest.NewNet(), &localtest.Clock{})
 
 	appliers := settingscontract.NewAppliers(settingAppliers(machine{host: host, vars: map[string]string{}, stores: &stores{}})...)
 

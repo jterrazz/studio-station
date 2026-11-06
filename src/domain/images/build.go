@@ -15,7 +15,7 @@ import (
 
 	"github.com/jterrazz/studio-station/src/catalog"
 	"github.com/jterrazz/studio-station/src/machines/contract"
-	"github.com/jterrazz/studio-station/src/system"
+	"github.com/jterrazz/studio-station/src/platform/local"
 )
 
 type BuildRequest struct {
@@ -249,8 +249,8 @@ func (s *Service) imageKey(ctx context.Context) (key, pub string, err error) {
 		if mkErr := s.h.FS.MkdirAll(path.Dir(key), 0o700); mkErr != nil {
 			return "", "", mkErr
 		}
-		var out system.Output
-		out, err = s.h.Run.Output(ctx, system.Cmd{Name: "ssh-keygen", Args: []string{"-q", "-t", "ed25519", "-N", "", "-C", "station-image", "-f", key}})
+		var out local.Output
+		out, err = s.h.Run.Output(ctx, local.Cmd{Name: "ssh-keygen", Args: []string{"-q", "-t", "ed25519", "-N", "", "-C", "station-image", "-f", key}})
 		if err != nil {
 			return "", "", err
 		}

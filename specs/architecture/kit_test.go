@@ -73,7 +73,7 @@ func ruleLevels(w *world) []finding {
 				continue
 			}
 			switch {
-			case under(rel, "domain/*", "pages/*", "catalog", "system", "system/*"):
+			case under(rel, "domain/*", "pages/*", "catalog", "platform/*"):
 				out = append(out, finding{"levels", f.at(f.syntax.Imports[i].Pos()), f.pkg + " renders page nodes only, not " + rel})
 			case levelOf(rel) > own && (!f.test || f.pkg != "ui/render"):
 				out = append(out, finding{"levels", f.at(f.syntax.Imports[i].Pos()), f.pkg + " imports " + rel + ", a level above its own"})

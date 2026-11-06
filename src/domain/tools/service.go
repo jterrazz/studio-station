@@ -10,7 +10,7 @@ import (
 	"github.com/jterrazz/studio-station/src/apps/contract"
 	"github.com/jterrazz/studio-station/src/catalog"
 	probe "github.com/jterrazz/studio-station/src/core/call/lanes"
-	"github.com/jterrazz/studio-station/src/system"
+	"github.com/jterrazz/studio-station/src/platform/local"
 )
 
 const commandLane = 16
@@ -34,14 +34,14 @@ type VMs interface {
 }
 
 type Service struct {
-	h      system.Host
+	h      local.Host
 	tools  []catalog.Tool
 	byName map[string]catalog.Tool
 	cfg    Configurer
 	o      Options
 }
 
-func New(h system.Host, list []catalog.Tool, cfg Configurer, o Options) *Service {
+func New(h local.Host, list []catalog.Tool, cfg Configurer, o Options) *Service {
 	byName := make(map[string]catalog.Tool, len(list))
 	for _, t := range list {
 		byName[t.Name] = t

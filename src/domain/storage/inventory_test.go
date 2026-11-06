@@ -7,8 +7,8 @@ import (
 	"time"
 
 	"github.com/jterrazz/studio-station/src/catalog"
-	"github.com/jterrazz/studio-station/src/system"
-	"github.com/jterrazz/studio-station/src/system/systemtest"
+	"github.com/jterrazz/studio-station/src/platform/local"
+	"github.com/jterrazz/studio-station/src/platform/local/localtest"
 )
 
 type slowInventory struct {
@@ -25,7 +25,7 @@ func (i slowInventory) Installed(ctx context.Context, each func(map[string]bool)
 }
 
 func TestASizedRowShowsItsSizeBeforeASlowInventoryAnswers(t *testing.T) {
-	fs := systemtest.NewFS()
+	fs := localtest.NewFS()
 	fs.Files["h/quick/tree/f"] = &fstest.MapFile{Data: []byte("abc")}
 	fs.Files["h/late/tree/f"] = &fstest.MapFile{Data: []byte("abcde")}
 	tools := []catalog.Tool{
@@ -33,7 +33,7 @@ func TestASizedRowShowsItsSizeBeforeASlowInventoryAnswers(t *testing.T) {
 		{Name: "late", Installs: catalog.HostOnly(catalog.Brew("late")), Storage: catalog.Storage{Paths: []catalog.Stored{{Path: "~/late/*", Level: catalog.LevelCache}}}},
 	}
 	inventory := slowInventory{release: make(chan struct{})}
-	s := New(system.Host{FS: fs, Clock: realClock{}}, tools, Options{Disk: systemtest.Disk{FS: fs}, Here: catalog.Host, Expand: Expander{Home: "/h"}, Inventory: inventory})
+	s := New(local.Host{FS: fs, Clock: realClock{}}, tools, Options{Disk: localtest.Disk{FS: fs}, Here: catalog.Host, Expand: Expander{Home: "/h"}, Inventory: inventory})
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()

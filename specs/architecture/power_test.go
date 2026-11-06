@@ -99,7 +99,7 @@ func rulePowerSafe(w *world) []finding {
 
 func isFS(t types.Type) bool {
 	named, ok := types.Unalias(t).(*types.Named)
-	return ok && named.Obj().Name() == "FS" && named.Obj().Pkg() != nil && named.Obj().Pkg().Path() == module+"/src/system"
+	return ok && named.Obj().Name() == "FS" && named.Obj().Pkg() != nil && named.Obj().Pkg().Path() == module+"/src/platform/local"
 }
 
 func powerRaw(w *world) []finding {

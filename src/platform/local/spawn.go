@@ -6,13 +6,11 @@ import (
 	"errors"
 	"io"
 	"os/exec"
-
-	"github.com/jterrazz/studio-station/src/system"
 )
 
 type Spawner interface {
 	// value: a tool kept running, its stdin and stdout the caller's to speak over.
-	Spawn(ctx context.Context, c system.Cmd) (Process, error)
+	Spawn(ctx context.Context, c Cmd) (Process, error)
 }
 
 type Process interface {
@@ -32,7 +30,7 @@ type spawned struct {
 	cancel context.CancelFunc
 }
 
-func (r *runner) Spawn(ctx context.Context, c system.Cmd) (Process, error) {
+func (r *runner) Spawn(ctx context.Context, c Cmd) (Process, error) {
 	ctx, cancel := context.WithCancel(context.WithoutCancel(ctx))
 	_, cmd, stop, err := r.command(ctx, c)
 	if err != nil {

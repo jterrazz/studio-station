@@ -11,7 +11,7 @@ import (
 	"github.com/jterrazz/studio-station/src/awake"
 	"github.com/jterrazz/studio-station/src/awake/contract"
 	"github.com/jterrazz/studio-station/src/domain/power"
-	"github.com/jterrazz/studio-station/src/system/systemtest"
+	"github.com/jterrazz/studio-station/src/platform/local/localtest"
 )
 
 type port struct {
@@ -59,7 +59,7 @@ func (p *port) count(call string) int {
 type world struct {
 	t       *testing.T
 	port    *port
-	clock   *systemtest.Clock
+	clock   *localtest.Clock
 	m       *power.Machine
 	notices []power.End
 }
@@ -69,7 +69,7 @@ func laptop() awake.Reading {
 }
 
 func newWorld(t *testing.T, r awake.Reading) *world {
-	w := &world{t: t, port: &port{r: r}, clock: &systemtest.Clock{At: time.Date(2026, 11, 3, 10, 0, 0, 0, time.UTC)}}
+	w := &world{t: t, port: &port{r: r}, clock: &localtest.Clock{At: time.Date(2026, 11, 3, 10, 0, 0, 0, time.UTC)}}
 	w.m = power.New(w.port, w.clock, power.Options{Notice: func(e power.End) { w.notices = append(w.notices, e) }})
 	return w
 }

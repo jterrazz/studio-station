@@ -15,8 +15,8 @@ import (
 	"github.com/jterrazz/studio-station/src/catalog"
 	"github.com/jterrazz/studio-station/src/core/store"
 	machinescontract "github.com/jterrazz/studio-station/src/machines/contract"
+	"github.com/jterrazz/studio-station/src/platform/local"
 	setupcontract "github.com/jterrazz/studio-station/src/setup/contract"
-	"github.com/jterrazz/studio-station/src/system"
 )
 
 const (
@@ -38,7 +38,7 @@ type Options struct {
 
 type Guest interface {
 	// invariant: a command inside a VM rides its engine's one connection to it.
-	GuestExec(ctx context.Context, vm, line, stdin string) (system.Output, error)
+	GuestExec(ctx context.Context, vm, line, stdin string) (local.Output, error)
 }
 
 type Stores struct {
@@ -50,8 +50,8 @@ type Stores struct {
 }
 
 type Service struct {
-	h      system.Host
-	clock  system.Clock
+	h      local.Host
+	clock  local.Clock
 	guest  Guest
 	st     Stores
 	source contract.SecretSource
@@ -59,7 +59,7 @@ type Service struct {
 	o      Options
 }
 
-func New(h system.Host, guest Guest, st Stores, source contract.SecretSource, ids contract.Identities, o Options) *Service {
+func New(h local.Host, guest Guest, st Stores, source contract.SecretSource, ids contract.Identities, o Options) *Service {
 	return &Service{h: h, clock: h.Clock, guest: guest, st: st, source: source, ids: ids, o: o}
 }
 
@@ -280,7 +280,7 @@ func (s *Service) checkVM(ctx context.Context, name string) error {
 	return &accounts.UnknownVMError{VM: name}
 }
 
-func (s *Service) inVM(ctx context.Context, vm, line, stdin string) (system.Output, error) {
+func (s *Service) inVM(ctx context.Context, vm, line, stdin string) (local.Output, error) {
 	ctx, cancel := context.WithTimeout(ctx, stepBudget)
 	defer cancel()
 	return s.guest.GuestExec(ctx, vm, line, stdin)
@@ -292,7 +292,7 @@ func VMStudio(args ...string) string {
 	return strings.Join(append([]string{"STUDIO_CREDENTIALS_BACKEND=file", "studio", "credentials"}, args...), " ")
 }
 
-func failure(err error, out system.Output) error {
+func failure(err error, out local.Output) error {
 	if err != nil {
 		return err
 	}

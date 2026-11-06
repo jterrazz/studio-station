@@ -50,6 +50,7 @@ import (
 	imagescontract "github.com/jterrazz/studio-station/src/images/contract"
 	machinesfake "github.com/jterrazz/studio-station/src/machines/adapter/fake"
 	"github.com/jterrazz/studio-station/src/machines/contract"
+	"github.com/jterrazz/studio-station/src/platform/local"
 	"github.com/jterrazz/studio-station/src/ports"
 	portsfake "github.com/jterrazz/studio-station/src/ports/adapter/fake"
 	"github.com/jterrazz/studio-station/src/ports/adapter/funnel"
@@ -61,7 +62,6 @@ import (
 	settingsfake "github.com/jterrazz/studio-station/src/settings/adapter/fake"
 	settingscontract "github.com/jterrazz/studio-station/src/settings/contract"
 	"github.com/jterrazz/studio-station/src/surface/cli/kit"
-	"github.com/jterrazz/studio-station/src/system"
 	"github.com/jterrazz/studio-station/src/world"
 )
 
@@ -248,7 +248,7 @@ func (m *worldMac) slice() world.Mac {
 
 func (m *worldMac) runs() bool { mac := m.slice(); return mac.EngineRuns() }
 
-func (m *worldMac) host(h system.Host) system.Host {
+func (m *worldMac) host(h local.Host) local.Host {
 	h.Run = rootless{Runner: h.Run, w: m.run.w}
 	m.home = h.Env.Home()
 	h.FS = worldFS{FS: h.FS, m: m, plist: catalog.EnginePlist(h.Env.Home()), files: m.files()}
@@ -388,7 +388,7 @@ func (w worldMarks) Write(mark engine.StopMark) error {
 // world it is there while the Mac's engine is set up, whatever the run's
 // home holds.
 type worldFS struct {
-	system.FS
+	local.FS
 	m     *worldMac
 	plist string
 	// value: the files of the Mac's disk in the world, seen beside the
@@ -736,7 +736,7 @@ func (r *worldRun) close(ctx context.Context) error {
 }
 
 type worldEnv struct {
-	system.Env
+	local.Env
 	here, user string
 	// value: this run has admin rights, on This Mac's own terminal.
 	admin bool
@@ -915,13 +915,13 @@ func (m *worldMac) budgets() probe.Clock { return budgetClock{m.run.clock()} }
 // lists a listener there or the world already bound them, so no run binds a
 // real port another run holds.
 type worldSockets struct {
-	system.Sockets
+	local.Sockets
 	m *worldMac
 }
 
 var errPortBusy = errors.New("the port is busy in the world")
 
-func (s worldSockets) ListenTCP(_ string, port int) (system.Listener, error) {
+func (s worldSockets) ListenTCP(_ string, port int) (local.Listener, error) {
 	w := s.m.run.w
 	w.Lock()
 	defer w.Unlock()
@@ -950,7 +950,7 @@ type worldListener struct {
 	release func()
 }
 
-func (l *worldListener) Accept() (system.Conn, error) {
+func (l *worldListener) Accept() (local.Conn, error) {
 	<-l.done
 	return nil, net.ErrClosed
 }
@@ -989,7 +989,7 @@ var errNoSSHD = errors.New("no sshd answers at this address in the world")
 
 // invariant: inside a VM of the world, the socket its Mac's engine offers
 // there is that engine, as the guest relays it.
-func (s worldSockets) DialUnix(ctx context.Context, _ string, _ time.Duration) (system.Conn, error) {
+func (s worldSockets) DialUnix(ctx context.Context, _ string, _ time.Duration) (local.Conn, error) {
 	m := s.m
 	if p, inside := m.placement(); inside {
 		m = m.run.mac(p.Host)
@@ -1003,7 +1003,7 @@ func (s worldSockets) DialUnix(ctx context.Context, _ string, _ time.Duration) (
 	return near, nil
 }
 
-func (worldSockets) ListenUnix(string) (system.Listener, error) {
+func (worldSockets) ListenUnix(string) (local.Listener, error) {
 	return nil, errors.New("a world's engine is stepped, never listening")
 }
 
@@ -1021,13 +1021,13 @@ func (l lockedNotifier) Notify(ctx context.Context, n engine.Notification) {
 // invariant: a Mac of the world runs nothing as root: a command that asks
 // sudo, even inside a shell line, is refused and kept in the world.
 type rootless struct {
-	system.Runner
+	local.Runner
 	w *world.World
 }
 
 var errRoot = errors.New("this world runs nothing as root")
 
-func (r rootless) refuses(c system.Cmd) bool {
+func (r rootless) refuses(c local.Cmd) bool {
 	line := strings.Join(append([]string{c.Name}, c.Args...), " ")
 	if !slices.Contains(strings.FieldsFunc(line, func(r rune) bool {
 		return r == ' ' || r == ';' || r == '&' || r == '|' || r == '(' || r == '\'' || r == '"'
@@ -1040,21 +1040,21 @@ func (r rootless) refuses(c system.Cmd) bool {
 	return true
 }
 
-func (r rootless) Output(ctx context.Context, c system.Cmd) (system.Output, error) {
+func (r rootless) Output(ctx context.Context, c local.Cmd) (local.Output, error) {
 	if r.refuses(c) {
-		return system.Output{ExitCode: 1, Stderr: errRoot.Error()}, errRoot
+		return local.Output{ExitCode: 1, Stderr: errRoot.Error()}, errRoot
 	}
 	return r.Runner.Output(ctx, c)
 }
 
-func (r rootless) Attach(ctx context.Context, c system.Cmd, out system.Stream) (system.Attached, error) {
+func (r rootless) Attach(ctx context.Context, c local.Cmd, out local.Stream) (local.Attached, error) {
 	if r.refuses(c) {
-		return system.Attached{}, errRoot
+		return local.Attached{}, errRoot
 	}
 	return r.Runner.Attach(ctx, c, out)
 }
 
-func (r rootless) Start(c system.Cmd, logPath string) (int, error) {
+func (r rootless) Start(c local.Cmd, logPath string) (int, error) {
 	if r.refuses(c) {
 		return 0, errRoot
 	}

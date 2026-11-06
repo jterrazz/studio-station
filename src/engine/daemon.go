@@ -19,8 +19,8 @@ import (
 	"github.com/jterrazz/studio-station/src/domain/power"
 	"github.com/jterrazz/studio-station/src/domain/services"
 	model "github.com/jterrazz/studio-station/src/machines"
+	"github.com/jterrazz/studio-station/src/platform/local"
 	"github.com/jterrazz/studio-station/src/ports"
-	"github.com/jterrazz/studio-station/src/system"
 )
 
 const (
@@ -95,7 +95,7 @@ type Options struct {
 }
 
 type Daemon struct {
-	h      system.Host
+	h      local.Host
 	hv     Hypervisor
 	guests Guests
 	m      Machines
@@ -157,7 +157,7 @@ type Reservations interface {
 	Delete(ctx context.Context, vm string, guestPort int) error
 }
 
-func New(h system.Host, hv Hypervisor, guests Guests, m Machines, tn Tailnet, st Stores, o Options) *Daemon {
+func New(h local.Host, hv Hypervisor, guests Guests, m Machines, tn Tailnet, st Stores, o Options) *Daemon {
 	if o.Tick == 0 {
 		o.Tick = time.Second
 	}
@@ -411,7 +411,7 @@ func (d *Daemon) warmCert(ctx context.Context, host string) {
 		case ctx.Err() != nil:
 		case err == nil:
 			d.logf("tailnet", "certificate for "+host+" ready in "+d.h.Clock.Now().Sub(start).Round(time.Millisecond).String())
-		case errors.Is(err, system.ErrTimeout) || errors.Is(err, context.DeadlineExceeded):
+		case errors.Is(err, local.ErrTimeout) || errors.Is(err, context.DeadlineExceeded):
 			d.logf("tailnet", "certificate for "+host+" not issued: no answer within "+certBudget.String())
 		default:
 			d.logf("tailnet", "certificate for "+host+" not issued: "+err.Error())
@@ -419,7 +419,7 @@ func (d *Daemon) warmCert(ctx context.Context, host string) {
 	}()
 }
 
-func (d *Daemon) accept(ctx context.Context, l system.Listener) {
+func (d *Daemon) accept(ctx context.Context, l local.Listener) {
 	for {
 		conn, err := l.Accept()
 		if err != nil {

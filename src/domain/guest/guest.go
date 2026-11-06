@@ -14,8 +14,8 @@ import (
 	"time"
 
 	"github.com/jterrazz/studio-station/src/catalog"
+	"github.com/jterrazz/studio-station/src/platform/local"
 	"github.com/jterrazz/studio-station/src/ports"
-	"github.com/jterrazz/studio-station/src/system"
 )
 
 const (
@@ -45,11 +45,11 @@ type Listeners interface {
 }
 
 type Service struct {
-	h system.Host
+	h local.Host
 	o Options
 }
 
-func New(h system.Host, o Options) *Service { return &Service{h: h, o: o} }
+func New(h local.Host, o Options) *Service { return &Service{h: h, o: o} }
 
 type HostOnlyRefusedError struct{}
 
@@ -234,7 +234,7 @@ func (s *Service) scan(ctx context.Context, h Hello, docker *[]Listener, refresh
 	if refresh {
 		if _, ok := s.h.Run.LookPath("docker"); !ok {
 			*docker = nil
-		} else if out, err := s.h.Run.Output(ctx, system.Cmd{Name: "docker", Args: []string{"ps", "--format", "{{json .}}"}, Timeout: 5 * time.Second}); err == nil && out.ExitCode == 0 {
+		} else if out, err := s.h.Run.Output(ctx, local.Cmd{Name: "docker", Args: []string{"ps", "--format", "{{json .}}"}, Timeout: 5 * time.Second}); err == nil && out.ExitCode == 0 {
 			*docker = ParseDockerPS([]byte(out.Stdout))
 		}
 	}
@@ -316,7 +316,7 @@ func (s *Service) Placement() Placement {
 	return p
 }
 
-func (s *Service) listen(ctx context.Context, g *session, quit context.CancelFunc) system.Listener {
+func (s *Service) listen(ctx context.Context, g *session, quit context.CancelFunc) local.Listener {
 	file := s.SocketPath()
 	if conn, err := s.h.Sockets.DialUnix(ctx, file, time.Second); err == nil {
 		_, _ = conn.Write([]byte(`{"v":2,"id":"q","call":"` + callQuit + `"}` + "\n"))
@@ -369,7 +369,7 @@ type fault struct {
 	Hint    string `json:"hint"`
 }
 
-func (g *session) serve(ctx context.Context, conn system.Conn, quit context.CancelFunc) {
+func (g *session) serve(ctx context.Context, conn local.Conn, quit context.CancelFunc) {
 	defer func() { _ = conn.Close() }()
 	scanner := bufio.NewScanner(conn)
 	for scanner.Scan() {

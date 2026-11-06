@@ -11,7 +11,7 @@ import (
 	setupmodel "github.com/jterrazz/studio-station/src/setup"
 
 	"github.com/jterrazz/studio-station/src/catalog"
-	"github.com/jterrazz/studio-station/src/system"
+	"github.com/jterrazz/studio-station/src/platform/local"
 )
 
 const legacyDir = ".studio"
@@ -172,7 +172,7 @@ func (s *Service) detach() error {
 	if err := s.h.FS.MkdirAll(path.Dir(s.logPath()), 0o700); err != nil {
 		return err
 	}
-	_, err := s.h.Run.Start(system.Cmd{Name: s.o.Executable, Args: []string{"setup"}, Env: []string{"STATION_XDG_DETACHED=1"}}, s.logPath())
+	_, err := s.h.Run.Start(local.Cmd{Name: s.o.Executable, Args: []string{"setup"}, Env: []string{"STATION_XDG_DETACHED=1"}}, s.logPath())
 	return err
 }
 

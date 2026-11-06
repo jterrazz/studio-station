@@ -16,8 +16,8 @@ import (
 	"github.com/jterrazz/studio-station/src/machines"
 	"github.com/jterrazz/studio-station/src/machines/contract"
 	"github.com/jterrazz/studio-station/src/machines/contract/contracttest"
-	"github.com/jterrazz/studio-station/src/system"
-	"github.com/jterrazz/studio-station/src/system/systemtest"
+	"github.com/jterrazz/studio-station/src/platform/local"
+	"github.com/jterrazz/studio-station/src/platform/local/localtest"
 )
 
 const (
@@ -27,7 +27,7 @@ const (
 
 type lockedFS struct {
 	mu sync.Mutex
-	*systemtest.FS
+	*localtest.FS
 }
 
 func (f *lockedFS) ReadFile(p string) ([]byte, error) {
@@ -105,23 +105,23 @@ func (k *kernel) start(pid int, name string, files ...string) {
 }
 
 type machine struct {
-	run    *systemtest.Runner
+	run    *localtest.Runner
 	fs     *lockedFS
 	kernel *kernel
 	disks  map[string]string
 }
 
 func newMachine(t *testing.T) *machine {
-	run := systemtest.NewRunner(t)
+	run := localtest.NewRunner(t)
 	run.Paths["tart"] = bin
-	return &machine{run: run, fs: &lockedFS{FS: systemtest.NewFS()}, kernel: &kernel{names: map[int]string{}, files: map[int][]string{}}, disks: map[string]string{}}
+	return &machine{run: run, fs: &lockedFS{FS: localtest.NewFS()}, kernel: &kernel{names: map[int]string{}, files: map[int][]string{}}, disks: map[string]string{}}
 }
 
 func (m *machine) hypervisor() contract.Hypervisor {
 	return New(m.run, m.fs, yielding{}, m.kernel, state)
 }
 
-func (m *machine) listing() system.Output {
+func (m *machine) listing() local.Output {
 	type row struct{ Source, Name, State string }
 	rows := make([]row, 0, len(m.disks)+1)
 	rows = append(rows, row{Source: "OCI", Name: contracttest.Image, State: "stopped"})
@@ -129,14 +129,14 @@ func (m *machine) listing() system.Output {
 		rows = append(rows, row{Source: "local", Name: vm, State: m.disks[vm]})
 	}
 	data, _ := json.Marshal(rows)
-	return system.Output{Stdout: string(data)}
+	return local.Output{Stdout: string(data)}
 }
 
 func (m *machine) boot(vm string, extra ...string) {
 	argv := append([]string{bin, "run", "--no-graphics", "--no-audio", "--serial-path", state + "/consoles/" + vm}, extra...)
-	m.run.On("sh", wrapped(append(argv, vm), state+"/runs/"+vm+".exit").Args...).Answer(func() system.Output {
+	m.run.On("sh", wrapped(append(argv, vm), state+"/runs/"+vm+".exit").Args...).Answer(func() local.Output {
 		m.disks[vm] = "running"
-		return system.Output{}
+		return local.Output{}
 	})
 }
 
@@ -158,26 +158,26 @@ func TestTartKeepsTheHypervisorContract(t *testing.T) {
 		m := newMachine(t)
 		vm, renamed := contracttest.VM, contracttest.Renamed
 		m.run.On(bin, "pull", contracttest.Image)
-		m.run.On(bin, "clone", contracttest.Image, vm).Answer(func() system.Output {
+		m.run.On(bin, "clone", contracttest.Image, vm).Answer(func() local.Output {
 			m.disks[vm] = "stopped"
-			return system.Output{}
+			return local.Output{}
 		})
 		m.run.On(bin, "set", vm, "--cpu", "4", "--memory", "8192", "--disk-size", "50")
 		m.run.On(bin, "list", "--source", "local", "--format", "json").Answer(m.listing)
 		m.boot(vm)
-		m.run.On(bin, "ip", vm, "--wait", "5").Reply(system.Output{Stdout: "192.168.64.5\n"})
-		m.run.On(bin, "rename", vm, renamed).Answer(func() system.Output {
+		m.run.On(bin, "ip", vm, "--wait", "5").Reply(local.Output{Stdout: "192.168.64.5\n"})
+		m.run.On(bin, "rename", vm, renamed).Answer(func() local.Output {
 			m.disks[renamed] = m.disks[vm]
 			delete(m.disks, vm)
-			return system.Output{}
+			return local.Output{}
 		})
 		for _, name := range []string{vm, renamed} {
-			m.run.On(bin, "delete", name).Answer(func() system.Output {
+			m.run.On(bin, "delete", name).Answer(func() local.Output {
 				if m.disks[name] == "running" {
-					return system.Output{ExitCode: 1, Stderr: "Error: VM \"" + name + "\" is running\n"}
+					return local.Output{ExitCode: 1, Stderr: "Error: VM \"" + name + "\" is running\n"}
 				}
 				delete(m.disks, name)
-				return system.Output{}
+				return local.Output{}
 			})
 		}
 		return contracttest.Subject{Hypervisor: m.hypervisor(), End: m.end, Restart: m.hypervisor}
@@ -186,7 +186,7 @@ func TestTartKeepsTheHypervisorContract(t *testing.T) {
 
 func TestDisksKeepLocalVMsAndTheirSize(t *testing.T) {
 	m := newMachine(t)
-	m.run.On(bin, "list", "--source", "local", "--format", "json").Reply(system.Output{Stdout: recorded(t, "list.json")})
+	m.run.On(bin, "list", "--source", "local", "--format", "json").Reply(local.Output{Stdout: recorded(t, "list.json")})
 	disks, err := m.hypervisor().Disks(t.Context())
 	if err != nil {
 		t.Fatal(err)
@@ -203,7 +203,7 @@ func TestDisksKeepLocalVMsAndTheirSize(t *testing.T) {
 
 func TestABridgedVMBootsOnTheMacsDefaultInterface(t *testing.T) {
 	m := newMachine(t)
-	m.run.On("route", "-n", "get", "default").Reply(system.Output{Stdout: "   route to: default\ndestination: default\n  interface: en7\n"})
+	m.run.On("route", "-n", "get", "default").Reply(local.Output{Stdout: "   route to: default\ndestination: default\n  interface: en7\n"})
 	m.boot("dev", "--net-bridged=en7")
 	r, err := m.hypervisor().Boot(t.Context(), "dev", contract.BootOptions{Network: machines.Network{Bridged: true}})
 	if err != nil {
@@ -247,7 +247,7 @@ func TestARunThatEndedWhileNoEngineWatchedIsNotAdopted(t *testing.T) {
 
 func TestAFailedCommandCarriesItsStderr(t *testing.T) {
 	m := newMachine(t)
-	m.run.On(bin, "delete", "dev").Reply(system.Output{ExitCode: 1, Stderr: "no such VM"})
+	m.run.On(bin, "delete", "dev").Reply(local.Output{ExitCode: 1, Stderr: "no such VM"})
 	err := m.hypervisor().Delete(t.Context(), "dev")
 	if err == nil || !strings.Contains(err.Error(), "no such VM") {
 		t.Fatalf("err = %v", err)

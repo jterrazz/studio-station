@@ -21,11 +21,11 @@ import (
 	"github.com/jterrazz/studio-station/src/engine"
 	imagescontract "github.com/jterrazz/studio-station/src/images/contract"
 	"github.com/jterrazz/studio-station/src/machines/contract"
+	"github.com/jterrazz/studio-station/src/platform/local"
 	"github.com/jterrazz/studio-station/src/ports/adapter/funnel"
 	portscontract "github.com/jterrazz/studio-station/src/ports/contract"
 	remotecontract "github.com/jterrazz/studio-station/src/remote/contract"
 	settingscontract "github.com/jterrazz/studio-station/src/settings/contract"
-	"github.com/jterrazz/studio-station/src/system"
 )
 
 // invariant: the release build knows no world: openWorld answers none, so
@@ -42,7 +42,7 @@ func (*worldRun) farFrom(func(*worldMac) farMac) {}
 func (*worldRun) command() *cobra.Command        { return nil }
 func (*worldRun) close(context.Context) error    { return nil }
 
-func (*worldMac) host(h system.Host) system.Host                        { return h }
+func (*worldMac) host(h local.Host) local.Host                          { return h }
 func (*worldMac) lend(context.Context) error                            { return nil }
 func (*worldMac) watch([]string) func()                                 { return func() {} }
 func (*worldMac) stores(*stores)                                        {}

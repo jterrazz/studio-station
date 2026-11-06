@@ -1,11 +1,11 @@
-package systemtest
+package localtest
 
 import (
 	"context"
 	"fmt"
 	"time"
 
-	"github.com/jterrazz/studio-station/src/system"
+	"github.com/jterrazz/studio-station/src/platform/local"
 )
 
 type Env struct {
@@ -78,6 +78,6 @@ func (c *Clock) Sleep(ctx context.Context, d time.Duration) error {
 	return nil
 }
 
-func Host(r *Runner, f *FS, e Env, n *Net, c *Clock) system.Host {
-	return system.Host{Run: r, FS: f, Env: e, Net: n, Clock: c}
+func Host(r *Runner, f *FS, e Env, n *Net, c *Clock) local.Host {
+	return local.Host{Run: r, FS: f, Env: e, Net: n, Clock: c}
 }

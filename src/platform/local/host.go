@@ -3,13 +3,11 @@ package local
 import (
 	"io"
 	"strings"
-
-	"github.com/jterrazz/studio-station/src/system"
 )
 
 const defaultSystemDirs = "/usr/sbin:/sbin:/usr/libexec:/usr/libexec/ApplicationFirewall"
 
-func New(env []string, stdin io.Reader, stdout, stderr io.Writer) system.Host {
+func New(env []string, stdin io.Reader, stdout, stderr io.Writer) Host {
 	vars := map[string]string{}
 	for _, kv := range env {
 		if k, v, ok := strings.Cut(kv, "="); ok {
@@ -26,7 +24,7 @@ func New(env []string, stdin io.Reader, stdout, stderr io.Writer) system.Host {
 			dirs = append(dirs, d)
 		}
 	}
-	return system.Host{
+	return Host{
 		Run:     &runner{env: env, dirs: dirs, stdin: stdin, stdout: stdout, stderr: stderr},
 		FS:      disk{},
 		Env:     identity{vars: vars},

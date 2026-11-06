@@ -13,7 +13,7 @@ import (
 	probe "github.com/jterrazz/studio-station/src/core/call/lanes"
 	"github.com/jterrazz/studio-station/src/disk"
 	"github.com/jterrazz/studio-station/src/disk/contract"
-	"github.com/jterrazz/studio-station/src/system"
+	"github.com/jterrazz/studio-station/src/platform/local"
 )
 
 const (
@@ -50,12 +50,12 @@ type Configurer interface {
 }
 
 type Service struct {
-	h     system.Host
+	h     local.Host
 	tools []catalog.Tool
 	o     Options
 }
 
-func New(h system.Host, tools []catalog.Tool, o Options) *Service {
+func New(h local.Host, tools []catalog.Tool, o Options) *Service {
 	if o.Pool == nil {
 		o.Pool = probe.NewPool(context.Background(), h.Clock, commandLane, walkLane)
 	}
@@ -563,8 +563,8 @@ func (s *Service) run(ctx context.Context, a catalog.Action) *actionFailure {
 		env = append(env, s.o.Expand.Word(kv))
 	}
 	label := label(a.Run)
-	ran, err := s.h.Run.Attach(ctx, system.Cmd{Name: a.Run[0], Args: args, Env: env}, system.ToStderr)
-	if errors.Is(err, system.ErrNotFound) {
+	ran, err := s.h.Run.Attach(ctx, local.Cmd{Name: a.Run[0], Args: args, Env: env}, local.ToStderr)
+	if errors.Is(err, local.ErrNotFound) {
 		return nil
 	}
 	if err != nil {
@@ -588,8 +588,8 @@ func label(argv []string) string {
 }
 
 func (s *Service) dockerBytes(ctx context.Context) int64 {
-	out, err := s.h.Run.Output(ctx, system.Cmd{Name: "docker", Args: []string{"system", "df", "--format", "{{.Size}}"}, Timeout: dockerDFBudget})
-	if errors.Is(err, system.ErrTimeout) || ctx.Err() != nil {
+	out, err := s.h.Run.Output(ctx, local.Cmd{Name: "docker", Args: []string{"system", "df", "--format", "{{.Size}}"}, Timeout: dockerDFBudget})
+	if errors.Is(err, local.ErrTimeout) || ctx.Err() != nil {
 		return Unknown
 	}
 	if err != nil || out.ExitCode != 0 {

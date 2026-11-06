@@ -10,8 +10,8 @@ import (
 	"github.com/jterrazz/studio-station/src/catalog"
 	probe "github.com/jterrazz/studio-station/src/core/call/lanes"
 	"github.com/jterrazz/studio-station/src/domain/tools"
-	"github.com/jterrazz/studio-station/src/system"
-	"github.com/jterrazz/studio-station/src/system/systemtest"
+	"github.com/jterrazz/studio-station/src/platform/local"
+	"github.com/jterrazz/studio-station/src/platform/local/localtest"
 )
 
 type stillClock struct{}
@@ -23,8 +23,8 @@ func (stillClock) Sleep(ctx context.Context, _ time.Duration) error {
 	return ctx.Err()
 }
 
-func reportOf(t *testing.T, tool catalog.Tool, manager *fake.State, run *systemtest.Runner, files *systemtest.FS) tools.Report {
-	h := systemtest.Host(run, files, systemtest.Env{HomeDir: "/home/u", OS: "darwin"}, systemtest.NewNet(), &systemtest.Clock{})
+func reportOf(t *testing.T, tool catalog.Tool, manager *fake.State, run *localtest.Runner, files *localtest.FS) tools.Report {
+	h := localtest.Host(run, files, localtest.Env{HomeDir: "/home/u", OS: "darwin"}, localtest.NewNet(), &localtest.Clock{})
 	m := tool.Installs[0].Install.Method()
 	installers := contract.Installers{m: fake.New(m, manager)}
 	reports, err := tools.New(h, []catalog.Tool{tool}, nil, tools.Options{Here: catalog.Host, Installers: installers, Pool: probe.NewPool(context.Background(), stillClock{}, 16, 1)}).Inventory(context.Background())
@@ -35,11 +35,11 @@ func reportOf(t *testing.T, tool catalog.Tool, manager *fake.State, run *systemt
 }
 
 func TestStateAnAppPresentWithoutItsManagerIsDegraded(t *testing.T) {
-	files := systemtest.NewFS()
+	files := localtest.NewFS()
 	_ = files.MkdirAll("/Applications/Keynote.app", 0o755)
 	tool := catalog.Tool{Name: "keynote", Installs: catalog.HostOnly(catalog.Cask("keynote")), Bundle: "Keynote"}
 
-	got := reportOf(t, tool, &fake.State{Absent: true}, systemtest.NewRunner(t), files)
+	got := reportOf(t, tool, &fake.State{Absent: true}, localtest.NewRunner(t), files)
 
 	if got.State != catalog.StateDegraded || got.Detail != "installed, cask not installed" || got.Managed {
 		t.Fatalf("report %+v", got)
@@ -47,12 +47,12 @@ func TestStateAnAppPresentWithoutItsManagerIsDegraded(t *testing.T) {
 }
 
 func TestStateAStockShimWhoseProbeFailsIsAbsent(t *testing.T) {
-	run := systemtest.NewRunner(t)
+	run := localtest.NewRunner(t)
 	run.Paths["java"] = "/usr/bin/java"
-	run.On("java", "-version").Reply(system.Output{ExitCode: 1, Stderr: "The operation couldn't be completed. Unable to locate a Java Runtime."})
+	run.On("java", "-version").Reply(local.Output{ExitCode: 1, Stderr: "The operation couldn't be completed. Unable to locate a Java Runtime."})
 	tool := catalog.Tool{Name: "java", Installs: catalog.Anywhere(catalog.Cask("temurin")), Provides: []string{"java"}, Version: catalog.Probe{Args: []string{"java", "-version"}, Pattern: `version "([^"]+)"`}}
 
-	got := reportOf(t, tool, &fake.State{}, run, systemtest.NewFS())
+	got := reportOf(t, tool, &fake.State{}, run, localtest.NewFS())
 
 	if got.State != catalog.StateAbsent {
 		t.Fatalf("report %+v", got)
@@ -60,12 +60,12 @@ func TestStateAStockShimWhoseProbeFailsIsAbsent(t *testing.T) {
 }
 
 func TestStateAShimThatAnswersIsDegraded(t *testing.T) {
-	run := systemtest.NewRunner(t)
+	run := localtest.NewRunner(t)
 	run.Paths["java"] = "/usr/bin/java"
-	run.On("java", "-version").Reply(system.Output{Stderr: `openjdk version "21.0.5" 2024-10-15`})
+	run.On("java", "-version").Reply(local.Output{Stderr: `openjdk version "21.0.5" 2024-10-15`})
 	tool := catalog.Tool{Name: "java", Installs: catalog.Anywhere(catalog.Cask("temurin")), Provides: []string{"java"}, Version: catalog.Probe{Args: []string{"java", "-version"}, Pattern: `version "([^"]+)"`}}
 
-	got := reportOf(t, tool, &fake.State{}, run, systemtest.NewFS())
+	got := reportOf(t, tool, &fake.State{}, run, localtest.NewFS())
 
 	if got.State != catalog.StateDegraded || got.Version != "21.0.5" || got.Detail != "on PATH, not managed by cask" {
 		t.Fatalf("report %+v", got)

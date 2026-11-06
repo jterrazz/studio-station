@@ -15,7 +15,7 @@ import (
 	"github.com/jterrazz/studio-station/src/apps/contract"
 	"github.com/jterrazz/studio-station/src/catalog"
 	probe "github.com/jterrazz/studio-station/src/core/call/lanes"
-	"github.com/jterrazz/studio-station/src/system"
+	"github.com/jterrazz/studio-station/src/platform/local"
 )
 
 const (
@@ -356,7 +356,7 @@ func (s *Service) probe(ctx context.Context, p catalog.Probe) (version string, c
 	for _, a := range p.Args[1:] {
 		args = append(args, s.home(a))
 	}
-	out, err := s.h.Run.Output(ctx, system.Cmd{Name: p.Args[0], Args: args, Timeout: probeBudget})
+	out, err := s.h.Run.Output(ctx, local.Cmd{Name: p.Args[0], Args: args, Timeout: probeBudget})
 	if err != nil {
 		return "", 0, false
 	}

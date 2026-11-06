@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jterrazz/studio-station/src/system"
+	"github.com/jterrazz/studio-station/src/platform/local"
 )
 
 type Guests interface {
@@ -32,26 +32,26 @@ type GuestRan struct {
 	Stderr string `json:"stderr"`
 }
 
-func (d *Daemon) GuestExec(ctx context.Context, vm, line, stdin string) (system.Output, error) {
+func (d *Daemon) GuestExec(ctx context.Context, vm, line, stdin string) (local.Output, error) {
 	// invariant: a command inside a VM always rides the engine's own connection
 	// to it; with none up, it is refused as absent, never run another way.
 	v, err := d.find(vm)
 	if err != nil {
-		return system.Output{}, err
+		return local.Output{}, err
 	}
 	client, state := d.dialed(ctx, v)
 	if client == nil && state == StateStopped {
-		return system.Output{}, fault(VMStopped, vm+" is stopped", "station machines start "+vm)
+		return local.Output{}, fault(VMStopped, vm+" is stopped", "station machines start "+vm)
 	}
 	if client == nil {
-		return system.Output{}, fault("guest_absent", vm+"'s guest is not connected", "station machines start "+vm)
+		return local.Output{}, fault("guest_absent", vm+"'s guest is not connected", "station machines start "+vm)
 	}
 	var out, errs bytes.Buffer
 	code, err := client.Exec(ctx, line, strings.NewReader(stdin), &out, &errs)
 	if err != nil {
-		return system.Output{}, err
+		return local.Output{}, err
 	}
-	return system.Output{Stdout: out.String(), Stderr: errs.String(), ExitCode: code}, nil
+	return local.Output{Stdout: out.String(), Stderr: errs.String(), ExitCode: code}, nil
 }
 
 const guestWait = 10 * time.Second

@@ -13,8 +13,8 @@ import (
 	"github.com/jterrazz/studio-station/src/catalog"
 	"github.com/jterrazz/studio-station/src/domain/machines"
 	"github.com/jterrazz/studio-station/src/domain/services"
+	"github.com/jterrazz/studio-station/src/platform/local"
 	"github.com/jterrazz/studio-station/src/ports"
-	"github.com/jterrazz/studio-station/src/system"
 )
 
 type fakeTailnet struct {
@@ -101,7 +101,7 @@ type idleListener struct {
 	done chan struct{}
 }
 
-func (l *idleListener) Accept() (system.Conn, error) {
+func (l *idleListener) Accept() (local.Conn, error) {
 	<-l.done
 	return nil, errors.New("closed")
 }
@@ -114,12 +114,12 @@ func (l *idleListener) Close() error {
 func (l *idleListener) Port() int { return 0 }
 
 type loopback struct {
-	system.Sockets
+	local.Sockets
 	mu    sync.Mutex
 	bound []string
 }
 
-func (s *loopback) ListenTCP(ip string, _ int) (system.Listener, error) {
+func (s *loopback) ListenTCP(ip string, _ int) (local.Listener, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.bound = append(s.bound, ip)

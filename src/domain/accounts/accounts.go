@@ -12,7 +12,7 @@ import (
 	"github.com/jterrazz/studio-station/src/accounts/contract"
 	"github.com/jterrazz/studio-station/src/catalog"
 	probe "github.com/jterrazz/studio-station/src/core/call/lanes"
-	"github.com/jterrazz/studio-station/src/system"
+	"github.com/jterrazz/studio-station/src/platform/local"
 )
 
 const (
@@ -68,14 +68,14 @@ type Options struct {
 }
 
 type Service struct {
-	h    system.Host
+	h    local.Host
 	pool *probe.Pool
 	ids  contract.Identities
 	p    Ports
 	o    Options
 }
 
-func New(h system.Host, pool *probe.Pool, ids contract.Identities, p Ports, o Options) *Service {
+func New(h local.Host, pool *probe.Pool, ids contract.Identities, p Ports, o Options) *Service {
 	return &Service{h: h, pool: pool, ids: ids, p: p, o: o}
 }
 

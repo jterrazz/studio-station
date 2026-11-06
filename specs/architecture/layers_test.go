@@ -40,7 +40,7 @@ const (
 // `x/*`, a longer prefix beats a shorter. `std` is the standard library minus
 // forbiddenStd; a forbidden member is re-allowed only by its name in a row.
 func importTable() map[string][]string {
-	domain := []string{"system", "catalog", "domain/settings", "core/call/lanes", "ports", "ports/contract", "background", "background/contract", "accounts", "accounts/contract", "settings", "settings/contract",
+	domain := []string{"platform/local", "catalog", "setup", "core/call/lanes", "ports", "ports/contract", "background", "background/contract", "accounts", "accounts/contract", "settings", "settings/contract",
 		"machines", "machines/contract", "images", "setup", "setup/contract", "core/store", "core/adapter/fake", "machines/adapter/fake", std}
 	// value: what a surface reaches the use cases by: the kernel's calls,
 	// confirmations and machines, each family's model and calls.
@@ -69,10 +69,9 @@ func importTable() map[string][]string {
 		"domain/machines":            append(slices.Clone(domain), "machines", "machines/contract", "images/contract"),
 		"domain/images":              append(slices.Clone(domain), "machines/contract", "images/contract", "net/netip"),
 		"machines/adapter/ssh":       {"machines/contract", "machines/contract/contracttest", sshPkg, sshPkg + "/knownhosts", "os", "net", "net/netip", std},
-		"system":                     {std},
-		"machines/adapter/tart":      {"system", "machines", "machines/contract", "machines/contract/contracttest", "images/contract", "core/call", "net/netip", std},
-		"platform/local":             {"system", "platform/darwin", "os", "os/exec", "os/user", "net", "net/http", "syscall", "unsafe", "golang.org/x/sys/unix", std},
-		"system/systemtest":          {"system", "testing", "testing/fstest", std},
+		"machines/adapter/tart":      {"platform/local", "machines", "machines/contract", "machines/contract/contracttest", "images/contract", "core/call", "net/netip", std},
+		"platform/local":             {"platform/darwin", "os", "os/exec", "os/user", "net", "net/http", "syscall", "unsafe", "golang.org/x/sys/unix", std},
+		"platform/local/localtest":   {"platform/local", "testing", "testing/fstest", std},
 		"catalog":                    {"embed", std},
 		"page":                       {std},
 		"pages":                      {"page", "catalog", std},
@@ -114,7 +113,7 @@ func readsFiles(row, path string) bool {
 	return strings.HasPrefix(row, "core") && path == "path/filepath"
 }
 
-var testImports = []string{"testing", "testing/fstest", "flag", "os", "path/filepath", "system/systemtest"}
+var testImports = []string{"testing", "testing/fstest", "flag", "os", "path/filepath", "platform/local/localtest"}
 
 type symbolRule struct {
 	symbols []string
@@ -141,7 +140,7 @@ func symbolRules() []symbolRule {
 		{symbols: []string{"fmt.Fprint", "fmt.Fprintln", "fmt.Fprintf", "io.WriteString", "io.Copy", "io.CopyN"}, owners: []string{"output", "ui/render/*", "platform/local", "cmd/generate"}},
 		{symbols: cobraWriters(), owners: []string{"surface/cli/kit", "wire"}},
 		{symbols: []string{"time.Now", "time.Since", "time.Until", "time.Sleep", "time.After", "time.Tick", "time.NewTimer", "time.NewTicker", "time.AfterFunc"}, owners: []string{"platform/local", "platform/darwin", "machines/adapter/ssh", "ui/render/tty", "surface/tui", "surface/tui/*"}},
-		{symbols: []string{"path/filepath.Glob", "path/filepath.Walk", "path/filepath.WalkDir", "path/filepath.EvalSymlinks", "path/filepath.Abs", "io/fs.WalkDir", "io/fs.Glob"}, owners: []string{"platform/local", "system/systemtest"}},
+		{symbols: []string{"path/filepath.Glob", "path/filepath.Walk", "path/filepath.WalkDir", "path/filepath.EvalSymlinks", "path/filepath.Abs", "io/fs.WalkDir", "io/fs.Glob"}, owners: []string{"platform/local", "platform/local/localtest"}},
 		{symbols: paletteSymbols(), owners: []string{"ui/token"}},
 		{symbols: []string{lip + ".*"}, owners: []string{"ui/*"}},
 		{symbols: []string{bubble + "/key.*"}, owners: []string{"ui/organism", "ui/render/tty", "ui/render/tui"}},
@@ -430,8 +429,8 @@ func ruleSystemtest(w *world) []finding {
 	var out []finding
 	for _, f := range w.files {
 		for i, ip := range f.imports {
-			if ip == module+"/src/system/systemtest" && !f.test {
-				out = append(out, finding{"systemtest", f.at(f.syntax.Imports[i].Pos()), "system/systemtest is imported outside a _test.go file"})
+			if ip == module+"/src/platform/local/localtest" && !f.test {
+				out = append(out, finding{"systemtest", f.at(f.syntax.Imports[i].Pos()), "platform/local/localtest is imported outside a _test.go file"})
 			}
 		}
 	}
@@ -733,11 +732,11 @@ func rules() []rule {
 	return []rule{
 		{"Rows", ruleRows, "src/mutant/mutant.go", "package mutant\n", "src/mutant"},
 		{"RowsPresentation", ruleRows, "src/ui/mutantleak/leak.go", "package mutantleak\n\nimport _ \"os/exec\"\n", "src/ui/mutantleak"},
-		{"Imports", ruleImports, "src/system/mutant_imports.go", "package system\n\nimport _ \"os/exec\"\n", "src/system/mutant_imports.go"},
+		{"Imports", ruleImports, "src/catalog/mutant_imports.go", "package catalog\n\nimport _ \"os/exec\"\n", "src/catalog/mutant_imports.go"},
 		{"ImportsCore", ruleImports, "src/core/machine/mutant_imports.go", "package machine\n\nimport _ \"os\"\n", "src/core/machine/mutant_imports.go"},
 		{"ImportsCoreFiles", ruleImports, "src/core/section/mutant_imports.go", "package section\n\nimport _ \"path/filepath\"\n", "src/core/section/mutant_imports.go"},
 		{"Symbols", ruleSymbols, "src/present/mutant_symbols.go", "package present\n\nimport \"time\"\n\nfunc mutantNow() time.Time { return time.Now() }\n", "src/present/mutant_symbols.go"},
-		{"Systemtest", ruleSystemtest, "src/theme/mutant_systemtest.go", "package theme\n\nimport _ \"" + module + "/src/system/systemtest\"\n", "src/theme/mutant_systemtest.go"},
+		{"Systemtest", ruleSystemtest, "src/theme/mutant_systemtest.go", "package theme\n\nimport _ \"" + module + "/src/platform/local/localtest\"\n", "src/theme/mutant_systemtest.go"},
 		{"ANSI", ruleANSI, "src/present/mutant_ansi.go", "package present\n\nconst mutantBold = \"\\x1b[1m\"\n", "src/present/mutant_ansi.go"},
 		{"Palette", rulePalette, "src/present/mutant_palette.go", "package present\n\nconst mutantRed = \"#ff0000\"\n", "src/present/mutant_palette.go"},
 		{"Catalog", ruleCatalog, "src/catalog/mutant_catalog.go", "package catalog\n\ntype mutantEntry struct{ Check func() bool }\n\nvar mutantDefault = mutantEntry{Check: func() bool { return true }}\n", "src/catalog/mutant_catalog.go"},

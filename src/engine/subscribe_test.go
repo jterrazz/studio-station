@@ -9,8 +9,8 @@ import (
 	"time"
 
 	"github.com/jterrazz/studio-station/src/catalog"
+	"github.com/jterrazz/studio-station/src/platform/local/localtest"
 	"github.com/jterrazz/studio-station/src/setup"
-	"github.com/jterrazz/studio-station/src/system/systemtest"
 )
 
 type sleeper struct {
@@ -86,8 +86,8 @@ type streamed struct {
 // value: the nth subscription's feed reads the nth channel.
 func streamDaemon(t *testing.T, clock *manualClock, feeds ...chan any) *Daemon {
 	t.Helper()
-	files := systemtest.NewFS()
-	h := systemtest.Host(systemtest.NewRunner(t), files, systemtest.Env{}, systemtest.NewNet(), nil)
+	files := localtest.NewFS()
+	h := localtest.Host(localtest.NewRunner(t), files, localtest.Env{}, localtest.NewNet(), nil)
 	h.Clock = clock
 	paths := setup.Paths{Config: "/c", State: "/s"}
 	var n atomic.Int32
@@ -215,8 +215,8 @@ func TestASubscriberThatDoesNotReadNeverHoldsAnotherBack(t *testing.T) {
 // page's (`menubar.machine:jterrazz-mac-mini`): the machine feed streams it
 // for that machine; an unknown page is still refused.
 func TestAMachinesPageIsWatchedByItsName(t *testing.T) {
-	files := systemtest.NewFS()
-	h := systemtest.Host(systemtest.NewRunner(t), files, systemtest.Env{}, systemtest.NewNet(), nil)
+	files := localtest.NewFS()
+	h := localtest.Host(localtest.NewRunner(t), files, localtest.Env{}, localtest.NewNet(), nil)
 	h.Clock = newManualClock()
 	subjects := make(chan string, 1)
 	d := New(h, newHypervisor(), nil, &fakeMachines{}, &fakeTailnet{}, memStores(), Options{State: "/s", Here: catalog.Host,
@@ -252,8 +252,8 @@ func TestAMachinesPageIsWatchedByItsName(t *testing.T) {
 }
 
 func TestARefreshReadsAgainOnlyThePageItNames(t *testing.T) {
-	files := systemtest.NewFS()
-	h := systemtest.Host(systemtest.NewRunner(t), files, systemtest.Env{}, systemtest.NewNet(), nil)
+	files := localtest.NewFS()
+	h := localtest.Host(localtest.NewRunner(t), files, localtest.Env{}, localtest.NewNet(), nil)
 	h.Clock = newManualClock()
 	woke := make(chan string, 8)
 	reread := func(name string) Feed {

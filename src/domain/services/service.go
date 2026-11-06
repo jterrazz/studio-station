@@ -13,7 +13,7 @@ import (
 	setupcontract "github.com/jterrazz/studio-station/src/setup/contract"
 
 	"github.com/jterrazz/studio-station/src/catalog"
-	"github.com/jterrazz/studio-station/src/system"
+	"github.com/jterrazz/studio-station/src/platform/local"
 )
 
 var ErrDaemonDown = errors.New("the engine is not running")
@@ -60,13 +60,13 @@ type Stores struct {
 }
 
 type Service struct {
-	h  system.Host
+	h  local.Host
 	st Stores
 	d  Daemon
 	o  Options
 }
 
-func New(h system.Host, st Stores, d Daemon, o Options) *Service {
+func New(h local.Host, st Stores, d Daemon, o Options) *Service {
 	return &Service{h: h, st: st, d: d, o: o}
 }
 
@@ -187,7 +187,7 @@ func (s *Service) survey(ctx context.Context, vms []ports.Machine) ([]ports.Port
 	var mine []ports.Listener
 	if s.o.Listening != nil {
 		var err error
-		if mine, err = s.o.Listening(ctx); err != nil && !errors.Is(err, system.ErrNotFound) {
+		if mine, err = s.o.Listening(ctx); err != nil && !errors.Is(err, local.ErrNotFound) {
 			return nil, err
 		}
 	}

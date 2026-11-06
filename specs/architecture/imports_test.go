@@ -113,7 +113,8 @@ func isKernel(rel string) bool {
 // standard one by ioStd, a third-party one by the row's own libraries.
 // remote's adapters speak remote/api, its frames, as a family's adapter
 // speaks its model; their tests run remote/serve as the far side, and any
-// test may use its own family's fake.
+// test may use its own family's fake; a platform package's fake (local/localtest)
+// imports the package whose types it fakes.
 func allowedModule(p place, pkg, rel string, test bool) bool {
 	own := topOf(rel) == p.family && p.family != ""
 	if test && (rel == pkg || (own && rel == p.family+"/contract/contracttest") || (own && rel == p.family+"/adapter/fake") || rel == "world") {
@@ -145,7 +146,7 @@ func allowedModule(p place, pkg, rel string, test bool) bool {
 	case rowRemote:
 		return isKernel(rel) || isModel(rel) || (topOf(rel) == "remote" && !isAdapter(rel))
 	case rowPlatform:
-		return topOf(rel) == "platform" && test
+		return (topOf(rel) == "platform" && test) || pkg == rel+"/"+rel[strings.LastIndex(rel, "/")+1:]+"test"
 	case rowSurface:
 		return isCalls(rel) || isKernel(rel) || (isModel(rel) && rel != "engine") || rel == "page" || rel == "pages" || strings.HasPrefix(rel, "pages/") ||
 			rel == "output" || strings.HasPrefix(rel, "ui/render") || rel == "catalog" || topOf(rel) == "surface"
@@ -192,11 +193,10 @@ func allowedOutside(p place, ip string, test bool) bool {
 // longer true fails the gate until it is removed.
 func importsTolerated() map[string][]string {
 	return map[string][]string{
-		"engine":                {"domain/machines", "domain/power", "domain/services", "io", "io/fs", "system", "system/systemtest"},
-		"machines/adapter/ssh":  {"net", "os"},
-		"machines/adapter/tart": {"system", "system/systemtest"},
-		"platform/local":        {"platform/darwin", "system"},
-		"surface/cli/kit":       {"domain/*", "engine", "testing"},
+		"engine":               {"domain/machines", "domain/power", "domain/services", "io", "io/fs", "platform/local", "platform/local/localtest"},
+		"machines/adapter/ssh": {"net", "os"},
+		"platform/local":       {"platform/darwin"},
+		"surface/cli/kit":      {"domain/*", "engine", "testing"},
 	}
 }
 

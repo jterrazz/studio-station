@@ -14,6 +14,7 @@ import (
 	"github.com/jterrazz/studio-station/src/core/call/lanes"
 	"github.com/jterrazz/studio-station/src/domain/config"
 	pagesettings "github.com/jterrazz/studio-station/src/pages/settings"
+	"github.com/jterrazz/studio-station/src/platform/local"
 	settingsdefaults "github.com/jterrazz/studio-station/src/settings/adapter/defaults"
 	"github.com/jterrazz/studio-station/src/settings/adapter/dotfile"
 	"github.com/jterrazz/studio-station/src/settings/adapter/git"
@@ -27,7 +28,6 @@ import (
 	settingsapply "github.com/jterrazz/studio-station/src/surface/cli/settings/apply"
 	settingsdiff "github.com/jterrazz/studio-station/src/surface/cli/settings/diff"
 	settingsoff "github.com/jterrazz/studio-station/src/surface/cli/settings/off"
-	"github.com/jterrazz/studio-station/src/system"
 )
 
 func settingsCommand(env kit.Env, m machine) *cobra.Command {
@@ -113,8 +113,8 @@ func (m machine) sharedRead() git.Read {
 	if m.pool == nil {
 		return nil
 	}
-	return func(ctx context.Context, c system.Cmd) (system.Output, error) {
-		return lanes.Shared(ctx, m.pool, lanes.Command(c.Name, c.Args), func(ctx context.Context) (system.Output, error) { return m.host.Run.Output(ctx, c) })
+	return func(ctx context.Context, c local.Cmd) (local.Output, error) {
+		return lanes.Shared(ctx, m.pool, lanes.Command(c.Name, c.Args), func(ctx context.Context) (local.Output, error) { return m.host.Run.Output(ctx, c) })
 	}
 }
 

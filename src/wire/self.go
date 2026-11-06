@@ -9,10 +9,10 @@ import (
 	coreadaptermacos "github.com/jterrazz/studio-station/src/core/adapter/macos"
 	"github.com/jterrazz/studio-station/src/core/contract"
 	coremachine "github.com/jterrazz/studio-station/src/core/machine"
-	"github.com/jterrazz/studio-station/src/system"
+	"github.com/jterrazz/studio-station/src/platform/local"
 )
 
-func selfOf(h system.Host) contract.Self {
+func selfOf(h local.Host) contract.Self {
 	if h.Env.GOOS() == "linux" {
 		return coreadapterlinux.New(h.Env.Hostname())
 	}

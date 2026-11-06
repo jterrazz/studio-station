@@ -8,7 +8,7 @@ import (
 
 	"github.com/jterrazz/studio-station/src/accounts/contract"
 	"github.com/jterrazz/studio-station/src/catalog"
-	"github.com/jterrazz/studio-station/src/system"
+	"github.com/jterrazz/studio-station/src/platform/local"
 )
 
 const (
@@ -33,13 +33,13 @@ type Options struct {
 }
 
 type Service struct {
-	h      system.Host
+	h      local.Host
 	files  fs.FS
 	source contract.SecretSource
 	o      Options
 }
 
-func New(h system.Host, files fs.FS, source contract.SecretSource, o Options) *Service {
+func New(h local.Host, files fs.FS, source contract.SecretSource, o Options) *Service {
 	return &Service{h: h, files: files, source: source, o: o}
 }
 

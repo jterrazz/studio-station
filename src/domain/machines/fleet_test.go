@@ -14,13 +14,13 @@ import (
 
 	"github.com/jterrazz/studio-station/src/catalog"
 	"github.com/jterrazz/studio-station/src/domain/machines"
-	"github.com/jterrazz/studio-station/src/system"
-	"github.com/jterrazz/studio-station/src/system/systemtest"
+	"github.com/jterrazz/studio-station/src/platform/local"
+	"github.com/jterrazz/studio-station/src/platform/local/localtest"
 )
 
 func fleetAsking(t *testing.T, ask func(ctx context.Context, macs []string, answered func(string, machines.HostView))) *machines.Service {
 	t.Helper()
-	h := system.Host{Run: systemtest.NewRunner(t), FS: systemtest.NewFS(), Env: systemtest.Env{HomeDir: "/home"}, Net: systemtest.NewNet(), Clock: &systemtest.Clock{At: time.Unix(0, 0)}}
+	h := local.Host{Run: localtest.NewRunner(t), FS: localtest.NewFS(), Env: localtest.Env{HomeDir: "/home"}, Net: localtest.NewNet(), Clock: &localtest.Clock{At: time.Unix(0, 0)}}
 	prefs := corefake.NewPreferences()
 	p := machines.Prefs{Name: setupcontract.Name(prefs), Hosts: machinescontract.Macs(prefs), VMUser: machinescontract.VMUser(prefs)}
 	if err := p.Name.Set("laptop"); err != nil {

@@ -13,8 +13,8 @@ import (
 	"github.com/jterrazz/studio-station/src/catalog"
 	"github.com/jterrazz/studio-station/src/domain/machines"
 	"github.com/jterrazz/studio-station/src/domain/services"
+	"github.com/jterrazz/studio-station/src/platform/local"
 	"github.com/jterrazz/studio-station/src/ports"
-	"github.com/jterrazz/studio-station/src/system"
 )
 
 const (
@@ -29,7 +29,7 @@ type svc struct {
 	ip        string
 	process   string
 	st        services.State
-	listeners []system.Listener
+	listeners []local.Listener
 	served    bool
 	detail    string
 	serveNote string
@@ -228,7 +228,7 @@ func (d *Daemon) publish(ctx context.Context, s *svc) {
 		d.saveLeases()
 	}
 	lease := d.leases[i]
-	local, err := d.h.Sockets.ListenTCP(services.LocalHost, lease.HostPort)
+	held, err := d.h.Sockets.ListenTCP(services.LocalHost, lease.HostPort)
 	if err != nil {
 		if lease.Pinned {
 			s.detail, s.retryAt = "host port "+strconv.Itoa(lease.HostPort)+" is busy", d.h.Clock.Now().Add(busyRetry)
@@ -245,14 +245,14 @@ func (d *Daemon) publish(ctx context.Context, s *svc) {
 		lease.HostPort = moved.HostPort
 		d.leases[i] = lease
 		d.saveLeases()
-		if local, err = d.h.Sockets.ListenTCP(services.LocalHost, lease.HostPort); err != nil {
+		if held, err = d.h.Sockets.ListenTCP(services.LocalHost, lease.HostPort); err != nil {
 			s.detail = err.Error()
 			return
 		}
 		s.detail = "host port " + strconv.Itoa(was) + " was busy: now " + strconv.Itoa(lease.HostPort)
 	}
-	s.listeners = []system.Listener{local}
-	go d.carry(ctx, s, local)
+	s.listeners = []local.Listener{held}
+	go d.carry(ctx, s, held)
 	if lease.HTTP == nil {
 		http := d.detectHTTP(ctx, s)
 		lease.HTTP = &http
@@ -325,7 +325,7 @@ func (d *Daemon) clientLocked(vm string) Guest {
 	return nil
 }
 
-func (d *Daemon) carry(ctx context.Context, s *svc, l system.Listener) {
+func (d *Daemon) carry(ctx context.Context, s *svc, l local.Listener) {
 	for {
 		conn, err := l.Accept()
 		if err != nil {

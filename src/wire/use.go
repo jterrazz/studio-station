@@ -12,16 +12,16 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/jterrazz/studio-station/src/domain/machines"
+	"github.com/jterrazz/studio-station/src/platform/local"
 	"github.com/jterrazz/studio-station/src/surface/cli/kit"
 	usecmd "github.com/jterrazz/studio-station/src/surface/cli/use"
-	"github.com/jterrazz/studio-station/src/system"
 )
 
 // value: each terminal's choice, one file per STATION_TERMINAL under
 // <state>/use (SPEC §8.2).
 type terminalUses struct {
-	fs       system.FS
-	clock    system.Clock
+	fs       local.FS
+	clock    local.Clock
 	dir      string
 	terminal string
 }

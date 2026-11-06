@@ -10,8 +10,6 @@ import (
 	"strconv"
 	"sync"
 	"time"
-
-	"github.com/jterrazz/studio-station/src/system"
 )
 
 type sockets struct{}
@@ -21,7 +19,7 @@ type listener struct {
 	sock string
 }
 
-func (l listener) Accept() (system.Conn, error) { return l.l.Accept() }
+func (l listener) Accept() (Conn, error) { return l.l.Accept() }
 func (l listener) Close() error {
 	err := l.l.Close()
 	if l.sock != "" {
@@ -66,7 +64,7 @@ func viaShort(path string, call func(string) error) error {
 	return call(path)
 }
 
-func (sockets) ListenUnix(path string) (system.Listener, error) {
+func (sockets) ListenUnix(path string) (Listener, error) {
 	var l net.Listener
 	if err := viaShort(path, func(p string) (err error) {
 		l, err = net.Listen("unix", p)
@@ -85,7 +83,7 @@ func (sockets) ListenUnix(path string) (system.Listener, error) {
 	return listener{l: l, sock: sock}, nil
 }
 
-func (sockets) DialUnix(ctx context.Context, path string, timeout time.Duration) (system.Conn, error) {
+func (sockets) DialUnix(ctx context.Context, path string, timeout time.Duration) (Conn, error) {
 	d := net.Dialer{Timeout: timeout}
 	var conn net.Conn
 	err := viaShort(path, func(p string) (err error) {
@@ -97,10 +95,10 @@ func (sockets) DialUnix(ctx context.Context, path string, timeout time.Duration)
 
 // invariant: no code path binds every interface: an empty or unspecified ip is
 // refused here, the one place a TCP listener is made.
-func (sockets) ListenTCP(ip string, port int) (system.Listener, error) {
+func (sockets) ListenTCP(ip string, port int) (Listener, error) {
 	parsed := net.ParseIP(ip)
 	if ip == "" || parsed == nil || parsed.IsUnspecified() {
-		return nil, system.ErrWildcard
+		return nil, ErrWildcard
 	}
 	l, err := net.Listen("tcp", net.JoinHostPort(ip, strconv.Itoa(port)))
 	if err != nil {
@@ -134,9 +132,9 @@ type halfCloser interface{ CloseWrite() error }
 // invariant: each direction ends on its own: the end of one side's bytes
 // half-closes the other's write, so a request's EOF never cuts its response;
 // both close once both directions ended.
-func (sockets) Join(a, b system.Conn) {
+func (sockets) Join(a, b Conn) {
 	var wg sync.WaitGroup
-	carry := func(dst, src system.Conn) {
+	carry := func(dst, src Conn) {
 		defer wg.Done()
 		_, _ = io.Copy(dst, src)
 		if h, ok := dst.(halfCloser); ok {

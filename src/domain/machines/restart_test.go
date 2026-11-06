@@ -14,9 +14,9 @@ import (
 
 	"github.com/jterrazz/studio-station/src/catalog"
 	"github.com/jterrazz/studio-station/src/domain/machines"
+	"github.com/jterrazz/studio-station/src/platform/local"
+	"github.com/jterrazz/studio-station/src/platform/local/localtest"
 	"github.com/jterrazz/studio-station/src/setup"
-	"github.com/jterrazz/studio-station/src/system"
-	"github.com/jterrazz/studio-station/src/system/systemtest"
 )
 
 type noTailnet struct{}
@@ -25,11 +25,11 @@ func (noTailnet) Peers(context.Context) (map[string]machines.Node, error) {
 	return nil, nil
 }
 
-func service(t *testing.T, run system.Runner, answers func(context.Context, string) bool) (*machines.Service, *systemtest.Clock) {
+func service(t *testing.T, run local.Runner, answers func(context.Context, string) bool) (*machines.Service, *localtest.Clock) {
 	t.Helper()
-	files := systemtest.NewFS()
-	clock := &systemtest.Clock{At: time.Unix(0, 0)}
-	h := system.Host{Run: run, FS: files, Env: systemtest.Env{HomeDir: "/home"}, Net: systemtest.NewNet(), Clock: clock}
+	files := localtest.NewFS()
+	clock := &localtest.Clock{At: time.Unix(0, 0)}
+	h := local.Host{Run: run, FS: files, Env: localtest.Env{HomeDir: "/home"}, Net: localtest.NewNet(), Clock: clock}
 	paths := setup.Paths{Config: "/config", State: "/state"}
 	prefs := corefake.NewPreferences()
 	p := machines.Prefs{Name: setupcontract.Name(prefs), Hosts: machinescontract.Macs(prefs), VMUser: machinescontract.VMUser(prefs)}
@@ -58,9 +58,9 @@ func (a *answering) answers(context.Context, string) bool {
 	return up
 }
 
-func restarting(t *testing.T, polls ...bool) (*machines.Service, *systemtest.Clock) {
+func restarting(t *testing.T, polls ...bool) (*machines.Service, *localtest.Clock) {
 	t.Helper()
-	return service(t, systemtest.NewRunner(t), (&answering{polls: polls}).answers)
+	return service(t, localtest.NewRunner(t), (&answering{polls: polls}).answers)
 }
 
 func TestRestartWaitsForTheHostToGoAwayAndComeBack(t *testing.T) {

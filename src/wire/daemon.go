@@ -30,12 +30,12 @@ import (
 	"github.com/jterrazz/studio-station/src/machines/adapter/dial"
 	machinescontract "github.com/jterrazz/studio-station/src/machines/contract"
 	pageawake "github.com/jterrazz/studio-station/src/pages/awake"
+	"github.com/jterrazz/studio-station/src/platform/local"
 	portscontract "github.com/jterrazz/studio-station/src/ports/contract"
 	"github.com/jterrazz/studio-station/src/remote"
 	"github.com/jterrazz/studio-station/src/remote/api"
 	enginerun "github.com/jterrazz/studio-station/src/surface/cli/engine/run"
 	"github.com/jterrazz/studio-station/src/surface/cli/kit"
-	"github.com/jterrazz/studio-station/src/system"
 	"github.com/jterrazz/studio-station/src/ui/token"
 )
 
@@ -189,12 +189,12 @@ func (d hostDaemon) VMs(ctx context.Context) (map[string]machines.DaemonVM, erro
 	return out, nil
 }
 
-func (d hostDaemon) GuestExec(ctx context.Context, vm, line, stdin string) (system.Output, error) {
+func (d hostDaemon) GuestExec(ctx context.Context, vm, line, stdin string) (local.Output, error) {
 	var ran process.ExecOut
 	if err := d.c.do(ctx, process.GuestExec, process.ExecIn{VM: vm, Line: line, Stdin: stdin}, &ran); err != nil {
-		return system.Output{}, downAs(err, machines.ErrDaemonDown)
+		return local.Output{}, downAs(err, machines.ErrDaemonDown)
 	}
-	return system.Output{Stdout: ran.Stdout, Stderr: ran.Stderr, ExitCode: ran.Code}, nil
+	return local.Output{Stdout: ran.Stdout, Stderr: ran.Stderr, ExitCode: ran.Code}, nil
 }
 
 func (d hostDaemon) Do(ctx context.Context, op, vm string) error {

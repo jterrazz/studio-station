@@ -11,7 +11,7 @@ import (
 	"github.com/jterrazz/studio-station/src/catalog"
 	"github.com/jterrazz/studio-station/src/domain/machines"
 	"github.com/jterrazz/studio-station/src/domain/power"
-	"github.com/jterrazz/studio-station/src/system"
+	"github.com/jterrazz/studio-station/src/platform/local"
 )
 
 const JobBudget = startWait
@@ -48,7 +48,7 @@ type ControlOptions struct {
 type Control struct {
 	// value: station engine stop and start: the one engine of this Mac, its
 	// launchd agent and the VMs it supervises.
-	h   system.Host
+	h   local.Host
 	c   Peer
 	m   ControlMachines
 	hv  Hypervisor
@@ -56,7 +56,7 @@ type Control struct {
 	o   ControlOptions
 }
 
-func NewControl(h system.Host, c Peer, m ControlMachines, hv Hypervisor, job Job, o ControlOptions) *Control {
+func NewControl(h local.Host, c Peer, m ControlMachines, hv Hypervisor, job Job, o ControlOptions) *Control {
 	return &Control{h: h, c: c, m: m, hv: hv, job: job, o: o}
 }
 

@@ -11,7 +11,7 @@ import (
 
 	background "github.com/jterrazz/studio-station/src/background/contract"
 	"github.com/jterrazz/studio-station/src/catalog"
-	"github.com/jterrazz/studio-station/src/system"
+	"github.com/jterrazz/studio-station/src/platform/local"
 )
 
 type Options struct {
@@ -55,7 +55,7 @@ type Daemon interface {
 	Reserve(ctx context.Context, vm string, port int, profile string) (Reserved, error)
 	// invariant: a command inside a VM of this Mac rides the engine's one
 	// connection to it; station reaches a VM no other way.
-	GuestExec(ctx context.Context, vm, line, stdin string) (system.Output, error)
+	GuestExec(ctx context.Context, vm, line, stdin string) (local.Output, error)
 }
 
 type Releaser interface {
@@ -68,7 +68,7 @@ type Images interface {
 }
 
 type Service struct {
-	h      system.Host
+	h      local.Host
 	engine contract.Hypervisor
 	p      Prefs
 	recs   contract.MachineStore
@@ -106,7 +106,7 @@ func (s *Service) prefs() (prefsView, error) {
 	return v, nil
 }
 
-func New(h system.Host, e contract.Hypervisor, p Prefs, vms contract.MachineStore, nodes Nodes, img Images, d Daemon, rel Releaser, o Options) *Service {
+func New(h local.Host, e contract.Hypervisor, p Prefs, vms contract.MachineStore, nodes Nodes, img Images, d Daemon, rel Releaser, o Options) *Service {
 	return &Service{h: h, engine: e, p: p, recs: vms, nodes: nodes, img: img, daemon: d, rel: rel, o: o}
 }
 

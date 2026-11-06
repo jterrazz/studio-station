@@ -26,7 +26,6 @@ import (
 	"github.com/jterrazz/studio-station/src/surface/cli"
 	"github.com/jterrazz/studio-station/src/surface/cli/kit"
 	shellcmd "github.com/jterrazz/studio-station/src/surface/cli/shell"
-	"github.com/jterrazz/studio-station/src/system"
 	"github.com/jterrazz/studio-station/src/ui/help"
 	"github.com/jterrazz/studio-station/src/ui/token"
 )
@@ -249,11 +248,11 @@ type machine struct {
 	world *worldMac
 	// value: the host and power door before any world wraps them, from which
 	// another Mac of the world is built.
-	raw       system.Host
+	raw       local.Host
 	door      local.Power
 	far       *late
 	pool      *probe.Pool
-	host      system.Host
+	host      local.Host
 	powerPort awakecontract.Power
 	profile   coremachine.Profile
 	vars      map[string]string
@@ -263,7 +262,7 @@ type machine struct {
 	where     page.Context
 }
 
-func resolve(raw system.Host, door local.Power, vars map[string]string, world *worldMac) machine {
+func resolve(raw local.Host, door local.Power, vars map[string]string, world *worldMac) machine {
 	h := raw
 	if world != nil {
 		h = world.host(raw)

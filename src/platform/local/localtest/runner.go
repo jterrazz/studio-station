@@ -1,4 +1,4 @@
-package systemtest
+package localtest
 
 import (
 	"context"
@@ -8,7 +8,7 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/jterrazz/studio-station/src/system"
+	"github.com/jterrazz/studio-station/src/platform/local"
 )
 
 type Runner struct {
@@ -17,16 +17,16 @@ type Runner struct {
 	script  []*Call
 	Paths   map[string]string
 	live    map[int]bool
-	Calls   []system.Cmd
-	Signals []system.Sig
+	Calls   []local.Cmd
+	Signals []local.Sig
 }
 
 type Call struct {
 	name   string
 	args   []string
-	output system.Output
+	output local.Output
 	err    error
-	answer func() system.Output
+	answer func() local.Output
 	Seen   int
 }
 
@@ -40,12 +40,12 @@ func (r *Runner) On(name string, args ...string) *Call {
 	return c
 }
 
-func (c *Call) Reply(o system.Output) *Call {
+func (c *Call) Reply(o local.Output) *Call {
 	c.output = o
 	return c
 }
 
-func (c *Call) Answer(f func() system.Output) *Call {
+func (c *Call) Answer(f func() local.Output) *Call {
 	// value: f answers each call in turn, for a tool whose answer follows
 	// what was done to it before.
 	c.answer = f
@@ -57,7 +57,7 @@ func (c *Call) Fail(err error) *Call {
 	return c
 }
 
-func (r *Runner) answer(c system.Cmd) *Call {
+func (r *Runner) answer(c local.Cmd) *Call {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	r.Calls = append(r.Calls, c)
@@ -74,12 +74,12 @@ func (r *Runner) answer(c system.Cmd) *Call {
 	return &Call{}
 }
 
-func (r *Runner) Output(_ context.Context, c system.Cmd) (system.Output, error) {
+func (r *Runner) Output(_ context.Context, c local.Cmd) (local.Output, error) {
 	call := r.answer(c)
 	return call.output, call.err
 }
 
-func (r *Runner) Attach(_ context.Context, c system.Cmd, _ system.Stream) (system.Attached, error) {
+func (r *Runner) Attach(_ context.Context, c local.Cmd, _ local.Stream) (local.Attached, error) {
 	call := r.answer(c)
 	last := ""
 	for _, line := range strings.Split(call.output.Stderr, "\n") {
@@ -87,10 +87,10 @@ func (r *Runner) Attach(_ context.Context, c system.Cmd, _ system.Stream) (syste
 			last = line
 		}
 	}
-	return system.Attached{ExitCode: call.output.ExitCode, LastStderr: last}, call.err
+	return local.Attached{ExitCode: call.output.ExitCode, LastStderr: last}, call.err
 }
 
-func (r *Runner) Start(c system.Cmd, _ string) (int, error) {
+func (r *Runner) Start(c local.Cmd, _ string) (int, error) {
 	call := r.answer(c)
 	if call.err != nil {
 		return 0, call.err
@@ -125,7 +125,7 @@ func (r *Runner) Exit(pid int) {
 	delete(r.live, pid)
 }
 
-func (r *Runner) Signal(pid int, sig system.Sig) error {
+func (r *Runner) Signal(pid int, sig local.Sig) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	if !r.live[pid] {

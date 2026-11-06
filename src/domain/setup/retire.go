@@ -10,7 +10,7 @@ import (
 
 	"github.com/jterrazz/studio-station/src/accounts"
 	"github.com/jterrazz/studio-station/src/catalog"
-	"github.com/jterrazz/studio-station/src/system"
+	"github.com/jterrazz/studio-station/src/platform/local"
 )
 
 const (
@@ -84,7 +84,7 @@ func (s *Service) retire(ctx context.Context) (rows []Step, background bool, err
 		switch err := s.vault.Forget(ctx, account); {
 		case err == nil:
 			left = true
-		case errors.Is(err, accounts.ErrNotKept), errors.Is(err, system.ErrNotFound):
+		case errors.Is(err, accounts.ErrNotKept), errors.Is(err, local.ErrNotFound):
 		default:
 			return nil, false, err
 		}
@@ -106,7 +106,7 @@ func (s *Service) migrateStores(ctx context.Context) error {
 }
 
 func (s *Service) stop(ctx context.Context, pid int) error {
-	if err := s.h.Run.Signal(pid, system.SigTerm); err != nil {
+	if err := s.h.Run.Signal(pid, local.SigTerm); err != nil {
 		return err
 	}
 	for range 20 {
@@ -117,5 +117,5 @@ func (s *Service) stop(ctx context.Context, pid int) error {
 			return err
 		}
 	}
-	return s.h.Run.Signal(pid, system.SigKill)
+	return s.h.Run.Signal(pid, local.SigKill)
 }

@@ -10,9 +10,9 @@ import (
 	"github.com/jterrazz/studio-station/src/engine"
 	"github.com/jterrazz/studio-station/src/engine/process"
 	"github.com/jterrazz/studio-station/src/page"
+	"github.com/jterrazz/studio-station/src/platform/local"
 	"github.com/jterrazz/studio-station/src/surface/cli/kit"
 	"github.com/jterrazz/studio-station/src/surface/tui"
-	"github.com/jterrazz/studio-station/src/system"
 	"github.com/jterrazz/studio-station/src/ui/token"
 )
 
@@ -112,26 +112,26 @@ func skipped(stdout string) []string {
 	return out
 }
 
-func (b *binary) run(ctx context.Context, args []string) (system.Output, error) {
+func (b *binary) run(ctx context.Context, args []string) (local.Output, error) {
 	return b.runIn(ctx, args, "")
 }
 
-func (b *binary) runIn(ctx context.Context, args []string, stdin string) (system.Output, error) {
-	return b.m.host.Run.Output(ctx, system.Cmd{Name: b.m.host.Env.Executable(), Args: args, Env: []string{"STATION_TERMINAL="}, Stdin: stdin})
+func (b *binary) runIn(ctx context.Context, args []string, stdin string) (local.Output, error) {
+	return b.m.host.Run.Output(ctx, local.Cmd{Name: b.m.host.Env.Executable(), Args: args, Env: []string{"STATION_TERMINAL="}, Stdin: stdin})
 }
 
 func (b *binary) open(ctx context.Context, target string) error {
-	return b.exec(ctx, system.Cmd{Name: "open", Args: []string{target}})
+	return b.exec(ctx, local.Cmd{Name: "open", Args: []string{target}})
 }
 
 // invariant: a new terminal is Terminal.app told to run the line, as the
 // menu bar's Open in Terminal does.
 func (b *binary) terminal(ctx context.Context, line string) error {
 	quoted := strings.ReplaceAll(strings.ReplaceAll(line, `\`, `\\`), `"`, `\"`)
-	return b.exec(ctx, system.Cmd{Name: "osascript", Args: []string{"-e", `tell application "Terminal" to do script "` + quoted + `"`, "-e", `tell application "Terminal" to activate`}})
+	return b.exec(ctx, local.Cmd{Name: "osascript", Args: []string{"-e", `tell application "Terminal" to do script "` + quoted + `"`, "-e", `tell application "Terminal" to activate`}})
 }
 
-func (b *binary) exec(ctx context.Context, c system.Cmd) error {
+func (b *binary) exec(ctx context.Context, c local.Cmd) error {
 	out, err := b.m.host.Run.Output(ctx, c)
 	if err != nil {
 		return err

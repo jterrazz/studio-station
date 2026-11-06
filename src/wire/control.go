@@ -10,11 +10,11 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/jterrazz/studio-station/src/engine"
+	"github.com/jterrazz/studio-station/src/platform/local"
 	enginecmd "github.com/jterrazz/studio-station/src/surface/cli/engine"
 	enginestart "github.com/jterrazz/studio-station/src/surface/cli/engine/start"
 	enginestop "github.com/jterrazz/studio-station/src/surface/cli/engine/stop"
 	"github.com/jterrazz/studio-station/src/surface/cli/kit"
-	"github.com/jterrazz/studio-station/src/system"
 )
 
 func (m machine) control() *engine.Control {
@@ -34,7 +34,7 @@ func (m machine) stopMarks() engine.StopMarks {
 // invariant: the last stop the owner asked, kept beside the engine's socket
 // while it is stopped; a file that cannot be read is no stop kept.
 type fileMarks struct {
-	fs   system.FS
+	fs   local.FS
 	file string
 }
 

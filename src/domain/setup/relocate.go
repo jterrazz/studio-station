@@ -11,7 +11,7 @@ import (
 
 	"github.com/jterrazz/studio-station/src/catalog"
 	"github.com/jterrazz/studio-station/src/domain/storage"
-	"github.com/jterrazz/studio-station/src/system"
+	"github.com/jterrazz/studio-station/src/platform/local"
 )
 
 const (
@@ -219,7 +219,7 @@ func (s *Service) pending(st catalog.Stray) bool {
 }
 
 func (s *Service) busy(ctx context.Context, process string) bool {
-	out, err := s.h.Run.Output(ctx, system.Cmd{Name: "pgrep", Args: []string{"-x", process}, Timeout: busyBudget})
+	out, err := s.h.Run.Output(ctx, local.Cmd{Name: "pgrep", Args: []string{"-x", process}, Timeout: busyBudget})
 	return err == nil && out.ExitCode == 0
 }
 
@@ -274,7 +274,7 @@ func (s *Service) rename(from, to string) error {
 		}
 	}
 	err := s.h.FS.Rename(from, to)
-	if errors.Is(err, system.ErrCrossDevice) {
+	if errors.Is(err, local.ErrCrossDevice) {
 		return &CrossDeviceError{From: s.o.Expand.Display(from), To: s.o.Expand.Display(to)}
 	}
 	return err

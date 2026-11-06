@@ -11,14 +11,14 @@ import (
 	"github.com/jterrazz/studio-station/src/domain/power"
 	"github.com/jterrazz/studio-station/src/engine"
 	"github.com/jterrazz/studio-station/src/engine/process"
+	"github.com/jterrazz/studio-station/src/platform/local"
 	"github.com/jterrazz/studio-station/src/remote/api"
 	"github.com/jterrazz/studio-station/src/surface/cli/words"
-	"github.com/jterrazz/studio-station/src/system"
 )
 
 // value: a client of the station.api/v2 server at file: this Mac's engine
 // socket, or inside a VM the socket its engine offers there.
-func socketAPI(h system.Host, file string) engineAPI {
+func socketAPI(h local.Host, file string) engineAPI {
 	return engineAPI{c: api.NewClient(func(ctx context.Context) (io.ReadWriteCloser, error) {
 		return h.Sockets.DialUnix(ctx, file, api.ConnectBudget)
 	})}

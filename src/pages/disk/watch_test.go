@@ -14,7 +14,7 @@ import (
 	"github.com/jterrazz/studio-station/src/disk"
 	"github.com/jterrazz/studio-station/src/domain/storage"
 	"github.com/jterrazz/studio-station/src/page"
-	"github.com/jterrazz/studio-station/src/system/systemtest"
+	"github.com/jterrazz/studio-station/src/platform/local/localtest"
 )
 
 type clock struct{}
@@ -29,7 +29,7 @@ func (clock) Sleep(ctx context.Context, d time.Duration) error {
 }
 
 // value: a disk that answers its roots one at a time, 10 ms apart.
-type staggered struct{ systemtest.Disk }
+type staggered struct{ localtest.Disk }
 
 func (f staggered) Sizes(ctx context.Context, roots []string, each func(int, int64)) {
 	for i, root := range roots {
@@ -61,7 +61,7 @@ func shape(p page.Page) (ids []string, rows map[string]int) {
 }
 
 func TestNoSectionFlickers(t *testing.T) {
-	fs := staggered{Disk: systemtest.Disk{FS: systemtest.NewFS()}}
+	fs := staggered{Disk: localtest.Disk{FS: localtest.NewFS()}}
 	categories := []catalog.Category{catalog.CategoryPackageManagers, catalog.CategoryRuntimes, catalog.CategoryAIApps, catalog.CategoryAgentSkills}
 	tools := make([]catalog.Tool, 0, 40)
 	names := make([]string, 0, 40)
@@ -74,7 +74,7 @@ func TestNoSectionFlickers(t *testing.T) {
 	}
 	pool := probe.NewPool(context.Background(), clock{}, 4, 1)
 	defer pool.Close()
-	host := systemtest.Host(systemtest.NewRunner(t), fs.FS, systemtest.Env{}, systemtest.NewNet(), &systemtest.Clock{})
+	host := localtest.Host(localtest.NewRunner(t), fs.FS, localtest.Env{}, localtest.NewNet(), &localtest.Clock{})
 	host.FS, host.Clock = fs, clock{}
 	s := storage.New(host, tools, storage.Options{Disk: fs, Pool: pool, Here: catalog.Host, Expand: storage.Expander{Home: "/h"}, Budget: 5 * time.Second, Inventory: inventory{names: names}})
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)

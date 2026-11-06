@@ -11,7 +11,7 @@ import (
 	"github.com/jterrazz/studio-station/src/awake"
 	"github.com/jterrazz/studio-station/src/awake/contract"
 	"github.com/jterrazz/studio-station/src/core/machine"
-	"github.com/jterrazz/studio-station/src/system"
+	"github.com/jterrazz/studio-station/src/platform/local"
 )
 
 const (
@@ -124,7 +124,7 @@ type Options struct {
 
 type Machine struct {
 	port  Port
-	clock system.Clock
+	clock local.Clock
 	o     Options
 
 	mu      sync.Mutex
@@ -179,7 +179,7 @@ func (absent) Watch(context.Context) <-chan awake.Event {
 	return out
 }
 
-func New(port Port, clock system.Clock, o Options) *Machine {
+func New(port Port, clock local.Clock, o Options) *Machine {
 	if port == nil {
 		port = absent{}
 	}

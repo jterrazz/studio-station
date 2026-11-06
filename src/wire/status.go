@@ -29,7 +29,6 @@ import (
 	settingscontract "github.com/jterrazz/studio-station/src/settings/contract"
 	"github.com/jterrazz/studio-station/src/surface/cli/kit"
 	overviewcmd "github.com/jterrazz/studio-station/src/surface/cli/overview"
-	"github.com/jterrazz/studio-station/src/system"
 )
 
 func overviewCommand(env kit.Env, m machine) *cobra.Command {
@@ -186,7 +185,7 @@ func diskOf(report storage.Report) overviewcalls.DiskReading[storage.StrayReport
 
 // value: the machine's files under its root, as the Linux Meter reads /proc.
 type rootFS struct {
-	fs   system.FS
+	fs   local.FS
 	root string
 }
 

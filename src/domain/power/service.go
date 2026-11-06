@@ -8,7 +8,7 @@ import (
 
 	"github.com/jterrazz/studio-station/src/awake/contract"
 	"github.com/jterrazz/studio-station/src/catalog"
-	"github.com/jterrazz/studio-station/src/system"
+	"github.com/jterrazz/studio-station/src/platform/local"
 )
 
 const (
@@ -42,7 +42,7 @@ type ServiceOptions struct {
 }
 
 type Service struct {
-	h system.Host
+	h local.Host
 	p Ports
 	o ServiceOptions
 }
@@ -63,7 +63,7 @@ func (e *DaemonDownError) Error() string {
 	return "the engine is not installed on " + e.Host
 }
 
-func NewService(h system.Host, p Ports, o ServiceOptions) *Service { return &Service{h: h, p: p, o: o} }
+func NewService(h local.Host, p Ports, o ServiceOptions) *Service { return &Service{h: h, p: p, o: o} }
 
 func (s *Service) Check() error {
 	if s.o.Here != catalog.Host {

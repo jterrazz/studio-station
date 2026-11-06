@@ -14,13 +14,13 @@ import (
 	imagescontract "github.com/jterrazz/studio-station/src/images/contract"
 	machinesjsonfile "github.com/jterrazz/studio-station/src/machines/adapter/jsonfile"
 	machinescontract "github.com/jterrazz/studio-station/src/machines/contract"
+	"github.com/jterrazz/studio-station/src/platform/local"
 	portsjsonfile "github.com/jterrazz/studio-station/src/ports/adapter/jsonfile"
 	portscontract "github.com/jterrazz/studio-station/src/ports/contract"
 	settingsjsonfile "github.com/jterrazz/studio-station/src/settings/adapter/jsonfile"
 	settingscontract "github.com/jterrazz/studio-station/src/settings/contract"
 	"github.com/jterrazz/studio-station/src/setup"
 	setupcontract "github.com/jterrazz/studio-station/src/setup/contract"
-	"github.com/jterrazz/studio-station/src/system"
 )
 
 // invariant: the preference groups in the order settings.json writes them,
@@ -84,7 +84,7 @@ type stores struct {
 	applied      appliedStore
 }
 
-func newStores(files system.FS, p setup.Paths) *stores {
+func newStores(files local.FS, p setup.Paths) *stores {
 	return &stores{
 		prefs:        corejsonfile.NewPreferences(files, p.Config, preferenceGroups()).Renaming(machinescontract.RetiredGroupMacs, machinescontract.GroupMacs),
 		machines:     machinesjsonfile.New(files, filepath.Join(p.State, "vms")),

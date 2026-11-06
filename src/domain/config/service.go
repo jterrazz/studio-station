@@ -8,8 +8,8 @@ import (
 
 	"github.com/jterrazz/studio-station/src/catalog"
 	schedule "github.com/jterrazz/studio-station/src/core/call/lanes"
+	"github.com/jterrazz/studio-station/src/platform/local"
 	settingscontract "github.com/jterrazz/studio-station/src/settings/contract"
-	"github.com/jterrazz/studio-station/src/system"
 )
 
 const (
@@ -25,14 +25,14 @@ type Options struct {
 }
 
 type Service struct {
-	h        system.Host
+	h        local.Host
 	items    []catalog.ConfigItem
 	byName   map[string]catalog.ConfigItem
 	o        Options
 	appliers settingscontract.Appliers
 }
 
-func New(h system.Host, items []catalog.ConfigItem, o Options) *Service {
+func New(h local.Host, items []catalog.ConfigItem, o Options) *Service {
 	byName := make(map[string]catalog.ConfigItem, len(items))
 	for _, it := range items {
 		byName[it.Name] = it
