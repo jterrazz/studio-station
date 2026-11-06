@@ -11,7 +11,7 @@ runs:
       stdin: |
           see Stop everything on
           see linux-1 will stop; its disk is kept
-          see Awake ends, and the engine stays stopped until station engine start or the next login
+          see Awake ends; the engine stays off until you run station engine start or log in again
           send \r
       exit: 0
       stdout: |
