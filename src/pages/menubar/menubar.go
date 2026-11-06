@@ -23,13 +23,14 @@ import (
 const ID page.ID = "menubar"
 
 const (
-	ActionNewVM       = "new-vm"
-	ActionOpenStation = "open-station"
-	ActionStopAll     = "stop-all"
-	ActionStart       = "start"
-	ActionPowerAwake  = "power-awake"
-	ActionPowerSleep  = "power-sleep"
-	ActionUpdateAll   = "update-all"
+	ActionNewVM        = "new-vm"
+	ActionOpenStation  = "open-station"
+	ActionStopAll      = "stop-all"
+	ActionStart        = "start"
+	ActionPowerAwake   = "power-awake"
+	ActionPowerSleep   = "power-sleep"
+	ActionUpdateAll    = "update-all"
+	ActionOpenAccounts = "open-accounts"
 
 	SectionNeeds    = "needs-you"
 	SectionMachines = "machines"
@@ -56,7 +57,7 @@ func Page(r Reading, here page.Context) page.Page {
 	tree := Tree(r.Fleet, r.Services, homeLine(r))
 	markMacs(&tree, r)
 	p.Sections = []page.Section{needs, tree, awakeTile(r), accountsTile(r.Home)}
-	p.Actions = append([]page.Action{newVM(), openStation(), stopAll(r)}, powerAction(r.Power))
+	p.Actions = append([]page.Action{newVM(), openStation(), stopAll(r)}, powerAction(r.Power), openAccounts())
 	if update := updateAll(needs, r.Home); update != nil {
 		p.Actions = append(p.Actions, *update)
 	}
@@ -95,7 +96,11 @@ func Stopped(here page.Context, installed bool) page.Page {
 		row.Hint = page.Cmd("station setup")
 		actions = actions[1:]
 	}
-	s := page.Section{ID: SectionNeeds, Title: "Needs you", Role: page.Actions, Columns: columns(), Items: []page.Item{{Row: &row}}}
+	caption := "The engine is stopped"
+	if !installed {
+		caption = "station is not set up on this Mac"
+	}
+	s := page.Section{ID: SectionNeeds, Title: "Needs you", Role: page.Actions, Caption: []page.Value{page.Text(caption)}, Columns: columns(), Items: []page.Item{{Row: &row}}}
 	return page.Seal(page.Page{ID: ID, Command: "menubar", Context: here, Sections: []page.Section{s}, Actions: actions})
 }
 
@@ -307,7 +312,7 @@ func awakeTile(r Reading) page.Section {
 	}
 	for _, m := range r.Macs {
 		if !m.Here {
-			parts = append(parts, page.Text(page.MacName(m.Mac, self)+" "+cmpWord(awakeWords(m), "sleeps normally")))
+			parts = append(parts, page.Text(macLabel(r, m.Mac, self)+" "+cmpWord(awakeWords(m), "sleeps normally")))
 		}
 	}
 	value := page.Pending()
@@ -316,6 +321,19 @@ func awakeTile(r Reading) page.Section {
 	}
 	row := page.Row{ID: pagepower.RowAwake, Label: "Awake", Cells: []page.Value{value}}
 	return page.Section{ID: SectionAwake, Title: "Awake", Role: page.Summary, Columns: columns(), Items: []page.Item{{Row: &row}}}
+}
+
+// value: a Mac as the Machines list names it (`mac-mini`), else by the
+// interface's rule for a Mac's name.
+func macLabel(r Reading, mac, self string) string {
+	if r.Fleet != nil {
+		for _, h := range r.Fleet.Hosts {
+			if h.Name == mac {
+				return machines.Label(*r.Fleet, h)
+			}
+		}
+	}
+	return page.MacName(mac, self)
 }
 
 func cmpWord(s, otherwise string) string {
@@ -332,12 +350,34 @@ func accountsTile(home *overview.Summary) page.Section {
 		for _, body := range pagehome.Body(*home, true) {
 			for _, it := range body.Items {
 				if body.ID == "sections" && it.Row != nil && it.Row.ID == "accounts" {
-					row.Cells = it.Row.Cells
+					row.Cells = []page.Value{signIns(it.Row.Cells[0])}
 				}
 			}
 		}
 	}
 	return page.Section{ID: SectionAccounts, Title: "Accounts", Role: page.Summary, Columns: columns(), Items: []page.Item{{Row: &row}}}
+}
+
+// value: the Accounts tile's words: how many are signed in, then each
+// account whose sign-in failed said so (`npm needs sign-in`).
+func signIns(v page.Value) page.Value {
+	if v.Kind != page.KindList {
+		return v
+	}
+	out := make([]page.Value, 0, len(v.Items))
+	for _, it := range v.Items {
+		if it.Kind == page.KindText && (it.Label == string(page.Broken) || it.Label == string(page.Attention)) {
+			it.Text += " needs sign-in"
+		}
+		out = append(out, it)
+	}
+	v.Items = out
+	return v
+}
+
+// value: Accounts opens a terminal on the accounts of This Mac.
+func openAccounts() page.Action {
+	return page.Action{ID: ActionOpenAccounts, Label: "Accounts", On: page.OnRow, Rows: []string{SectionAccounts}, Priority: 6, Run: &page.Run{Terminal: true, Argv: []string{"accounts"}}}
 }
 
 // value: the calls the menu bar's actions make, by their calls.json names.
@@ -349,6 +389,7 @@ const (
 	CallUpdate    = "apps.update"
 	CallAddMac    = "machines.add"
 	CallStopVM    = "machines.stop"
+	CallStartVM   = "machines.start"
 	CallDeleteVM  = "machines.delete"
 	CallRestartVM = "machines.restart"
 	CallSharePort = "ports.share"

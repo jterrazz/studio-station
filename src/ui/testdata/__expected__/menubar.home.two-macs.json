@@ -475,7 +475,7 @@
                   },
                   {
                     "kind": "text",
-                    "text": "npm needs sign-in",
+                    "text": "npm needs sign-in needs sign-in",
                     "label": "broken"
                   }
                 ]
@@ -591,6 +591,21 @@
       "id": "power-sleep",
       "run": {
         "call": "awake.off"
+      }
+    },
+    {
+      "label": "Accounts",
+      "on": "row",
+      "rows": [
+        "accounts"
+      ],
+      "priority": 6,
+      "id": "open-accounts",
+      "run": {
+        "terminal": true,
+        "argv": [
+          "accounts"
+        ]
       }
     },
     {

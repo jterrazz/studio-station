@@ -298,6 +298,21 @@
           }
         ]
       }
+    },
+    {
+      "label": "Accounts",
+      "on": "row",
+      "rows": [
+        "accounts"
+      ],
+      "priority": 6,
+      "id": "open-accounts",
+      "run": {
+        "terminal": true,
+        "argv": [
+          "accounts"
+        ]
+      }
     }
   ]
 }

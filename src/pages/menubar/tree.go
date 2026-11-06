@@ -23,7 +23,7 @@ func treeColumns() []page.Column {
 
 func Tree(f *machines.Fleet, svc *ports.Fleet, line func(machines.HostView) page.Value) page.Section {
 	// invariant: SPEC §10.2's Machines: each Mac, then its Servers, then its
-	// Workspaces, each group named; a row's ID is its machine's name, the page
+	// Workspaces (the running first), each group named; a row's ID is its machine's name, the page
 	// it opens. line says what a Mac's row adds after its kind.
 	s := page.Section{ID: SectionMachines, Title: "Machines", Columns: treeColumns()}
 	if f == nil {
@@ -32,19 +32,23 @@ func Tree(f *machines.Fleet, svc *ports.Fleet, line func(machines.HostView) page
 	}
 	for _, h := range f.Hosts {
 		g := page.Group{Head: macRow(*f, h, line(h))}
-		var srv, ws []page.Item
+		var srv, ws, idle []page.Item
 		for _, vm := range h.VMs {
 			row := vmRow(vm, shared(svc, vm.Name), f.Read)
 			if !h.Reachable && !h.Here {
 				row.Mark, row.Reason = page.NotKnown, ""
 				row.Cells[1] = page.List(row.Cells[1].Items[0], page.Text("not known while "+machines.Label(*f, h)+" does not answer"))
 			}
-			if vm.Lifetime == machines.AlwaysOn {
+			switch {
+			case vm.Lifetime == machines.AlwaysOn:
 				srv = append(srv, page.Item{Row: &row})
-			} else {
+			case vm.State == machines.Running:
 				ws = append(ws, page.Item{Row: &row})
+			default:
+				idle = append(idle, page.Item{Row: &row})
 			}
 		}
+		ws = append(ws, idle...)
 		if len(srv) > 0 {
 			g.Items = append(g.Items, page.Item{Group: &page.Group{Head: page.Row{ID: h.Name + servers, Label: GroupServers}, Items: srv}})
 		}

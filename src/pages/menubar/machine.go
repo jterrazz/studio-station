@@ -3,6 +3,7 @@ package menubar
 import (
 	"slices"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/jterrazz/studio-station/src/accounts"
@@ -28,6 +29,9 @@ const (
 	ActionTakeBack = "take-back"
 	ActionUnlock   = "unlock"
 	ActionAddMac   = "add-mac"
+	ActionStartVM  = "start-vm"
+	// value: a terminal on one family of a workspace (`open:apps`).
+	ActionOpenFamily = "open:"
 
 	SectionMachine  = "machine"
 	SectionActivity = "activity"
@@ -110,19 +114,30 @@ func vmPage(m Machine, h machines.HostView, vm machines.VM) page.Page {
 		stop.Run.In = answered(stop.Confirm, stop.Run.In)
 		p.Actions = []page.Action{restart, stop}
 	} else {
-		sections = append(sections, activitySection(m.Samples, "Activity"), insideSection(m.Summary), portsSection(m, vm), sharedSection(m, h, vm))
+		sections = append(sections, activitySection(m.Samples, "Activity"), insideSection(m.Summary), portsSection(m, h, vm), sharedSection(m, h, vm))
 		stop := page.Action{ID: ActionStop, Label: "Stop", On: page.OnPage, Priority: 1, Mutates: true,
 			Confirm: ask(m.Asks, "stop", kind, vm.Name, "Stop "+vm.Name+"?", "stop", "Its disk is kept"),
 			Run:     &page.Run{Call: CallStopVM, In: map[string]string{"VM": vm.Name}, Target: target(h, vm.Name)}}
 		stop.Run.In = answered(stop.Confirm, stop.Run.In)
+		if vm.State != machines.Running && !machines.Down(vm) {
+			stop = page.Action{ID: ActionStartVM, Label: "Start", On: page.OnPage, Priority: 1, Mutates: true,
+				Run: &page.Run{Call: CallStartVM, In: map[string]string{"VM": vm.Name}, Target: target(h, vm.Name)}}
+		}
 		del := page.Action{ID: ActionDelete, Label: "Delete", On: page.OnPage, Priority: 2, Mutates: true,
 			Confirm: ask(m.Asks, "delete", kind, vm.Name, "Delete "+vm.Name+"?", "delete", "Its disk is erased: nothing of it is kept"),
 			Run:     &page.Run{Call: CallDeleteVM, In: map[string]string{"VM": vm.Name}, Target: target(h, vm.Name)}}
 		del.Run.In = answered(del.Confirm, del.Run.In)
-		share := page.Action{ID: ActionShare, Label: "Share a port", On: page.OnPage, Priority: 3, Mutates: true,
-			Run:  &page.Run{Call: CallSharePort, In: map[string]string{"VM": vm.Name}, Target: target(h, vm.Name)},
-			Form: &page.Form{Title: "Share a port of " + vm.Name, Fields: []page.Field{{Key: "Port", Label: "Port", Kind: page.FieldText, Required: true, Note: "private, on " + catalog.TailnetProduct}}}}
-		p.Actions = append([]page.Action{stop, del, share}, takeBacks(m, vm)...)
+		p.Actions = []page.Action{stop, del}
+		if vm.State == machines.Running {
+			p.Actions = append(p.Actions, page.Action{ID: ActionShare, Label: "Share a port", On: page.OnPage, Priority: 3, Mutates: true,
+				Run:  &page.Run{Call: CallSharePort, In: map[string]string{"VM": vm.Name}, Target: target(h, vm.Name)},
+				Form: &page.Form{Title: "Share a port of " + vm.Name, Fields: []page.Field{{Key: "Port", Label: "Port", Kind: page.FieldText, Required: true, Note: "a port number, like 5173"}}}})
+		}
+		p.Actions = append(p.Actions, takeBacks(m, vm)...)
+		if vm.State == machines.Running {
+			p.Actions = append(p.Actions, insideActions(vm.Name)...)
+		}
+		p.Actions = append(p.Actions, stopSharings(m, vm)...)
 	}
 	p.Actions = append(p.Actions, openIn("--on", vm.Name))
 	p.Sections = sections
@@ -193,11 +208,67 @@ func insideSection(s *overview.Summary) page.Section {
 		rows[i].Cells = []page.Value{page.None()}
 		for _, l := range s.Lines {
 			if string(l.Section) == rows[i].ID {
-				rows[i].Cells = []page.Value{lineOf(*s, rows[i].ID)}
+				rows[i].Cells = []page.Value{inside(rows[i].ID, lineOf(*s, rows[i].ID))}
 			}
 		}
 	}
 	return page.Section{ID: SectionInside, Title: "Inside", Role: page.Summary, Columns: columns(), Items: items(rows)}
+}
+
+// value: an Inside line in the vision's few words (`38 installed`, `2
+// need a look`, `12.4 GB free`): what is there and what needs you, never
+// what station does not manage.
+func inside(id string, v page.Value) page.Value {
+	parts := v.Items
+	if v.Kind != page.KindList {
+		parts = []page.Value{v}
+	}
+	var out []page.Value
+	look := 0
+	for _, p := range parts {
+		switch {
+		case p.Label == string(page.Attention) || p.Label == string(page.Broken):
+			switch {
+			case p.Kind == page.KindCount:
+				look += int(p.N)
+			case id == "disk" && p.Kind == page.KindSize:
+				out = append(out, p)
+			default:
+				look++
+			}
+		case id == "apps" && p.Label == string(page.OK):
+			out = append(out, page.Count(p.N, "installed"))
+		case id == "settings" && p.Label == string(page.Absent) && p.Kind == page.KindText:
+			out = append(out, page.Text(p.Text+" set"))
+		case id == "disk" && p.Kind == page.KindSize && p.Unit == "free":
+			out = append(out, p)
+		}
+	}
+	if look > 0 {
+		out = append(out, page.Text(strconv.Itoa(look)+" "+pluralVerb(look, "needs", "need")+" a look"))
+	}
+	if len(out) == 0 {
+		return v
+	}
+	return page.List(out...)
+}
+
+func pluralVerb(n int, one, many string) string {
+	if n == 1 {
+		return one
+	}
+	return many
+}
+
+// value: what opening Apps, Settings or Disk on a workspace's page does: a
+// terminal on that family, on the workspace.
+func insideActions(vm string) []page.Action {
+	ids := []string{"apps", "settings", "disk"}
+	out := make([]page.Action, 0, len(ids))
+	for _, id := range ids {
+		out = append(out, page.Action{ID: ActionOpenFamily + id, Label: "Open " + id, On: page.OnRow, Rows: []string{id}, Priority: 5, Run: &page.Run{Terminal: true, Argv: []string{id, "--on", vm}}})
+	}
+	return out
 }
 
 func lineOf(s overview.Summary, id string) page.Value {
@@ -212,7 +283,7 @@ func lineOf(s overview.Summary, id string) page.Value {
 }
 
 // value: the workspace's shared ports, each a link: private, on Tailscale.
-func portsSection(m Machine, vm machines.VM) page.Section {
+func portsSection(m Machine, _ machines.HostView, vm machines.VM) page.Section {
 	s := page.Section{ID: SectionPorts, Title: "Private", Caption: []page.Value{page.Text("shared on " + catalog.TailnetProduct)}, Uncounted: true}
 	if m.Services == nil {
 		s.Items = []page.Item{{Row: &page.Row{ID: "reading", Label: "reading", Mark: page.Awaiting}}}
@@ -237,6 +308,27 @@ func portsSection(m Machine, vm machines.VM) page.Section {
 	return s
 }
 
+// value: Stop sharing on each of the workspace's shared ports, the row
+// its link is.
+func stopSharings(m Machine, vm machines.VM) []page.Action {
+	if m.Services == nil {
+		return nil
+	}
+	var out []page.Action
+	for _, h := range m.Services.Hosts {
+		for _, sv := range h.Services {
+			if sv.VM != vm.Name {
+				continue
+			}
+			a := stopSharing(sv, h.Name)
+			row := strconv.Itoa(sv.GuestPort)
+			a.ID, a.Rows = ActionStopSharing+vm.Name+"/"+row, []string{row}
+			out = append(out, a)
+		}
+	}
+	return out
+}
+
 // value: the accounts This Mac shared with the workspace, each with what
 // it may do, its time left and its Take back.
 func sharedSection(m Machine, h machines.HostView, vm machines.VM) page.Section {
@@ -246,7 +338,9 @@ func sharedSection(m Machine, h machines.HostView, vm machines.VM) page.Section 
 		left := a.Lent.Until.Sub(m.Now)
 		words := make([]page.Value, 0, len(a.Scopes)+1)
 		for _, scope := range a.Scopes {
-			words = append(words, page.Text(scope))
+			if !strings.Contains(scope, ":") {
+				words = append(words, page.Text(scope))
+			}
 		}
 		row := page.Row{ID: a.Provider, Label: accounts.Label(a.Provider), Mark: page.OK, Cells: []page.Value{page.List(append(words, page.Text(hours(left)+" left"))...)}}
 		s.Items = append(s.Items, page.Item{Row: &row})
@@ -345,8 +439,13 @@ func serverSection(m Machine) page.Section {
 		return s
 	}
 	for _, body := range pagehome.Body(*m.Summary, true) {
-		if body.ID == "sections" {
-			s.Items = append(s.Items, body.Items...)
+		if body.ID != "sections" {
+			continue
+		}
+		for _, it := range body.Items {
+			if it.Row == nil || it.Row.ID != string(SectionActivity) {
+				s.Items = append(s.Items, it)
+			}
 		}
 	}
 	return s
@@ -381,8 +480,18 @@ func macPage(m Machine, h machines.HostView) page.Page {
 	}
 	sections = append(sections, vms)
 	p := page.Page{ID: MachineID, Command: "menubar", Context: page.Context{Machine: h.Name, Kind: string(machine.Mac)}, Sections: sections}
+	if h.Here {
+		for _, s := range sections {
+			if s.ID != SectionNeeds {
+				continue
+			}
+			if update := updateAll(s, m.Summary); update != nil {
+				p.Actions = append(p.Actions, *update)
+			}
+		}
+	}
 	if locked(m, h) {
-		p.Actions = append(p.Actions, page.Action{ID: ActionUnlock, Label: "Unlock", On: page.OnPage, Priority: 1, Mutates: true, Run: &page.Run{Terminal: true, Argv: []string{"machines", "unlock", label}}})
+		p.Actions = append(p.Actions, page.Action{ID: ActionUnlock, Label: "Unlock the disk", On: page.OnPage, Priority: 1, Mutates: true, Run: &page.Run{Terminal: true, Argv: []string{"machines", "unlock", label}}})
 	}
 	if !h.Here {
 		p.Actions = append(p.Actions, openIn("--on", label))

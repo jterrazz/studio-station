@@ -75,7 +75,7 @@
             "key": "Temperature",
             "value": {
               "kind": "text",
-              "text": "nominal"
+              "text": "normal"
             }
           }
         },

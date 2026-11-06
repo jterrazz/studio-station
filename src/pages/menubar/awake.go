@@ -42,6 +42,15 @@ func Awake(f pageawake.Fleet, here page.Context) page.Page {
 	// its guards; then each other Mac by its mode, with Change…, a y/n that
 	// names the servers it hosts. VMs are not listed: they follow their Mac.
 	p := page.Page{ID: AwakeID, Command: "awake", Context: here}
+	if f.Label == nil {
+		self := ""
+		for _, r := range f.Reports {
+			if r.Here {
+				self = r.Mac
+			}
+		}
+		f.Label = func(mac string) string { return page.MacName(mac, self) }
+	}
 	var others []page.Item
 	for _, r := range f.Reports {
 		if r.Here {
@@ -100,7 +109,7 @@ func guards(r awake.Report) *page.Section {
 	}
 	var facts []page.Fact
 	if r.Caps.Thermal {
-		facts = append(facts, page.Fact{Key: "Temperature", Value: page.Text(awake.Level(r.Reading.Thermal))})
+		facts = append(facts, page.Fact{Key: "Temperature", Value: page.Text(temperature(r.Reading.Thermal))})
 	}
 	if r.Caps.Battery {
 		facts = append(facts, page.Fact{Key: "Battery", Value: page.Text(strconv.Itoa(r.Reading.Percent) + " %")})
@@ -114,6 +123,15 @@ func guards(r awake.Report) *page.Section {
 		items = append(items, page.Item{Note: &page.Note{Text: "Awake stops by itself if the Mac gets too hot."}})
 	}
 	return &page.Section{ID: SectionGuards, Title: "Guards", Uncounted: true, Columns: awakeColumns(), Items: items}
+}
+
+// value: the Mac's thermal level in the menu bar's plain word: Normal
+// for the level macOS calls nominal.
+func temperature(n int) string {
+	if w := awake.Level(n); w != "nominal" {
+		return w
+	}
+	return "normal"
 }
 
 func nanos(d time.Duration) string { return strconv.FormatInt(int64(d), 10) }
