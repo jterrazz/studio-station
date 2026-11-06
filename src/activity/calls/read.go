@@ -27,6 +27,9 @@ type ReadIn struct {
 	// value: what the engine keeps, else one sample now: a read that never
 	// waits (an Overview's line).
 	Quick bool `json:"quick,omitempty"`
+	// value: the VM's run as this Mac measures it now, for a reader whose
+	// read inside the VM failed: its guest does not answer.
+	Run bool `json:"run,omitempty"`
 }
 
 var Read = call.Watch[Deps, ReadIn, activity.Report]{
@@ -70,6 +73,11 @@ func (d Deps) read(ctx context.Context, in ReadIn) activity.Report {
 	switch {
 	case in.Of == "":
 		r = d.direct(ctx, ref, kind, in.Quick, kept)
+	case in.Run:
+		r = d.run(ctx, in.Of)
+		if kept != nil {
+			r.Findings = findings(ref, kind, &kept.Series)
+		}
 	case kept != nil:
 		r.Findings = findings(ref, kind, &kept.Series)
 	}
@@ -132,6 +140,30 @@ func (d Deps) direct(ctx context.Context, ref machine.Ref, kind machine.Kind, qu
 		s.Add(x)
 	}
 	r.Findings = findings(ref, kind, &s)
+	return r
+}
+
+func (d Deps) run(ctx context.Context, vm string) activity.Report {
+	r := activity.Report{Source: activity.NotKept, Findings: []finding.Finding{}}
+	if d.Holder == nil || d.Now == nil {
+		return r
+	}
+	pid, err := d.Holder(ctx, vm)
+	if err != nil || pid == 0 {
+		return r
+	}
+	ctx, cancel := context.WithTimeout(ctx, activity.Budget)
+	defer cancel()
+	u, err := d.Meter.Process(ctx, pid)
+	if err != nil {
+		return r
+	}
+	r.Source = activity.FromMacProcess
+	r.Last = activity.Reading{
+		Sample: activity.Sample{At: d.Now().UTC(), Thermal: activity.ThermalUnknown},
+		Top:    activity.Busiest{CPU: []activity.Process{}, Memory: []activity.Process{}},
+		Run:    &u,
+	}
 	return r
 }
 

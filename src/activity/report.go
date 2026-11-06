@@ -28,6 +28,9 @@ const (
 	DirectGap  = time.Second
 	// value: what a read waits for a Meter before it says it did not answer.
 	Budget = 2 * time.Second
+	// value: what a reader waits on a read inside a VM, its two samples
+	// and the way in, before it shows the VM's run from its Mac.
+	Inside = 3*Budget + DirectGap
 )
 
 type Report struct {

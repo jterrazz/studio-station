@@ -165,3 +165,32 @@ func TestTwentyHungGuestsCostATickOneBudgetNotTwenty(t *testing.T) {
 		t.Error("This Mac was not sampled in the tick its VMs hung")
 	}
 }
+
+type patientMeter struct{ silentMeter }
+
+func (patientMeter) Process(ctx context.Context, _ int) (activity.Usage, error) {
+	if err := ctx.Err(); err != nil {
+		return activity.Usage{}, err
+	}
+	return activity.Usage{CPU: 0.18, Memory: 15 << 30}, nil
+}
+
+func TestAVMWhoseGuestHangsIsMeasuredOnItsMacInTheSameTick(t *testing.T) {
+	c := &clock{now: time.Date(2026, 11, 4, 10, 0, 0, 0, time.UTC)}
+	h := activity.NewHistory(c.now)
+	guests := &hung{machines: machines{clock: c, asked: map[string]int{}}}
+	guests.waiting.Add(1)
+	s := &Sample{
+		Calls: guests, Meter: patientMeter{}, Clock: c,
+		Seen: func() []Seen {
+			return []Seen{{Ref: machine.Ref{Name: "infra", On: "mac"}, Kind: machine.Server, PID: 4242, Guest: true}}
+		},
+		Watched: func(machine.Ref) bool { return false },
+		History: func() *activity.History { return h }, Tell: func(string, string, string) {},
+	}
+	s.Run(t.Context())
+	kept, _ := h.Of("infra")
+	if kept.Last.Run == nil || kept.Last.Run.Memory != 15<<30 {
+		t.Errorf("after a tick its guest hung through, infra's last reading is %+v; want its process's usage on its Mac", kept.Last)
+	}
+}

@@ -45,6 +45,7 @@ type fakeRun struct {
 
 func (r *fakeRun) VM() string                 { return r.vm }
 func (r *fakeRun) PID() int                   { return r.pid }
+func (r *fakeRun) Holder() int                { return r.pid }
 func (r *fakeRun) Ended() <-chan model.RunEnd { return r.ended }
 
 type fakeHypervisor struct {

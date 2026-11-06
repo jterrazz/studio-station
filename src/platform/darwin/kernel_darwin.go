@@ -12,7 +12,7 @@ package darwin
 #include <sys/sysctl.h>
 #include <sys/socket.h>
 #include <net/if.h>
-#include <net/route.h>
+#include <net/if_mib.h>
 #include <libproc.h>
 #include <CoreFoundation/CoreFoundation.h>
 #include <IOKit/IOKitLib.h>
@@ -148,28 +148,24 @@ typedef struct {
 	uint64_t in, out;
 } station_link_t;
 
+// outside: the routing table's RTM_IFINFO2 counters reach a process without the
+// network entitlement cut to 32 bits and rounded to the KiB, so a link past
+// 4 GiB wraps; the interface MIB answers every byte.
 static int station_links(station_link_t *out, int max) {
-	int mib[6] = {CTL_NET, PF_ROUTE, 0, 0, NET_RT_IFLIST2, 0};
-	size_t len = 0;
-	if (sysctl(mib, 6, NULL, &len, NULL, 0) != 0) return -1;
-	char *buf = malloc(len);
-	if (!buf) return -1;
-	if (sysctl(mib, 6, buf, &len, NULL, 0) != 0) { free(buf); return -1; }
+	struct if_nameindex *names = if_nameindex();
+	if (!names) return -1;
 	int n = 0;
-	for (char *p = buf; p < buf + len && n < max;) {
-		struct if_msghdr *h = (struct if_msghdr *)p;
-		if (h->ifm_msglen == 0) break;
-		if (h->ifm_type == RTM_IFINFO2) {
-			struct if_msghdr2 *h2 = (struct if_msghdr2 *)p;
-			if (if_indextoname(h2->ifm_index, out[n].name)) {
-				out[n].in = h2->ifm_data.ifi_ibytes;
-				out[n].out = h2->ifm_data.ifi_obytes;
-				n++;
-			}
-		}
-		p += h->ifm_msglen;
+	for (struct if_nameindex *i = names; i->if_index != 0 && n < max; i++) {
+		int mib[6] = {CTL_NET, PF_LINK, NETLINK_GENERIC, IFMIB_IFDATA, (int)i->if_index, IFDATA_GENERAL};
+		struct ifmibdata d;
+		size_t len = sizeof d;
+		if (sysctl(mib, 6, &d, &len, NULL, 0) != 0) continue;
+		strlcpy(out[n].name, i->if_name, sizeof out[n].name);
+		out[n].in = d.ifmd_data.ifi_ibytes;
+		out[n].out = d.ifmd_data.ifi_obytes;
+		n++;
 	}
-	free(buf);
+	if_freenameindex(names);
 	return n;
 }
 
@@ -228,12 +224,41 @@ static station_proc_t *station_procs(int *count) {
 
 static station_proc_t station_proc_at(station_proc_t *list, int i) { return list[i]; }
 
+static char *station_files(int pid, int *used) {
+	*used = -1;
+	int want = proc_pidinfo(pid, PROC_PIDLISTFDS, 0, NULL, 0);
+	if (want <= 0) return NULL;
+	struct proc_fdinfo *fds = malloc(want);
+	if (!fds) return NULL;
+	int got = proc_pidinfo(pid, PROC_PIDLISTFDS, 0, fds, want);
+	if (got <= 0) { free(fds); return NULL; }
+	int count = got / (int)sizeof *fds;
+	char *out = malloc((size_t)count * (MAXPATHLEN + 1) + 1);
+	if (!out) { free(fds); return NULL; }
+	*used = 0;
+	for (int i = 0; i < count; i++) {
+		if (fds[i].proc_fdtype != PROX_FDTYPE_VNODE) continue;
+		struct vnode_fdinfowithpath v;
+		if (proc_pidfdinfo(pid, fds[i].proc_fd, PROC_PIDFDVNODEPATHINFO, &v, sizeof v) != (int)sizeof v) continue;
+		int n = (int)strnlen(v.pvip.vip_path, MAXPATHLEN);
+		if (n == 0) continue;
+		memcpy(out + *used, v.pvip.vip_path, n);
+		out[*used + n] = '\n';
+		*used += n + 1;
+	}
+	free(fds);
+	return out;
+}
+
+static void station_free_files(char *files) { free(files); }
+
 static void station_free(station_proc_t *list) { free(list); }
 */
 import "C"
 
 import (
 	"errors"
+	"strings"
 	"time"
 )
 
@@ -310,6 +335,19 @@ func (Kernel) Process(pid int) (Procs, error) {
 		one.Started = time.Unix(int64(sec), int64(usec)*1000).UTC()
 	}
 	return Procs{At: time.Duration(C.station_now()), List: []Proc{one}}, nil
+}
+
+func (Kernel) Files(pid int) ([]string, error) {
+	var n C.int
+	files := C.station_files(C.int(pid), &n)
+	if n < 0 {
+		return nil, errUnread
+	}
+	defer C.station_free_files(files)
+	if n == 0 {
+		return []string{}, nil
+	}
+	return strings.Split(strings.TrimSuffix(C.GoStringN(files, n), "\n"), "\n"), nil
 }
 
 func proc(p C.station_proc_t) Proc {

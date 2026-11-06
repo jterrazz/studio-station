@@ -5,6 +5,7 @@ import (
 	"path"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/jterrazz/studio-station/src/machines"
@@ -13,6 +14,10 @@ import (
 )
 
 const (
+	// outside: Virtualization.framework runs each guest in its own XPC
+	// service, com.apple.Virtualization.VirtualMachine, a child of launchd and
+	// not of tart; the kernel names a process in 32 characters at most.
+	holderName     = "com.apple.Virtualization."
 	poweroffIntent = "station-intent=poweroff"
 	watchEvery     = 200 * time.Millisecond
 )
@@ -99,14 +104,51 @@ type run struct {
 	vm    string
 	pid   int
 	ended chan machines.RunEnd
+	find  func() int
+	mu    sync.Mutex
+	held  int
 }
 
 func (r *run) VM() string                    { return r.vm }
 func (r *run) PID() int                      { return r.pid }
 func (r *run) Ended() <-chan machines.RunEnd { return r.ended }
 
+func (r *run) Holder() int {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	if r.held == 0 {
+		r.held = r.find()
+	}
+	return r.held
+}
+
+// outside: tart keeps a VM's disk at vms/<vm>/disk.img of its home, and the
+// service that runs the guest holds it open while the guest runs.
+func (h *hypervisor) holder(vm string) int {
+	if h.kernel == nil {
+		return 0
+	}
+	pids, err := h.kernel.Named(holderName)
+	if err != nil {
+		return 0
+	}
+	disk := "/vms/" + vm + "/disk.img"
+	for _, pid := range pids {
+		files, err := h.kernel.Files(pid)
+		if err != nil {
+			continue
+		}
+		for _, f := range files {
+			if strings.HasSuffix(f, disk) {
+				return pid
+			}
+		}
+	}
+	return 0
+}
+
 func (h *hypervisor) watch(ctx context.Context, vm string, pid int) *run {
-	r := &run{vm: vm, pid: pid, ended: make(chan machines.RunEnd, 1)}
+	r := &run{vm: vm, pid: pid, ended: make(chan machines.RunEnd, 1), find: func() int { return h.holder(vm) }}
 	watching := context.WithoutCancel(ctx)
 	go func() {
 		for h.run.Alive(pid) {

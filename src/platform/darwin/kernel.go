@@ -28,7 +28,7 @@ type BlockDriver struct {
 }
 
 type Link struct {
-	// value: an interface of NET_RT_IFLIST2 and its if_data64 byte counters.
+	// value: an interface and its byte counters, net.link.generic's IFMIB_IFDATA.
 	Name string `json:"name"`
 	In   uint64 `json:"in"`
 	Out  uint64 `json:"out"`

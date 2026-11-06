@@ -21,21 +21,29 @@ const (
 	commandGrace = 15 * time.Second
 )
 
-type hypervisor struct {
-	run   system.Runner
-	fs    system.FS
-	clock system.Clock
-	path  string
-	files files
+type Kernel interface {
+	// value: the pids of the processes whose name starts with prefix.
+	Named(prefix string) ([]int, error)
+	// value: the paths of the files a process holds open.
+	Files(pid int) ([]string, error)
 }
 
-func New(run system.Runner, fs system.FS, clock system.Clock, stateDir string) contract.Hypervisor {
+type hypervisor struct {
+	run    system.Runner
+	fs     system.FS
+	clock  system.Clock
+	kernel Kernel
+	path   string
+	files  files
+}
+
+func New(run system.Runner, fs system.FS, clock system.Clock, kernel Kernel, stateDir string) contract.Hypervisor {
 	// invariant: the tart path is resolved here, absolute, because a launchd agent has no PATH of the owner's.
 	path, ok := run.LookPath(name)
 	if !ok {
 		path = name
 	}
-	return &hypervisor{run: run, fs: fs, clock: clock, path: path, files: files{state: stateDir}}
+	return &hypervisor{run: run, fs: fs, clock: clock, kernel: kernel, path: path, files: files{state: stateDir}}
 }
 
 func (h *hypervisor) Name() string { return name }

@@ -124,22 +124,30 @@ func (s *Sample) Run(ctx context.Context) {
 }
 
 func (s *Sample) read(ctx context.Context, m Seen, now time.Time) (activity.Reading, bool) {
-	ctx, cancel := context.WithTimeout(ctx, budget)
-	defer cancel()
+	// invariant: a guest that hangs spends its own budget, and its run is
+	// still measured on this Mac in the same tick, with a budget of its own.
 	if m.Ref.On == "" || m.Guest {
-		r, err := call.Invoke(ctx, s.Calls, m.Ref, activitycalls.Sample, activitycalls.SampleIn{}, nil)
+		r, err := s.guest(ctx, m.Ref)
 		if err == nil {
 			return r, true
 		}
 	}
-	if m.PID == 0 {
+	if m.PID == 0 || ctx.Err() != nil {
 		return activity.Reading{}, false
 	}
+	ctx, cancel := context.WithTimeout(ctx, budget)
+	defer cancel()
 	u, err := s.Meter.Process(ctx, m.PID)
 	if err != nil {
 		return activity.Reading{}, false
 	}
 	return activity.Reading{Sample: activity.Sample{At: now.UTC(), Thermal: activity.ThermalUnknown}, Top: activity.Busiest{CPU: []activity.Process{}, Memory: []activity.Process{}}, Run: &u}, true
+}
+
+func (s *Sample) guest(ctx context.Context, ref machine.Ref) (activity.Reading, error) {
+	ctx, cancel := context.WithTimeout(ctx, budget)
+	defer cancel()
+	return call.Invoke(ctx, s.Calls, ref, activitycalls.Sample, activitycalls.SampleIn{}, nil)
 }
 
 // invariant: a hypervisor process on this Mac is named by the VM it runs,
