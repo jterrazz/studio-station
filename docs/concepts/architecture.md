@@ -1,6 +1,6 @@
 # Architecture
 
-`station` is one Go binary in layers: an input layer parses argv, a command calls one domain operation, a pure presenter turns the result into a document, and one output layer prints it. The layers mirror the estate's TypeScript `studio` CLI, and a test refuses an import that crosses them.
+`station` is one Go binary in layers: an input layer parses argv, a command invokes one call of a family, a pure page function turns the result into a document, and one output layer prints it. The layers mirror the estate's TypeScript `studio` CLI, and a test refuses an import that crosses them.
 
 | Section                   | Answers                                                         |
 | ------------------------- | --------------------------------------------------------------- |
@@ -24,10 +24,11 @@ src/
   surface/cli/    the cobra tree, one folder per command word: input -> call -> page
     kit/          how a leaf and a group are declared; how a leaf answers the confirmation its call asks; the wording of every domain error
     words/        the wording of every fail.Code a call raises
-  domain/         behaviour, never touching the machine except through ports
-    setup/ machines/ guest/
-  engine/         the per-Mac process (the engine): its runs, its socket, the guards it holds
-    process/      the engine's own calls over its live state, and its station.api/v2 server: those and the registry's
+  machines/ apps/ settings/ disk/ ports/ accounts/ background/ awake/ images/ activity/ overview/ setup/
+                  the families: each a pure model, its contract/, its calls/ and its adapter/<tech>/
+  engine/         the per-Mac process: its model (events, the API's calls and frames)
+    calls/        engine.read, engine.start, engine.stop, and the refusals a surface words
+    process/      the engine itself: its runs, its guest sessions, its socket, the guards it holds, its station.api/v2 server
 ```
 
 The ports and the data:
@@ -51,10 +52,7 @@ The data and its presentation:
   page/           the page language: one semantic page (sections, rows, groups, values, marks, reasons, actions), Seal and station.page/v1
   pages/          one page function per page: domain data to a page, pure (tools today)
   ui/             the design system: token, atom, molecule, organism, template, and the renderers tty, pipe, json and tui
-  present/        the Document model of the pages not migrated yet, and one presenter per subject
   output/         the only place that knows a terminal: picks tty, pipe or json and renders a page through ui/render, and the one error block
-  theme/          the styles of the pages not migrated yet, over ui/token's palette
-  prompt/         the conversations on stderr: confirmations and the forms that ask a config item's values
   surface/tui/    the unified Bubble Tea app
 ```
 
