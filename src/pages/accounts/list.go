@@ -8,47 +8,46 @@ import (
 	"github.com/jterrazz/studio-station/src/catalog"
 	"github.com/jterrazz/studio-station/src/core/finding"
 	"github.com/jterrazz/studio-station/src/core/machine"
-	"github.com/jterrazz/studio-station/src/domain/accounts"
 	"github.com/jterrazz/studio-station/src/page"
 )
 
-func stateWord(a accounts.Account) string {
+func stateWord(a model.Account) string {
 	switch {
 	case a.State == catalog.StateOK:
 		return "signed in"
-	case a.State == catalog.StateBroken && a.Reason == accounts.ReasonRefused:
+	case a.State == catalog.StateBroken && a.Reason == model.ReasonRefused:
 		return "expired"
 	case a.State == catalog.StateAbsent:
 		return "not signed in"
 	case a.State == catalog.StatePending:
 		return "reading"
-	case a.Reason == accounts.ReasonLate:
+	case a.Reason == model.ReasonLate:
 		return "late"
 	}
 	return string(mark(a))
 }
 
-func who(a accounts.Account) string {
-	if len(a.Identity) == 1 && a.Identity[0] == accounts.Unknown {
+func who(a model.Account) string {
+	if len(a.Identity) == 1 && a.Identity[0] == model.Unknown {
 		return ""
 	}
 	return strings.Join(a.Identity, ", ")
 }
 
 func kindWord(kind string) string {
-	if kind == accounts.KindVM {
+	if kind == model.KindVM {
 		return "workspace"
 	}
 	return "mac"
 }
 
-func ownRecords(m accounts.Machine) []page.Item {
+func ownRecords(m model.Machine) []page.Item {
 	var items []page.Item
 	for _, a := range m.Accounts {
-		if a.Lent != nil && a.Origin == accounts.OriginLent {
+		if a.Lent != nil && a.Origin == model.OriginLent {
 			continue
 		}
-		rec := page.Row{ID: accounts.RowID(m.Name, a.Provider), Label: a.Provider, Mark: mark(a)}
+		rec := page.Row{ID: model.RowID(m.Name, a.Provider), Label: a.Provider, Mark: mark(a)}
 		rec.Cells = []page.Value{page.Text(stateWord(a)), page.Text(who(a)), page.Texts(a.Scopes...), page.Text(a.Detail), page.Text(a.Hint)}
 		if rec.Mark == page.Attention || rec.Mark == page.Broken {
 			rec.Reason = reason(a.Reason)
@@ -85,7 +84,7 @@ func SharesSection(shared []model.Shared, now time.Time) page.Section {
 	return s
 }
 
-func List(r accounts.Report, shared []model.Shared) page.Page {
+func List(r model.Report, shared []model.Shared) page.Page {
 	// value: the Accounts section as the CLI prints it piped: the machine's
 	// own sign-ins, one row per provider, then the shares it holds or makes.
 	r = r.Resolved()
@@ -106,7 +105,7 @@ type MachineBlock struct {
 	// value: one machine of --all-machines: its reading, the shares it
 	// holds, or the line that says why it has none.
 	Name   string
-	Report accounts.Report
+	Report model.Report
 	Shared []model.Shared
 	Note   string
 	// value: a machine not read, marked as every surface marks it: a
@@ -211,7 +210,7 @@ type ShareRow struct {
 	UntilAt time.Time `json:"until_at"`
 }
 
-func ListContract(schema string, r accounts.Report, shared []model.Shared) ListJSON {
+func ListContract(schema string, r model.Report, shared []model.Shared) ListJSON {
 	// invariant: names, states, who and scopes only: no field of it ever
 	// carries a token, a cookie or a key body.
 	r = r.Resolved()
@@ -223,7 +222,7 @@ func ListContract(schema string, r accounts.Report, shared []model.Shared) ListJ
 		m := r.Machines[0]
 		out.Machine = MachineRef{Name: m.Name, Kind: kindWord(m.Kind)}
 		for _, a := range m.Accounts {
-			if a.Lent != nil && a.Origin == accounts.OriginLent {
+			if a.Lent != nil && a.Origin == model.OriginLent {
 				continue
 			}
 			secret, ok := model.SecretOf(a.Provider)

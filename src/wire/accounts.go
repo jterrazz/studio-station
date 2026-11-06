@@ -3,36 +3,31 @@ package wire
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"path"
 	"strings"
 
+	"github.com/jterrazz/studio-station/src/accounts"
 	"github.com/jterrazz/studio-station/src/accounts/adapter/cli"
+	"github.com/jterrazz/studio-station/src/accounts/adapter/tailscale"
+	accountscalls "github.com/jterrazz/studio-station/src/accounts/calls"
 	accountscontract "github.com/jterrazz/studio-station/src/accounts/contract"
 	"github.com/jterrazz/studio-station/src/catalog"
-	"github.com/jterrazz/studio-station/src/domain/accounts"
 	"github.com/jterrazz/studio-station/src/domain/guest"
 	"github.com/jterrazz/studio-station/src/engine"
 	"github.com/jterrazz/studio-station/src/engine/process"
-	"github.com/jterrazz/studio-station/src/ports"
-	"github.com/jterrazz/studio-station/src/ports/contract"
 )
 
-func (m machine) accounts() *accounts.Service {
-	o := accounts.Options{Here: m.kind, HereName: m.where.Machine}
+func (m machine) accounts() *accountscalls.Reader {
+	o := accountscalls.ReaderOptions{Here: m.kind, HereName: m.where.Machine, Now: m.host.Clock.Now}
 	ids := m.identities(engine.ChildrenDir(m.paths.State))
 	if m.kind != catalog.Host {
 		o.Keys = m.stationHostKeys
-		return accounts.New(m.host, m.pool, ids, accounts.Ports{}, o)
+		return accountscalls.NewReader(m.pool, ids, accountscalls.ReaderPorts{}, o)
 	}
 	sec := m.secrets()
-	tn := m.tailnet()
 	d := m.engineAPI()
-	sources := accounts.Ports{
+	sources := accountscalls.ReaderPorts{
 		LendList: sec.ShareList,
-		Tailnet: func(ctx context.Context) accounts.TailnetAccount {
-			return tailnetAccount(ctx, tn)
-		},
 		VMs: func(ctx context.Context) ([]accounts.VM, error) {
 			recs, err := m.machines(false).Records()
 			if err != nil {
@@ -77,7 +72,7 @@ func (m machine) accounts() *accounts.Service {
 			return out, accounts.DaemonRunning
 		},
 	}
-	return accounts.New(m.host, m.pool, ids, sources, o)
+	return accountscalls.NewReader(m.pool, tailscale.New(m.tailnet(), ids), sources, o)
 }
 
 // value: inside a VM, who may ssh in is the station hosts block the guest
@@ -102,18 +97,6 @@ func (m machine) stationHostKeys() []string {
 		}
 	}
 	return keys
-}
-
-func tailnetAccount(ctx context.Context, tn contract.Tailnet) accounts.TailnetAccount {
-	self, err := tn.Self(ctx)
-	var absent *ports.Absent
-	switch {
-	case errors.As(err, &absent):
-		return accounts.TailnetAccount{State: catalog.StateAbsent, Variant: self.Client.Variant}
-	case err != nil:
-		return accounts.TailnetAccount{State: catalog.StateBroken, Variant: self.Client.Variant}
-	}
-	return accounts.TailnetAccount{State: catalog.StateOK, Login: self.Login, Tailnet: self.Network, Variant: self.Client.Variant, Problem: self.Sharing.Backend}
 }
 
 // value: who each provider says is signed in here, read by its own tool, each

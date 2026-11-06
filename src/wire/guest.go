@@ -7,8 +7,8 @@ import (
 
 	"github.com/spf13/cobra"
 
+	accountscalls "github.com/jterrazz/studio-station/src/accounts/calls"
 	"github.com/jterrazz/studio-station/src/catalog"
-	"github.com/jterrazz/studio-station/src/domain/accounts"
 	"github.com/jterrazz/studio-station/src/domain/guest"
 	"github.com/jterrazz/studio-station/src/ports/adapter/lsof"
 	"github.com/jterrazz/studio-station/src/ports/adapter/procnet"
@@ -24,7 +24,7 @@ func (m machine) guest() *guest.Service {
 		root = "/"
 	}
 	return guest.New(m.host, guest.Options{State: m.paths.State, ServicesEnv: filepath.Join(m.paths.Config, "services.env"), Kind: m.kind, Version: Version(), Listeners: m.listeners(root), Accounts: func(ctx context.Context, keys []string) any {
-		a := accounts.New(m.host, m.pool, m.identities(path.Join(m.paths.State, "children")), accounts.Ports{}, accounts.Options{Here: m.kind, HereName: m.where.Machine, Keys: func() []string { return keys }})
+		a := accountscalls.NewReader(m.pool, m.identities(path.Join(m.paths.State, "children")), accountscalls.ReaderPorts{}, accountscalls.ReaderOptions{Here: m.kind, HereName: m.where.Machine, Now: m.host.Clock.Now, Keys: func() []string { return keys }})
 		return a.Own(ctx)
 	}})
 }

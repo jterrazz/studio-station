@@ -1,9 +1,9 @@
-package accounts_test
+package cli_test
 
 import (
 	"testing"
 
-	"github.com/jterrazz/studio-station/src/domain/accounts"
+	"github.com/jterrazz/studio-station/src/accounts"
 )
 
 func TestRedactDropsEveryTokenShape(t *testing.T) {

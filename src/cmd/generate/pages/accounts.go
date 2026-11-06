@@ -3,8 +3,8 @@ package pages
 import (
 	"time"
 
+	"github.com/jterrazz/studio-station/src/accounts"
 	"github.com/jterrazz/studio-station/src/catalog"
-	"github.com/jterrazz/studio-station/src/domain/accounts"
 	pageaccounts "github.com/jterrazz/studio-station/src/pages/accounts"
 )
 
