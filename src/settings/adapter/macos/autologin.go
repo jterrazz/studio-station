@@ -64,12 +64,12 @@ func (m *Mac) applyAutologin(ctx context.Context, values map[string]string) (set
 	if !m.exists(kcpasswordTo) {
 		return change, errors.New(kcpasswordTo + " missing after write")
 	}
-	if got, ok := m.probe(ctx, "defaults", "read", loginWindow, "autoLoginUser"); !ok || got != agentUser {
+	if got, ok := m.output(ctx, "defaults", "read", loginWindow, "autoLoginUser"); !ok || got != agentUser {
 		return change, errors.New("autoLoginUser cross-check failed (got \"" + got + "\")")
 	}
 	// value: clearing the screen-locked-after-resume flag keeps the auto-login session
 	// interactive; lock-after-login owns the lock itself.
-	_, _ = m.probe(ctx, "defaults", "delete", loginWindow, "autoLoginUserScreenLocked")
+	_, _ = m.output(ctx, "defaults", "delete", loginWindow, "autoLoginUserScreenLocked")
 
 	change.After = m.autologinValues(ctx)
 	change.Steps = append(change.Steps, next("next", autologinHint))
@@ -78,12 +78,12 @@ func (m *Mac) applyAutologin(ctx context.Context, values map[string]string) (set
 
 func (m *Mac) undoAutologin(ctx context.Context) (settings.Change, error) {
 	change := settings.Change{Before: m.autologinValues(ctx)}
-	_, _ = m.probe(ctx, "sysadminctl", "-autologin", "off")
+	_, _ = m.output(ctx, "sysadminctl", "-autologin", "off")
 	if err := m.files.Remove(kcpasswordTo); err != nil && !errors.Is(err, fs.ErrNotExist) {
 		return change, err
 	}
 	for _, key := range []string{"autoLoginUser", "oneTimeAutoLogin", "autoLoginUserScreenLocked"} {
-		_, _ = m.probe(ctx, "defaults", "delete", loginWindow, key)
+		_, _ = m.output(ctx, "defaults", "delete", loginWindow, key)
 	}
 	change.Steps = []settings.ChangeStep{done(kcpasswordTo, "removed"), done("autoLoginUser", "cleared")}
 	change.After = m.autologinValues(ctx)
@@ -91,7 +91,7 @@ func (m *Mac) undoAutologin(ctx context.Context) (settings.Change, error) {
 }
 
 func (m *Mac) autologinValues(ctx context.Context) []settings.KeyValue {
-	user, ok := m.probe(ctx, "defaults", "read", loginWindow, "autoLoginUser")
+	user, ok := m.output(ctx, "defaults", "read", loginWindow, "autoLoginUser")
 	if !ok {
 		user = ""
 	}

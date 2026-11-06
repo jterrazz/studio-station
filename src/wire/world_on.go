@@ -37,7 +37,7 @@ import (
 	"github.com/jterrazz/studio-station/src/catalog"
 	corefake "github.com/jterrazz/studio-station/src/core/adapter/fake"
 	"github.com/jterrazz/studio-station/src/core/call"
-	probe "github.com/jterrazz/studio-station/src/core/call/lanes"
+	"github.com/jterrazz/studio-station/src/core/call/lanes"
 	corecontract "github.com/jterrazz/studio-station/src/core/contract"
 	"github.com/jterrazz/studio-station/src/core/fail"
 	diskfake "github.com/jterrazz/studio-station/src/disk/adapter/fake"
@@ -908,7 +908,7 @@ func (c budgetClock) Sleep(ctx context.Context, d time.Duration) error {
 	return c.worldClock.Sleep(context.WithValue(ctx, waits{}, true), d)
 }
 
-func (m *worldMac) budgets() probe.Clock { return budgetClock{m.run.clock()} }
+func (m *worldMac) budgets() lanes.Clock { return budgetClock{m.run.clock()} }
 
 // invariant: a Mac's engine socket is its engine in this process, reached
 // through a pipe; its loopback ports are the world's, busy when the Mac

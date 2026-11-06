@@ -53,7 +53,7 @@ func (m *Mac) undoPower(ctx context.Context, it catalog.ConfigItem) (settings.Ch
 // value: the policy's keys as pmset reads them now; a key it does not
 // print is empty.
 func (m *Mac) powerValues(ctx context.Context, policy []settings.KeyValue) []settings.KeyValue {
-	out, ok := m.probe(ctx, "pmset", "-g", "custom")
+	out, ok := m.output(ctx, "pmset", "-g", "custom")
 	if !ok {
 		return nil
 	}

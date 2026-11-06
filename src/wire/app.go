@@ -15,7 +15,7 @@ import (
 	awakemacos "github.com/jterrazz/studio-station/src/awake/adapter/macos"
 	awakecontract "github.com/jterrazz/studio-station/src/awake/contract"
 	"github.com/jterrazz/studio-station/src/catalog"
-	probe "github.com/jterrazz/studio-station/src/core/call/lanes"
+	"github.com/jterrazz/studio-station/src/core/call/lanes"
 	"github.com/jterrazz/studio-station/src/core/fail"
 	coremachine "github.com/jterrazz/studio-station/src/core/machine"
 	"github.com/jterrazz/studio-station/src/domain/settings"
@@ -254,7 +254,7 @@ type machine struct {
 	raw       system.Host
 	door      local.Power
 	far       *late
-	pool      *probe.Pool
+	pool      *lanes.Pool
 	host      system.Host
 	powerPort awakecontract.Power
 	profile   coremachine.Profile
@@ -296,7 +296,7 @@ func resolve(raw system.Host, door local.Power, vars map[string]string, world *w
 		world.stores(st)
 	}
 	registered, _ := st.name().Get()
-	var budgets probe.Clock = h.Clock
+	var budgets lanes.Clock = h.Clock
 	if world != nil {
 		budgets = world.budgets()
 	}
@@ -305,7 +305,7 @@ func resolve(raw system.Host, door local.Power, vars map[string]string, world *w
 		raw:    raw,
 		door:   door,
 		far:    &late{},
-		pool:   probe.NewPool(context.Background(), budgets, commandLane, walkLane),
+		pool:   lanes.NewPool(context.Background(), budgets, commandLane, walkLane),
 		host:   h,
 		vars:   vars,
 		paths:  paths,

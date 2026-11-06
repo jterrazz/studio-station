@@ -56,18 +56,18 @@ type Misplaced struct {
 	Clean []Action
 }
 
-type SizeProbe string
+type SizeMethod string
 
 const (
-	SizeDirs     SizeProbe = ""
-	SizeDockerDF SizeProbe = "docker-system-df"
+	SizeDirs     SizeMethod = ""
+	SizeDockerDF SizeMethod = "docker-system-df"
 )
 
 type Disk struct {
 	Paths     []Stored
 	Installed []string
 	Removal   map[string]string
-	Size      SizeProbe
+	Size      SizeMethod
 	Clean     []Action
 	Reset     []Action
 	NoReset   string

@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/jterrazz/studio-station/src/catalog"
-	probe "github.com/jterrazz/studio-station/src/core/call/lanes"
+	"github.com/jterrazz/studio-station/src/core/call/lanes"
 	"github.com/jterrazz/studio-station/src/disk"
 	"github.com/jterrazz/studio-station/src/domain/storage"
 	"github.com/jterrazz/studio-station/src/page"
@@ -72,7 +72,7 @@ func TestNoSectionFlickers(t *testing.T) {
 			Storage: catalog.Disk{Paths: []catalog.Stored{{Path: "~/" + name + "/*", Level: catalog.LevelCache}}}})
 		names = append(names, name)
 	}
-	pool := probe.NewPool(context.Background(), clock{}, 4, 1)
+	pool := lanes.NewPool(context.Background(), clock{}, 4, 1)
 	defer pool.Close()
 	host := systemtest.Host(systemtest.NewRunner(t), fs.FS, systemtest.Env{}, systemtest.NewNet(), &systemtest.Clock{})
 	host.FS, host.Clock = fs, clock{}

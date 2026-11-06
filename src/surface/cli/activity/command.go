@@ -131,7 +131,7 @@ func vm(ctx context.Context, d Deps, env kit.Env, holder machine.Ref, name strin
 	if kept.Graph != nil {
 		r.Graph = kept.Graph
 	}
-	r.Findings = activity.Lasting(r.Findings, kept.Findings)
+	r.Findings = activity.Persisting(r.Findings, kept.Findings)
 	v.Report = r
 	return v, err
 }

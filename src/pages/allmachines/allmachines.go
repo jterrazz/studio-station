@@ -16,7 +16,7 @@ import (
 const (
 	KeyBuild  = "b"
 	KeyForget = "f"
-	KeyProbe  = "p"
+	KeyHealth = "p"
 	KeyUnlock = "o"
 )
 
@@ -109,7 +109,7 @@ func Actions(r Reading) []page.Action {
 	add(page.Action{Key: pagemachines.KeyStart, Label: "start/stop", On: page.OnRow, Priority: 5, Mutates: true}, vms)
 	add(page.Action{Key: KeyForget, Label: "forget", On: page.OnRow, Priority: 6, Mutates: true, Confirm: &page.Confirm{Yes: "forget"}}, without(remote, vms))
 	add(page.Action{Key: KeyBuild, Label: "build images", On: page.OnPage, Priority: 7, Mutates: true}, nil)
-	add(page.Action{Key: KeyProbe, Label: "health", On: page.OnRow, Priority: 8}, remote)
+	add(page.Action{Key: KeyHealth, Label: "health", On: page.OnRow, Priority: 8}, remote)
 	add(page.Action{Key: KeyUnlock, Label: "unlock", On: page.OnRow, Priority: 9, Mutates: true}, without(remote, vms))
 	return out
 }

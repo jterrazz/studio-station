@@ -137,8 +137,8 @@ func digestOf(values []settings.KeyValue) string {
 	return strings.Join(parts, "\n")
 }
 
-func (m *Mac) probe(ctx context.Context, name string, args ...string) (string, bool) {
-	return local.Probe(ctx, m.run, local.Cmd{Name: name, Args: args, Timeout: readBudget})
+func (m *Mac) output(ctx context.Context, name string, args ...string) (string, bool) {
+	return local.Read(ctx, m.run, local.Cmd{Name: name, Args: args, Timeout: readBudget})
 }
 
 func (m *Mac) must(ctx context.Context, name string, args ...string) (string, error) {

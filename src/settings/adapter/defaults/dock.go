@@ -36,13 +36,13 @@ func (d Dock) Apply(ctx context.Context, it catalog.ConfigItem, _ map[string]str
 	// outside: `defaults delete` fails when the domain is already absent, which is the
 	// state the reset asks for.
 	if d.of == catalog.ProcDockReset {
-		_, _ = local.Probe(ctx, d.run, local.Command("defaults", "delete", dockDomain))
+		_, _ = local.Read(ctx, d.run, local.Command("defaults", "delete", dockDomain))
 	} else if _, err := local.Must(ctx, d.run, local.Command("defaults", "write", dockDomain, "persistent-apps", "-array-add", `{"tile-type"="small-spacer-tile";}`)); err != nil {
 		return settings.Change{}, err
 	}
 	// outside: killall fails while the Dock is down, between a restart and launchd's
 	// relaunch, which then reads the change anyway.
-	_, _ = local.Probe(ctx, d.run, local.Command("killall", "Dock"))
+	_, _ = local.Read(ctx, d.run, local.Command("killall", "Dock"))
 	var change settings.Change
 	for _, kv := range settings.Sets(it) {
 		change.Steps = append(change.Steps, settings.ChangeStep{Label: "dock", State: catalog.StateOK, Detail: kv.Value})

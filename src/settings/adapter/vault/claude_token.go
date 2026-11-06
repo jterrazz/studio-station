@@ -47,7 +47,7 @@ func (c *ClaudeToken) Observe(ctx context.Context, it catalog.ConfigItem) (setti
 func (c *ClaudeToken) values(ctx context.Context) []settings.KeyValue {
 	token := "not kept"
 	if _, ok := c.run.LookPath("studio"); ok {
-		if _, ok := local.Probe(ctx, c.run, local.Cmd{Name: "studio", Args: []string{"credentials", "export", tokenName}, Timeout: readBudget}); ok {
+		if _, ok := local.Read(ctx, c.run, local.Cmd{Name: "studio", Args: []string{"credentials", "export", tokenName}, Timeout: readBudget}); ok {
 			token = kept
 		}
 	}

@@ -42,7 +42,7 @@ func (s *Signing) Observe(ctx context.Context, it catalog.ConfigItem) (settings.
 func (s *Signing) values(ctx context.Context) []settings.KeyValue {
 	out := make([]settings.KeyValue, 0, 2)
 	for _, key := range []string{"commit.gpgsign", "gpg.program"} {
-		v, ok := local.Probe(ctx, s.run, local.Cmd{Name: "git", Args: []string{"config", "--global", key}, Timeout: readBudget})
+		v, ok := local.Read(ctx, s.run, local.Cmd{Name: "git", Args: []string{"config", "--global", key}, Timeout: readBudget})
 		if !ok {
 			v = ""
 		}
@@ -61,7 +61,7 @@ func (s *Signing) Apply(ctx context.Context, _ catalog.ConfigItem, _ map[string]
 		return settings.Change{}, errors.New("gpg is not installed: station apps install gpg")
 	}
 	change := settings.Change{Before: s.values(ctx)}
-	if out, ok := local.Probe(ctx, s.run, local.Cmd{Name: "gpg", Args: []string{"--list-secret-keys", "--keyid-format", "long", email}, Timeout: readBudget}); ok && out != "" {
+	if out, ok := local.Read(ctx, s.run, local.Cmd{Name: "gpg", Args: []string{"--list-secret-keys", "--keyid-format", "long", email}, Timeout: readBudget}); ok && out != "" {
 		change.Steps = append(change.Steps, done("gpg key", "already exists for "+email))
 	} else {
 		batch := local.Command("gpg", "--batch", "--generate-key")
