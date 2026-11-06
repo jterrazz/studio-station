@@ -5,11 +5,12 @@ Everything `station` shows, in a terminal, a pipe or the TUI, comes from one pal
 | Section           | Answers                                              |
 | ----------------- | ---------------------------------------------------- |
 | The palette       | The colours, by meaning                              |
-| The marks         | The four glyphs and what each says                   |
+| The marks         | The glyphs and what each says                        |
 | Typography        | Margins, rows, columns and empty states              |
 | Header and footer | What frames every document                           |
 | Pipe and JSON     | The record format a script reads, written once       |
 | The TUI           | The shell, its focus, its widths and the loading law |
+| Graphs            | The sparklines and bars of Activity                  |
 
 ## The palette
 
@@ -41,6 +42,20 @@ The same tokens colour Fang's help and the forms that ask a setting's values.
 | `⊘`  | off here, your choice                       |
 | `–`  | not for this machine                        |
 | `?`  | not managed by station, or not readable now |
+
+Beside the marks, a few glyphs carry structure, never a state:
+
+| Glyph            | Means                                                                          |
+| ---------------- | ------------------------------------------------------------------------------ |
+| `→`              | a next step, at the foot of a page                                             |
+| `✓`              | a step passed, a row ticked for a group action, a toast's success              |
+| `+` / `-`        | a folded / unfolded group in the TUI                                           |
+| `▸`              | the current entry of the sidebar, and the step that runs in the Progress strip |
+| `◇`              | All machines, in the TUI's tree                                                |
+| `⏻`, `⚡`        | a Mac kept awake, a battery charging                                           |
+| `›`              | between the levels of the breadcrumb, and before a text you type               |
+| `├─`, `└─`       | a Mac's VMs under it                                                           |
+| `▁▂▃▄▅▆▇█`, `█░` | a sparkline, a bar ([Graphs](#graphs))                                         |
 
 The glyph is the meaning and survives a pipe and `NO_COLOR`; colour only reinforces it. `◌` (Muted) marks a row whose read has not answered yet, on a terminal and in the TUI only: a pipe, `NO_COLOR` and `--json` wait for every read, so they never carry it. `⊘` and `?` are Muted, `–` Subtle, each always followed by its word (`page.OffHere`, `page.NotForThisMachine`, `page.NotKnown`); the families draw them as they take their v3 words. Every glyph station prints is a token of `src/ui/token/glyphs.go` (`token.Glyphs`), and the layer test refuses one in any other Go literal of a migrated package. Folding in the TUI uses `+` and `-` before a group title; the cursor is a background, not a glyph.
 
@@ -90,6 +105,10 @@ All machines › Settings is the matrix (vision screen 4): one row per setting, 
 A section with keys of its own is a screen, under `surface/tui/screens/` (Activity, Awake, Ports, a VM's Overview and SSH): it adds to its page's words only what it keeps itself (Activity's graph window, `--graph 6m`, a flag no help shows), draws its lines or lets the list draw them, names its keys for the footer, keeps the list's cursor off the sections it draws no row of (a screen that draws its own lines draws the cursor on the row it is on, and the list's filter still keeps its rows), and says how often it is read again while shown (Activity every 2 s, Awake every second, so a guard's end redraws at once). A screen may read pages beside its own and draw fixed panes at the right of the master pane, under it on a terminal narrower than 110 columns: a server's Overview reads its Activity over the last hour, its Mac's Ports and its ssh command, and draws its state, what it was created with, its last hour, its door and what station leaves to its tooling, with its Health and its Ports beside; its SSH screen reads its Overview and its Mac's ssh command to say each hop that reaches it. All machines › Ports is one wide pane, as SPEC §9.2 draws it: a table per class (MACHINE, PORT, WHAT, then LISTENS ON and DECLARED, or ROUTE and VERIFIED, or the link), the fix of what needs you said once in full, the count of what listens on its machine only, which `a` unfolds (`ports --all`); `enter` opens a row's detail, its QR code with it, over the pane. All machines › Activity draws a row per machine, each VM one step in under its Mac, CPU with a sparkline of the session's reads, how its rates were read, what needs you from them, and each Mac's thermal state and battery, which its page carries only for the TUI (`activity --all-machines --graph`). Awake draws a block per Mac, this one first: its state, then the keys that keep it awake and the lid and battery toggles it reports (E1), its guards; a Mac that never sleeps says what set it and the servers that pause while it sleeps. While the TUI shows a machine's activity (its Activity or its Overview, or All machines for every machine of this Mac) it holds this Mac's engine's watch on it, as the menu bar open does, so the engine samples it every 2 s. A key's call is the CLI's command for its words, run as the same binary: a yes/no question first, or a typed name (`S` stops a server, `D` deletes a VM, `enter` off until its name is typed: `Type infra to stop it`), or a form whose answers make the words; it runs in the Progress strip as every command does. A copy (`c`) goes to the terminal's clipboard (OSC 52) and is toasted there too. The graphs are `ui/atom`'s: a sparkline from its label whose columns are the mean of their points, the newest at its right end, and a bar whose full and light blocks carry the share without colour.
 
 The loading law: the shown section is read first, then All machines and each other Mac's Overview. Every read runs in a command off the frame, its answer arrives as a message, and the view only draws what has answered: until then a section is `◌` with its name. A view never calls a read or the system; the architecture rule `tui-loading-law` refuses a call of the TUI's read outside a command.
+
+## Graphs
+
+Activity is the one section with graphs, in the TUI and the menu bar only; the CLI prints values, a pipe and `--json` the numbers. A graph is a cell of the kind `page.KindSpark`: a sparkline of the eight levels `▁▂▃▄▅▆▇█` (`token.Spark`), one point per sample of the engine's history, each 0 to 100 of its measure's own scale (CPU, memory, swap, disk read and write, network in and out), and a bar of `█` and `░` for the disk's free space. A measure with no points has no graph, never a flat line of zeros. The window is the screen's (`--graph 6m`). Each graph sits after its line's value, so a screen reader and `NO_COLOR` keep the number.
 
 ## Related
 

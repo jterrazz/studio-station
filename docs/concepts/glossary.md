@@ -2,11 +2,12 @@
 
 One word per concept, one concept per word: the words below are the only ones the code, the help, the docs and the output use for these concepts.
 
-| Section       | Answers                                            |
-| ------------- | -------------------------------------------------- |
-| The words     | Every term, what it means, and the words it is not |
-| The verbs     | One verb per meaning, and which one destroys       |
-| Default names | How a VM and a Mac get their name                  |
+| Section               | Answers                                            |
+| --------------------- | -------------------------------------------------- |
+| The words             | Every term, what it means, and the words it is not |
+| The words of the code | The architecture's words, in Go and the docs only  |
+| The verbs             | One verb per meaning, and which one destroys       |
+| Default names         | How a VM and a Mac get their name                  |
 
 Code identifiers follow the words (`Mac`, `VM`, `Lifetime`, `LivesOn`). A word listed as rejected never appears for that concept, and the words v3 retired are refused everywhere by `specs/architecture/banned_test.go`; every other page links here and defines nothing. The one spelling rule: "catalogue" in prose, `catalog` in Go (the package name; same word).
 
@@ -74,6 +75,29 @@ Code identifiers follow the words (`Mac`, `VM`, `Lifetime`, `LivesOn`). A word l
 | **Activity**             | the monitoring section, on every machine right after Overview                                                                                                                                                                                          | status system                                                                                          |
 | **Needs you**            | the heading of the lines asking for your action; one line is a **finding**, its gesture a **fix**                                                                                                                                                      | To do, action, repair                                                                                  |
 | **error type**           | what kind of no an error is: refused, failed, unreachable...                                                                                                                                                                                           | error kind ("kind" is a machine's word)                                                                |
+| **section**              | a part of a machine's page: Overview, Activity, Apps, Settings, Disk, Ports, Accounts, Background, Awake, SSH, in that one order                                                                                                                       | tab                                                                                                    |
+| **always-on Mac**        | the settings group for a Mac that hosts servers and never sleeps; a group, not a kind                                                                                                                                                                  | headless, production host                                                                              |
+| **Mac readiness**        | the checklist an always-on Mac must pass, each item measured on that Mac                                                                                                                                                                               |                                                                                                        |
+| **Progress**             | station's own work in progress, the TUI's strip                                                                                                                                                                                                        | Tasks (a task is a background task)                                                                    |
+| **use**                  | `station use <machine>`: the machine this terminal's commands run on; `--on` names it for one command                                                                                                                                                  | switch, context                                                                                        |
+
+## The words of the code
+
+The architecture has its own words, used in Go and in the docs, never in the interface ([Architecture](architecture.md)):
+
+| Word           | Means                                                                                                             |
+| -------------- | ----------------------------------------------------------------------------------------------------------------- |
+| **family**     | a top-level package of `src/`: a section's family, or a noun of its own (`machines`, `images`, `engine`, `setup`) |
+| **model**      | a family's root package: its values and rules, no I/O                                                             |
+| **contract**   | an interface in a family's `contract/`: one need of station from the world outside                                |
+| **adapter**    | a contract's implementation for one technology, in `adapter/<tech>/`; `fake` is the one over the world            |
+| **strategy**   | a contract with several adapters chosen per item at run time, through one registry                                |
+| **call**       | a use case, `<family>.<verb>`, in a family's `calls/`; a **watch** is a read that fills progressively             |
+| **Router**     | what decides on which machine and in which process a call runs                                                    |
+| **Profile**    | what a machine is and can do: its kind, its system, its capabilities                                              |
+| **capability** | a fact a machine reports through the contract that owns it (a battery, a lid, a job manager, a hypervisor)        |
+| **world**      | the fake world the spec build runs every fake over                                                                |
+| **tailnet**    | Tailscale's private network, as the `Tailnet` contract names it; the interface says Tailscale                     |
 
 ## The verbs
 
