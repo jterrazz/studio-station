@@ -70,7 +70,8 @@ ip=$(boot "$vm") || fail "boot $vm"
 say "-- $vm at $ip"
 
 # invariant: inside, the guest plays a Mac: STATION_MACHINE_KIND=host on every call
-# but the one that reads Activity as a macOS workspace's guest.
+# but those that play a macOS workspace's guest: the Activity read, and the npm and
+# uv apps the catalogue places only there.
 in_vm() { ssh -n "${ssh_opts[@]}" -i "$ssh_key" "$user@$ip" "export STATION_MACHINE_KIND=host; $1"; }
 say "kern.hv_vmm_present: $(in_vm 'sysctl -n kern.hv_vmm_present' 2>&1)"
 
@@ -149,8 +150,10 @@ case_pass
 
 
 case_begin apps-every-method AP-24
-while read -r app method; do
+while read -r app method kind; do
   case "$app" in '' | '#'*) continue ;; esac
+  pin=""
+  [ -z "$kind" ] || pin="STATION_MACHINE_KIND=$kind"
   if [ "$method" = mas ]; then
     in_vm "$brew_path $station apps install mas </dev/null" >> "$log" 2>&1 || miss "apps install mas exited $?"
     out=$(perl -e 'alarm 120; exec @ARGV' ssh -n "${ssh_opts[@]}" -i "$ssh_key" "$user@$ip" "export STATION_MACHINE_KIND=host; $brew_path $mise_path $station apps install $app </dev/null" 2>&1)
@@ -170,9 +173,9 @@ while read -r app method; do
     fi
     flag=""
     [ "$verb" != remove ] || flag=--yes
-    in_vm "$brew_path $mise_path $station apps $verb $app $flag </dev/null" >> "$log" 2>&1 || { miss "apps $verb $app ($method) exited $?"; break; }
-    state=$(in_vm "$brew_path $mise_path $station apps --all --json" | jq -r --arg a "$app" '.apps[] | select(.name == $a) | .state')
-    say "   $method $app: $verb, then $state"
+    in_vm "$pin $brew_path $mise_path $station apps $verb $app $flag </dev/null" >> "$log" 2>&1 || { miss "apps $verb $app ($method) exited $?"; break; }
+    state=$(in_vm "$pin $brew_path $mise_path $station apps --all --json" | jq -r --arg a "$app" '.apps[] | select(.name == $a) | .state')
+    say "   $method $app${kind:+ as $kind}: $verb, then $state"
     case "$verb" in
       remove) [ "$state" = not-installed ] || [ "$state" = not-managed ] || miss "$app is $state after remove" ;;
       *) [ "$state" != not-installed ] || miss "$app is not installed after $verb" ;;
