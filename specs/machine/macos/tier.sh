@@ -229,8 +229,8 @@ case_pass
 
 case_begin disk-free-erase DK-16
 # invariant: the home is listed six deep before and after free and erase; a removed
-# path lies under a path of the rows the action empties (or is the OS's own), and a
-# made one is in the footprint, so a free that deleted ~/.zshrc or ~/.ssh is caught.
+# path lies under one the footprint lets the action remove (or is the OS's own), and
+# a made one is in the footprint, so a free that deleted ~/.zshrc or ~/.ssh is caught.
 deep() { in_vm 'cd ~ && find . -mindepth 1 -maxdepth 6 2>/dev/null | sed "s|^\./||" | LC_ALL=C sort'; }
 snapshot() {
   local before=$1 after=$2 may=$3 what=$4 path count
@@ -246,6 +246,15 @@ snapshot() {
   count=$(wc -l < "$before.removed" | tr -d ' ')
   say "   $what: $count home paths removed, every one under its rows; $(wc -l < "$before.made" | tr -d ' ') made, in the footprint"
 }
+# value: what disk free may remove, by the footprint: its can rebuild and misplaced
+# paths, what its Free lines delete, and the unused runtimes `mise prune` drops
+# (every runtime the mise config names is checked still installed after).
+free_paths() {
+  local ref="$repo/docs/reference/footprint.md"
+  grep -E '^\| `~/[^`]*` +\| (can rebuild|misplaced) ' "$ref" | sed -E 's/^\| `~\/([^`]*)`.*/\1/'
+  grep '^Free:' "$ref" | sed 's/ Erase:.*//' | grep -o 'delete `~/[^`]*`' | sed 's/^delete `~\///; s/`$//'
+  printf '%s\n' '.local/share/mise/installs/**' '.local/share/mise/shims/*'
+}
 row_paths() { jq -r "$2 | .paths[] | select(startswith(\"~/\")) | ltrimstr(\"~/\")" "$1"; }
 data_sizes() { jq -r '.rows[] | select(.group == "your-data") | "\(.app) \(.bytes) \(.paths | join(" "))"' "$1"; }
 in_vm "$station disk --json" > "$work/disk-before.json" || fail "disk --json"
@@ -253,9 +262,11 @@ data_sizes "$work/disk-before.json" > "$work/data-before.txt"
 deep > "$work/free-before.txt" || fail "list the home"
 in_vm "$brew_path $mise_path $station disk free" >> "$log" 2>&1 || fail "disk free exited $?"
 deep > "$work/free-after.txt" || fail "list the home"
-row_paths "$work/disk-before.json" '.rows[] | select(.group == "can-rebuild")' > "$work/free-may.txt"
+free_paths > "$work/free-may.txt"
 in_vm "$station disk --json" > "$work/disk-after.json" || fail "disk --json"
 snapshot "$work/free-before.txt" "$work/free-after.txt" "$work/free-may.txt" "disk free"
+missing=$(in_vm "$mise_path mise ls --missing" 2>&1)
+[ -z "$missing" ] || miss "disk free pruned a runtime the mise config names: $missing"
 left=$(jq -r '.rows[] | select(.group == "can-rebuild" and .bytes > 0) | "\(.app) \(.bytes)"' "$work/disk-after.json")
 [ -z "$left" ] || fail "disk free left: $left"
 data_sizes "$work/disk-after.json" > "$work/data-after.txt"
