@@ -29,10 +29,12 @@ function binaryIsStale(): boolean {
     return false;
 }
 
-// invariant: `make test` builds the binary before the runner starts; a direct run that
-// finds it stale builds it beside and renames it into place, so a worker never runs a
-// binary another worker is still writing.
-if (binaryIsStale()) {
+// invariant: `make test` builds the binary before the runner starts and says so
+// (STATION_SPEC_BUILT), so every document of a gate runs the one binary it built, even
+// when `src/` changes under the run; a direct run that finds it stale builds it beside
+// and renames it into place, so a worker never runs a binary another worker is still
+// writing.
+if (process.env.STATION_SPEC_BUILT !== '1' && binaryIsStale()) {
     const version = execSync('git describe --tags --always --dirty', { cwd: REPO_ROOT })
         .toString()
         .trim();

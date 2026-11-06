@@ -65,8 +65,8 @@ VZ_SUITES    := specs/usecases/machines specs/usecases/engine/keep
 test: node_modules/.install ## The Go tests (modules and the boundary), then the CLI specs against a fresh build of station, then the VM suites again over vz
 	@go test ./src/... ./specs/...
 	@go build -tags $(SPEC_TAGS) -ldflags "$(LDFLAGS)" -o $(TEST_PATH) ./src/cmd/station && touch $(TEST_PATH)
-	@npx typescript test
-	@STATION_SPEC_HYPERVISOR=vz npx vitest run $(VZ_SUITES)
+	@STATION_SPEC_BUILT=1 npx typescript test
+	@STATION_SPEC_BUILT=1 STATION_SPEC_HYPERVISOR=vz npx vitest run $(VZ_SUITES)
 
 check: lint test build-linux menubar-check ## Every gate a change passes
 
