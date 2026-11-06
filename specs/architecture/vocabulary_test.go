@@ -454,8 +454,9 @@ func TestVocabularyLetsOnlyTheCatalogueSayOrbStack(t *testing.T) {
 		{"docs/reference", "docs/reference/machines.md:1", "OrbStack runs the VMs"},
 		{"src/machines", "src/machines/errors.go:1", "OrbStack"},
 	}
-	got := []string{}
-	for _, f := range ruleVocabulary(planted) {
+	found := ruleVocabulary(planted)
+	got := make([]string, 0, len(found))
+	for _, f := range found {
 		got = append(got, f.where)
 	}
 	if want := []string{"docs/reference/machines.md:1", "src/machines/errors.go:1"}; !slices.Equal(got, want) {
