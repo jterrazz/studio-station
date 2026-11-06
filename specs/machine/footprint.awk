@@ -3,9 +3,10 @@
 # exceptions, the OS's noise; `*` and `?` stay inside one folder, `**` spans
 # folders and `**/` may be none); the second the paths a step created, relative
 # to $HOME. A path is matched when it is an allowed path, lies under one, or is a
-# parent folder of one (~/.local made for ~/.local/share/mise). Prints every
-# unmatched path.
-# usage: awk -f footprint.awk allowed.txt created.txt
+# parent folder of one (~/.local made for ~/.local/share/mise); with -v under=1, as
+# for the paths a step removed, only an allowed path or one under it matches.
+# Prints every unmatched path.
+# usage: awk [-v under=1] -f footprint.awk allowed.txt paths.txt
 function regex(glob,    out, i, c) {
     out = ""
     for (i = 1; i <= length(glob); i++) {
@@ -34,7 +35,7 @@ FNR == NR {
     path = $0
     for (i = 1; i <= count; i++) {
         if (path ~ re[i]) next
-        if (index(lit[i], path "/") == 1) next
+        if (!under && index(lit[i], path "/") == 1) next
     }
     print path
 }

@@ -45,3 +45,23 @@ func TestTheMacOSNoiseMatchesByShapeAndAStrayIsStillReported(t *testing.T) {
 		t.Fatalf("unmatched:\n%s\nwant:\n%s", out, want)
 	}
 }
+
+func TestARemovedPathMatchesOnlyUnderWhatTheActionMayRemoveNeverItsParent(t *testing.T) {
+	dir := t.TempDir()
+	may := filepath.Join(dir, "may.txt")
+	removed := filepath.Join(dir, "removed.txt")
+	if err := os.WriteFile(may, []byte(".cache/uv\nLibrary/Caches/Homebrew\n.zcompdump*\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	listing := ".cache/uv\n.cache/uv/archive-v0\nLibrary/Caches/Homebrew/downloads\n.zcompdump-e2e-5.9\n.cache\nLibrary\n.zshrc\n.ssh/authorized_keys\n"
+	if err := os.WriteFile(removed, []byte(listing), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	out, err := exec.Command("/usr/bin/awk", "-v", "under=1", "-f", "footprint.awk", may, removed).Output()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if want := ".cache\nLibrary\n.zshrc\n.ssh/authorized_keys\n"; string(out) != want {
+		t.Fatalf("unmatched:\n%s\nwant:\n%s", out, want)
+	}
+}

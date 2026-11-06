@@ -18,3 +18,5 @@ Library/HomeKit
 Library/DataDeliveryServices
 Library/Sharing/**
 Library/**/*.sb-*-*
+# sshd keeps one agent socket per session of the suite under ~/.ssh/agent.
+.ssh/agent

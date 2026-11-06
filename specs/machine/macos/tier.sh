@@ -228,11 +228,34 @@ case_pass
 
 
 case_begin disk-free-erase DK-16
+# invariant: the home is listed six deep before and after free and erase; a removed
+# path lies under a path of the rows the action empties (or is the OS's own), and a
+# made one is in the footprint, so a free that deleted ~/.zshrc or ~/.ssh is caught.
+deep() { in_vm 'cd ~ && find . -mindepth 1 -maxdepth 6 2>/dev/null | sed "s|^\./||" | LC_ALL=C sort'; }
+snapshot() {
+  local before=$1 after=$2 may=$3 what=$4 path count
+  [ -s "$may" ] || fail "$what: no row path to remove: the check would prove nothing"
+  LC_ALL=C comm -23 "$before" "$after" > "$before.removed"
+  LC_ALL=C comm -13 "$before" "$after" > "$before.made"
+  [ -s "$before.removed" ] || miss "$what removed nothing from the home"
+  grep -v '^#' "$suite/macos/os-noise.txt" >> "$may"
+  while IFS= read -r path; do miss "$what removed ~/$path, outside its rows"; done \
+    < <(awk -v under=1 -f "$suite/footprint.awk" "$may" "$before.removed")
+  while IFS= read -r path; do miss "$what made ~/$path, outside the footprint"; done \
+    < <(awk -f "$suite/footprint.awk" "$fp/allowed.txt" "$before.made")
+  count=$(wc -l < "$before.removed" | tr -d ' ')
+  say "   $what: $count home paths removed, every one under its rows; $(wc -l < "$before.made" | tr -d ' ') made, in the footprint"
+}
+row_paths() { jq -r "$2 | .paths[] | select(startswith(\"~/\")) | ltrimstr(\"~/\")" "$1"; }
 data_sizes() { jq -r '.rows[] | select(.group == "your-data") | "\(.app) \(.bytes) \(.paths | join(" "))"' "$1"; }
 in_vm "$station disk --json" > "$work/disk-before.json" || fail "disk --json"
 data_sizes "$work/disk-before.json" > "$work/data-before.txt"
+deep > "$work/free-before.txt" || fail "list the home"
 in_vm "$brew_path $mise_path $station disk free" >> "$log" 2>&1 || fail "disk free exited $?"
+deep > "$work/free-after.txt" || fail "list the home"
+row_paths "$work/disk-before.json" '.rows[] | select(.group == "can-rebuild")' > "$work/free-may.txt"
 in_vm "$station disk --json" > "$work/disk-after.json" || fail "disk --json"
+snapshot "$work/free-before.txt" "$work/free-after.txt" "$work/free-may.txt" "disk free"
 left=$(jq -r '.rows[] | select(.group == "can-rebuild" and .bytes > 0) | "\(.app) \(.bytes)"' "$work/disk-after.json")
 [ -z "$left" ] || fail "disk free left: $left"
 data_sizes "$work/disk-after.json" > "$work/data-after.txt"
@@ -247,7 +270,11 @@ ip=$(boot "$erase_vm") || fail "boot $erase_vm"
 in_vm "$station disk --json" > "$work/erase-before.json" || fail "disk --json"
 held=$(jq -r '[.rows[] | select(.app == "go" and .group == "your-data") | .paths[] | select(. == "~/.local/share/go/bin/*")] | length' "$work/erase-before.json")
 [ "$held" -gt 0 ] || fail "go's bin holds nothing before the erase: the check would prove nothing"
+deep > "$work/erase-before.txt" || fail "list the home"
 in_vm "$mise_path $station disk erase go --confirm=go" >> "$log" 2>&1 || fail "disk erase go exited $?"
+deep > "$work/erase-after.txt" || fail "list the home"
+row_paths "$work/erase-before.json" '.rows[] | select(.app == "go" and (.group == "your-data" or .group == "can-rebuild"))' > "$work/erase-may.txt"
+snapshot "$work/erase-before.txt" "$work/erase-after.txt" "$work/erase-may.txt" "disk erase go"
 in_vm "$station disk --json" > "$work/erase-after.json" || fail "disk --json"
 gone=$(jq -r '.rows[] | select(.app == "go" and (.group == "your-data" or .group == "can-rebuild") and .bytes > 0) | "\(.group) \(.paths | join(" "))"' "$work/erase-after.json")
 [ -z "$gone" ] || fail "disk erase go left: $gone"
