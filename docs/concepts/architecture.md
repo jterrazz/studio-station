@@ -25,7 +25,7 @@ src/
     kit/          how a leaf and a group are declared; how a leaf answers the confirmation its call asks; the wording of every domain error
     words/        the wording of every fail.Code a call raises
   domain/         behaviour, never touching the machine except through ports
-    settings/ tools/ config/ setup/ status/ storage/ machines/ images/ secrets/ remote/ tailnet/ shell/
+    tools/ config/ setup/ storage/ machines/ images/ secrets/ services/ guest/ power/ accounts/ shell/
   engine/         the per-Mac process (the engine): its runs, its socket, the guards it holds
     process/      the engine's own calls over its live state, and its station.api/v2 server: those and the registry's
 ```
@@ -33,13 +33,13 @@ src/
 The ports and the data:
 
 ```text
-  system/         the ports: interfaces and value types (Runner, FS, Env, Net, Clock, Host, Engine)
-    systemtest/   scripted fakes of every port, for tests
   machines/adapter/
     tart/         the Engine adapter, over Runner
     ssh/          the connection to a VM, over x/crypto/ssh
   platform/
-    local/        the real adapters: the only importer of os/exec, files, the network
+    local/        the host's door (Runner, FS, Env, Net, Sockets, Clock, Host) and its real
+                  adapters: the only importer of os/exec, files, the network
+      localtest/  scripted fakes of that door, for tests
     darwin/       the only cgo: IOKit power assertions, the lid, power sources, notify(3)
 ```
 
