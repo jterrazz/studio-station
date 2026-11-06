@@ -481,19 +481,22 @@ extension PageHeader where Trailing == EmptyView {
     }
 }
 
-// value: a machine's state word in its colour, as the vision's head says
-// "Running".
+// value: a machine's state as the vision's head says "Running": the dot
+// carries the colour, the word stays secondary ink, legible on any panel.
 public struct StateWord: View {
     let word: String
-    let ink: Color
+    let mark: Mark
 
-    public init(_ word: String, ink: Color) {
+    public init(_ word: String, mark: Mark) {
         self.word = word
-        self.ink = ink
+        self.mark = mark
     }
 
     public var body: some View {
-        Text(word).font(.subheadline.weight(.semibold)).foregroundStyle(ink).lineLimit(1).fixedSize()
+        HStack(spacing: 5) {
+            StateDot(mark: mark)
+            Text(word).font(.subheadline.weight(.semibold)).foregroundStyle(.secondary).lineLimit(1).fixedSize()
+        }
     }
 }
 

@@ -38,7 +38,7 @@ struct MachineContent: View {
         return PageHeader(back: back, title: s.title ?? "", subtitle: caption.joined(separator: Token.Glyph.sep), symbol: Token.Symbol.machine(page.context?.kind),
                           badge: server ? "Server" : nil, action: handlers.back) {
             if let word = row?.cells?.first.map({ Format.show($0) }) {
-                StateWord(word, ink: mark == .absent ? palette.grey : palette.of(mark))
+                StateWord(word, mark: mark)
             }
         }
     }

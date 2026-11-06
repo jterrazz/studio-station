@@ -219,7 +219,7 @@ public enum Token {
     // accent, and a state colour only where a state means something
     // (healthy, needs you, failed).
     public struct Palette: Sendable {
-        public let text, muted, accent, good, warn, bad, grey, onTint, qrDark, qrLight: Color
+        public let text, muted, accent, good, warn, bad, onTint, qrDark, qrLight: Color
 
         public func of(_ mark: Mark) -> Color {
             switch mark {
@@ -236,12 +236,10 @@ public enum Token {
     }
 
     public static func palette(_ scheme: ColorScheme) -> Palette {
-        let dark = scheme == .dark
-        let pair = { (light: UInt32, night: UInt32) in hex(dark ? night : light) }
-        return Palette(
+        Palette(
             text: Color.primary, muted: Color.secondary,
-            accent: pair(0x007AFF, 0x0A84FF), good: pair(0x28CD41, 0x32D74B), warn: pair(0xFF9500, 0xFF9F0A), bad: pair(0xFF3B30, 0xFF453A),
-            grey: hex(0x8E8E93), onTint: hex(0xFFFFFF), qrDark: hex(0x000000), qrLight: hex(0xFFFFFF))
+            accent: Color.accentColor, good: Color.green, warn: Color.orange, bad: Color.red,
+            onTint: Color.white, qrDark: hex(0x000000), qrLight: hex(0xFFFFFF))
     }
 }
 
