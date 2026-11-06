@@ -29,7 +29,7 @@ func Translate(err error, path string) *fail.Error {
 		return worded
 	}
 	for _, failure := range []func(error) (*fail.Error, bool){
-		toolsFailure,
+		appsFailure,
 		configFailure,
 		setupFailure,
 		machinesFailure,

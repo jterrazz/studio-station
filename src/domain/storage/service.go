@@ -38,7 +38,7 @@ type Options struct {
 	Pool      *probe.Pool
 	Here      catalog.MachineKind
 	Expand    Expander
-	Files     map[catalog.ToolFile]string
+	Files     map[catalog.AppFile]string
 	Inventory Inventory
 	Budget    time.Duration
 	// value: applies the settings a moved folder needs (tart-launcher).
@@ -65,7 +65,7 @@ func New(h system.Host, tools []catalog.Tool, o Options) *Service {
 type (
 	Entry       = disk.Entry
 	PathReport  = disk.PathReport
-	StrayReport = disk.StrayReport
+	StrayReport = disk.MisplacedReport
 	Row         = disk.Tally
 	Report      = disk.Survey
 	Outcome     = disk.Outcome
@@ -74,12 +74,12 @@ type (
 func (s *Service) Entries() []Entry {
 	everywhere := []catalog.MachineKind{catalog.Host, catalog.Linux, catalog.MacOS}
 	out := []Entry{
-		{Name: StationName, Category: StationCategory, Storage: catalog.StationStorage, Places: everywhere},
-		{Name: catalog.KeysRow, Category: StationCategory, Storage: catalog.SSHStorage, Places: everywhere},
+		{Name: StationName, Category: StationCategory, Storage: catalog.StationDisk, Places: everywhere},
+		{Name: catalog.KeysRow, Category: StationCategory, Storage: catalog.SSHDisk, Places: everywhere},
 	}
 	for _, t := range s.tools {
 		if t.Storage.Declared() {
-			out = append(out, Entry{Name: t.Name, Category: string(t.Category), Storage: t.Storage, Places: t.Places()})
+			out = append(out, Entry{Name: t.Name, Category: string(t.Category), Storage: t.Storage, Places: t.LivesOn()})
 		}
 	}
 	return out
@@ -232,7 +232,7 @@ func (s *Service) strays(e Entry) []StrayReport {
 	return out
 }
 
-func (s *Service) stray(e Entry, st catalog.Stray, abs string, bytes int64) StrayReport {
+func (s *Service) stray(e Entry, st catalog.Misplaced, abs string, bytes int64) StrayReport {
 	r := StrayReport{Name: e.Name, Path: s.o.Expand.Display(abs), Bytes: bytes, Repair: "station disk move " + s.o.Expand.Display(abs)}
 	if len(st.Move) > 0 {
 		r.To = s.o.Expand.Display(s.o.Expand.Expand(st.Move[0].To))
@@ -240,7 +240,7 @@ func (s *Service) stray(e Entry, st catalog.Stray, abs string, bytes int64) Stra
 	return r
 }
 
-func (s *Service) Relocated(st catalog.Storage) bool {
+func (s *Service) Relocated(st catalog.Disk) bool {
 	for _, r := range st.Relocate {
 		if r.Pending != "" {
 			continue
@@ -402,7 +402,7 @@ func (s *Service) Move(ctx context.Context, folder string) (Outcome, error) {
 	return Outcome{}, &disk.NotMisplacedError{Path: s.o.Expand.Display(abs)}
 }
 
-func (s *Service) move(ctx context.Context, e Entry, st catalog.Stray) (Outcome, error) {
+func (s *Service) move(ctx context.Context, e Entry, st catalog.Misplaced) (Outcome, error) {
 	shown := s.o.Expand.Display(s.o.Expand.Expand(st.Path))
 	if st.Busy != "" && s.running(ctx, st.Busy) {
 		return Outcome{}, &disk.RunningError{Name: e.Name, Process: st.Busy, Verb: "move", Subject: shown}

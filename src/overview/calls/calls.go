@@ -12,9 +12,9 @@ import (
 )
 
 type (
-	Snapshot = overview.Snapshot[apps.Report, settings.Report, disk.StrayReport]
-	Sections = Deps[apps.Report, settings.Report, disk.StrayReport]
-	Overview = Reader[apps.Report, settings.Report, disk.StrayReport]
+	Snapshot = overview.Snapshot[apps.Report, settings.Report, disk.MisplacedReport]
+	Sections = Deps[apps.Report, settings.Report, disk.MisplacedReport]
+	Overview = Reader[apps.Report, settings.Report, disk.MisplacedReport]
 )
 
 func All(d Sections) []call.Handler {

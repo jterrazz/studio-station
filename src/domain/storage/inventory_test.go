@@ -29,8 +29,8 @@ func TestASizedRowShowsItsSizeBeforeASlowInventoryAnswers(t *testing.T) {
 	fs.Files["h/quick/tree/f"] = &fstest.MapFile{Data: []byte("abc")}
 	fs.Files["h/late/tree/f"] = &fstest.MapFile{Data: []byte("abcde")}
 	tools := []catalog.Tool{
-		{Name: "quick", Installs: catalog.HostOnly(catalog.Brew("quick")), Storage: catalog.Storage{Paths: []catalog.Stored{{Path: "~/quick/*", Level: catalog.LevelCache}}}},
-		{Name: "late", Installs: catalog.HostOnly(catalog.Brew("late")), Storage: catalog.Storage{Paths: []catalog.Stored{{Path: "~/late/*", Level: catalog.LevelCache}}}},
+		{Name: "quick", Installs: catalog.HostOnly(catalog.Brew("quick")), Storage: catalog.Disk{Paths: []catalog.Stored{{Path: "~/quick/*", Level: catalog.LevelCache}}}},
+		{Name: "late", Installs: catalog.HostOnly(catalog.Brew("late")), Storage: catalog.Disk{Paths: []catalog.Stored{{Path: "~/late/*", Level: catalog.LevelCache}}}},
 	}
 	inventory := slowInventory{release: make(chan struct{})}
 	s := New(system.Host{FS: fs, Clock: realClock{}}, tools, Options{Disk: systemtest.Disk{FS: fs}, Here: catalog.Host, Expand: Expander{Home: "/h"}, Inventory: inventory})

@@ -80,7 +80,7 @@ func Elsewhere(reports []Report) []catalog.Tool {
 		here[r.Tool.Name] = true
 	}
 	var out []catalog.Tool
-	for _, t := range catalog.Tools {
+	for _, t := range catalog.Apps {
 		if !here[t.Name] {
 			out = append(out, t)
 		}

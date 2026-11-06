@@ -12,7 +12,7 @@ import (
 func configFailure(err error) (*fail.Error, bool) {
 	var unknown *config.UnknownItemError
 	var root *config.NeedsRootError
-	var place *config.WrongPlaceError
+	var livesOn *config.WrongPlaceError
 	var irreversible *config.NotReversibleError
 	var terminal *config.NeedsTerminalError
 	var studio *settings.StudioMissingError
@@ -25,8 +25,8 @@ func configFailure(err error) (*fail.Error, bool) {
 			verb = "off"
 		}
 		return failed(root.Error(), "sudo station settings "+verb+" "+root.Item, err), true
-	case errors.As(err, &place):
-		return usage(place.Error(), "station settings apply "+place.Item+" --on this-mac"), true
+	case errors.As(err, &livesOn):
+		return usage(livesOn.Error(), "station settings apply "+livesOn.Item+" --on this-mac"), true
 	case errors.As(err, &irreversible):
 		return usage(irreversible.Error(), "station applies it but cannot undo it: undo it by hand"), true
 	case errors.As(err, &terminal):

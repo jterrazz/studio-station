@@ -5,16 +5,16 @@ import (
 	"fmt"
 )
 
-type wirePlace struct {
+type wireLivesOn struct {
 	Kinds   []MachineKind
 	Method  Method          `json:",omitempty"`
 	Install json.RawMessage `json:",omitempty"`
 }
 
-func (p Place) MarshalJSON() ([]byte, error) {
+func (p LivesOn) MarshalJSON() ([]byte, error) {
 	// invariant: a place travels with its install's method, so the far
 	// side's answer decodes into the same install it named.
-	w := wirePlace{Kinds: p.Kinds}
+	w := wireLivesOn{Kinds: p.Kinds}
 	if p.Install != nil {
 		raw, err := json.Marshal(p.Install)
 		if err != nil {
@@ -25,8 +25,8 @@ func (p Place) MarshalJSON() ([]byte, error) {
 	return json.Marshal(w)
 }
 
-func (p *Place) UnmarshalJSON(data []byte) error {
-	var w wirePlace
+func (p *LivesOn) UnmarshalJSON(data []byte) error {
+	var w wireLivesOn
 	if err := json.Unmarshal(data, &w); err != nil {
 		return err
 	}
@@ -34,7 +34,7 @@ func (p *Place) UnmarshalJSON(data []byte) error {
 	if err != nil {
 		return err
 	}
-	*p = Place{Kinds: w.Kinds, Install: install}
+	*p = LivesOn{Kinds: w.Kinds, Install: install}
 	return nil
 }
 

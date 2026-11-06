@@ -123,7 +123,7 @@ func machinesSection(m settings.Matrix, now time.Time, label func(string) string
 	s := page.Section{ID: "machines", Title: "Machines", Caption: caption, Columns: cols, Uncounted: true}
 	for _, c := range m.Columns {
 		mark, reason, words := standing(c, now)
-		row := page.Row{ID: c.Name, Label: c.Name, Short: heading(c.Place, label), Mark: mark, Reason: reason, Cells: []page.Value{page.Text(kindWord(c.Place)), page.Texts(words...)}}
+		row := page.Row{ID: c.Name, Label: c.Name, Short: heading(c.LivesOn, label), Mark: mark, Reason: reason, Cells: []page.Value{page.Text(kindWord(c.LivesOn)), page.Texts(words...)}}
 		s.Items = append(s.Items, page.Item{Row: &row})
 	}
 	for _, name := range m.Servers {
@@ -156,14 +156,14 @@ func standing(c settings.Column, now time.Time) (page.Mark, page.Reason, []strin
 	return page.OK, "", []string{"read"}
 }
 
-func heading(p settings.Place, label func(string) string) string {
+func heading(p settings.LivesOn, label func(string) string) string {
 	if p.Here {
 		return "This Mac"
 	}
 	return label(p.Name)
 }
 
-func kindWord(p settings.Place) string {
+func kindWord(p settings.LivesOn) string {
 	if p.Mac {
 		return "Mac"
 	}
@@ -179,7 +179,7 @@ func lookSection(m settings.Matrix, now time.Time, label func(string) string) pa
 			}
 			r, _ := c.Row(mr.Name)
 			one := Row(r, now)
-			row := page.Row{ID: c.Name + "/" + mr.Name, Label: c.Name, Short: heading(c.Place, label), Mark: one.Mark, Reason: one.Reason, Cells: append([]page.Value{page.Text(mr.Name)}, one.Cells...)}
+			row := page.Row{ID: c.Name + "/" + mr.Name, Label: c.Name, Short: heading(c.LivesOn, label), Mark: one.Mark, Reason: one.Reason, Cells: append([]page.Value{page.Text(mr.Name)}, one.Cells...)}
 			switch {
 			case c.Away == settings.Stopped:
 				row.Hint = page.Cmd("station machines start " + c.Name)
@@ -201,7 +201,7 @@ func groupSection(m settings.Matrix, g settings.Group, id, title string, all boo
 	cols := make([]page.Column, 0, len(m.Columns)+2)
 	cols = append(cols, page.Column{Key: "name", Kind: page.KindText, Keep: 100})
 	for _, c := range m.Columns {
-		cols = append(cols, page.Column{Key: c.Name, Label: heading(c.Place, label), Kind: page.KindText, Keep: 20})
+		cols = append(cols, page.Column{Key: c.Name, Label: heading(c.LivesOn, label), Kind: page.KindText, Keep: 20})
 	}
 	cols = append(cols, page.Column{Key: "ok", Label: "OK", Kind: page.KindText, Keep: 20})
 	s := page.Section{ID: id, Title: title, Columns: cols, Uncounted: true}

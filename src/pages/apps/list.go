@@ -84,7 +84,7 @@ func List(reports []apps.Report, here page.Context, all bool) page.Page {
 		s := page.Section{ID: "not-for-this-machine", Title: "Not for this machine", Fold: page.Open, Columns: Columns(), PipeCounts: true}
 		if all {
 			for _, t := range elsewhere {
-				row := page.Row{ID: t.Name, Label: t.Name, Mark: page.NotForThisMachine, Detail: page.Text(apps.LivesOn(t.Places()))}
+				row := page.Row{ID: t.Name, Label: t.Name, Mark: page.NotForThisMachine, Detail: page.Text(apps.LivesOn(t.LivesOn()))}
 				s.Items = append(s.Items, page.Item{Row: &row})
 			}
 		} else {

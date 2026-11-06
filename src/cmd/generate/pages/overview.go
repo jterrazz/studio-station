@@ -31,7 +31,7 @@ func overviewOf(needs bool) overview.Summary {
 		VMs: []overview.VM{{Name: "linux-1", Running: true}, {Name: "api"}},
 	}
 	if needs {
-		misplaced := "~/." + catalog.HypervisorTool
+		misplaced := "~/." + catalog.HypervisorApp
 		s.Needs = []overview.Need{
 			{Section: "apps", Subject: "brew", Text: "122 brew updates waiting", Call: "apps.update", Args: map[string]string{"method": "brew"}},
 			{Section: "accounts", Subject: "npm", Broken: true, Text: "npm sign-in expired", Command: "npm login"},

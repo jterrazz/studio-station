@@ -64,13 +64,13 @@ func Judge(listed []Job, root, home string) []Task {
 		default:
 			j.Run = Idle
 		}
-		place(&j, l)
+		livesOn(&j, l)
 		tasks = append(tasks, j)
 	}
 	return tasks
 }
 
-func place(j *Task, l Job) {
+func livesOn(j *Task, l Job) {
 	owner, known := catalog.LaunchOwnerOf(j.Label)
 	if known {
 		j.Owner = owner.App

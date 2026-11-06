@@ -29,17 +29,17 @@ type Action struct {
 	On     []MachineKind
 }
 
-type ToolFile string
+type AppFile string
 
 const (
-	FileGoEnv  ToolFile = "go-env"
-	FileNpmrc  ToolFile = "npmrc"
-	FileBunfig ToolFile = "bunfig"
-	FileMise   ToolFile = "mise config"
+	FileGoEnv  AppFile = "go-env"
+	FileNpmrc  AppFile = "npmrc"
+	FileBunfig AppFile = "bunfig"
+	FileMise   AppFile = "mise config"
 )
 
 type Relocation struct {
-	File    ToolFile
+	File    AppFile
 	Key     string
 	Value   string
 	Pending string
@@ -47,7 +47,7 @@ type Relocation struct {
 
 type Move struct{ From, To string }
 
-type Stray struct {
+type Misplaced struct {
 	Path  string
 	Busy  string
 	Move  []Move
@@ -63,7 +63,7 @@ const (
 	SizeDockerDF SizeProbe = "docker-system-df"
 )
 
-type Storage struct {
+type Disk struct {
 	Paths     []Stored
 	Installed []string
 	Removal   map[string]string
@@ -73,10 +73,10 @@ type Storage struct {
 	NoReset   string
 	Quit      string
 	Relocate  []Relocation
-	Strays    []Stray
+	Strays    []Misplaced
 }
 
-func (s Storage) Declared() bool {
+func (s Disk) Declared() bool {
 	return len(s.Paths) > 0 || len(s.Installed) > 0 || len(s.Clean) > 0 || len(s.Strays) > 0 || s.Size != SizeDirs
 }
 
@@ -123,11 +123,11 @@ func onLinux(a Action) Action { a.On = []MachineKind{Linux}; return a }
 
 const (
 	stationNoReset = "station's data are VMs and images: station machines delete <vm>, station images delete <image>"
-	toolsNoReset   = "nothing to erase: keys and logins are kept"
+	appsNoReset    = "nothing to erase: keys and logins are kept"
 	appNoReset     = "an app's data is its account's: erase it in the app"
 )
 
-var StationStorage = Storage{
+var StationDisk = Disk{
 	Paths: []Stored{
 		memos(noted(cache("{cache}/station"), "downloaded station binaries (`station-linux-arm64`) and the last-known sizes a read shows until its walk answers"), "sizes.json"),
 		noted(cache("{state}/station/logs/*.log"), "`engine.log`, each VM's run `<vm>.log`, `station-build-<image>.log`, `setup.log`, `apps.log`, `accounts.log`"),
@@ -164,11 +164,11 @@ var StationStorage = Storage{
 
 const KeysRow = "ssh"
 
-var SSHStorage = Storage{
+var SSHDisk = Disk{
 	// value: the owner's keys and ssh config: a Disk row of Never touched
 	// alone, so `disk erase ssh` is told what station never erases.
 	Paths:   []Stored{noted(kept("~/.ssh"), "the owner's keys and ssh config")},
-	NoReset: toolsNoReset,
+	NoReset: appsNoReset,
 }
 
 const StationRetiredNote = "The keychain service `station` holds nothing since round 5: `station setup` removed the three tailnet accounts the earlier rounds kept there. It also retired round 3's per-VM launchd agents, `~/Library/LaunchAgents/com.jterrazz.station.vm.*.plist`: booted out and removed, the one engine runs every VM."
@@ -208,14 +208,14 @@ var HomeExceptions = []Exception{
 }
 
 var (
-	storageHomebrew = Storage{
+	diskHomebrew = Disk{
 		Paths:     []Stored{cache("~/Library/Caches/Homebrew"), cache("~/Library/Logs/Homebrew")},
 		Installed: []string{"/opt/homebrew"},
 		Clean:     []Action{runIf("brew", "brew", "cleanup", "--prune=all"), remove("~/Library/Caches/Homebrew/*")},
 		NoReset:   "Homebrew's data are its formulae: station apps remove <app>",
 	}
-	miseMemo    = "*/*/bin_paths-*.msgpack.z"
-	storageMise = Storage{
+	miseMemo = "*/*/bin_paths-*.msgpack.z"
+	diskMise = Disk{
 		Paths: []Stored{
 			memos(cache("~/Library/Caches/mise", Host, MacOS), miseMemo), memos(cache("{cache}/mise", Linux), miseMemo), cache("{data}/mise/downloads"),
 			noted(cache("~/Library/Caches/sigstore-rust", Host, MacOS), "mise's signature checks"), noted(cache("{cache}/sigstore-rust", Linux), "mise's signature checks"),
@@ -230,7 +230,7 @@ var (
 		},
 		NoReset: "runtimes are apps: station apps remove <runtime>",
 	}
-	storageNode = Storage{
+	diskNode = Disk{
 		Paths: []Stored{cache("{cache}/npm"), noted(conf("~/.npmrc"), "may hold registry tokens")},
 		Clean: []Action{
 			runIf("npm", "npm", "cache", "clean", "--force"),
@@ -238,7 +238,7 @@ var (
 		},
 		NoReset:  "npm's globals are apps: station apps remove <app>",
 		Relocate: []Relocation{{File: FileNpmrc, Key: "cache", Value: "{cache}/npm"}},
-		Strays: []Stray{{
+		Strays: []Misplaced{{
 			Path: "~/.npm",
 			Clean: []Action{
 				runIf("npm", "npm", "cache", "clean", "--force", "--cache", "~/.npm"),
@@ -246,7 +246,7 @@ var (
 			},
 		}},
 	}
-	storageGo = Storage{
+	diskGo = Disk{
 		Paths: []Stored{
 			cache("~/Library/Caches/go-build", Host, MacOS), cache("{cache}/go-build", Linux), cache("{cache}/go/mod"),
 			noted(cache("~/Library/Caches/gopls", Host, MacOS), "gopls's index"), noted(cache("{cache}/gopls", Linux), "gopls's index"),
@@ -268,7 +268,7 @@ var (
 			{File: FileGoEnv, Key: "GOMODCACHE", Value: "{cache}/go/mod"},
 			{File: FileMise, Key: "settings.go_set_gobin", Value: "false"},
 		},
-		Strays: []Stray{{
+		Strays: []Misplaced{{
 			Path:  "~/go",
 			Move:  []Move{{From: "~/go/bin/*", To: "{data}/go/bin"}},
 			Prune: []string{"~/go/bin", "~/go"},
@@ -278,7 +278,7 @@ var (
 			},
 		}},
 	}
-	storageBun = Storage{
+	diskBun = Disk{
 		Paths: []Stored{
 			cache("{cache}/bun/install"), cache("~/Library/Caches/bun", Host, MacOS),
 			conf("~/.bunfig.toml"),
@@ -291,7 +291,7 @@ var (
 			{File: FileBunfig, Key: "install.globalBinDir", Value: "{data}/bun/bin"},
 			{File: FileBunfig, Key: "install.cache.dir", Value: "{cache}/bun/install"},
 		},
-		Strays: []Stray{{
+		Strays: []Misplaced{{
 			Path: "~/.bun",
 			Move: []Move{
 				{From: "~/.bun/install/global", To: "{data}/bun/install/global"},
@@ -301,13 +301,13 @@ var (
 			Clean: []Action{{Delete: []string{"~/.bun/install/cache"}, Prune: []string{"~/.bun/bin", "~/.bun/install", "~/.bun"}}},
 		}},
 	}
-	storageUv = Storage{
+	diskUv = Disk{
 		Paths:     []Stored{cache("{cache}/uv")},
 		Installed: []string{"{data}/uv/tools", "{data}/uv/python"},
 		Clean:     []Action{runIf("uv", "uv", "cache", "clean")},
 		NoReset:   "uv's tools are apps: station apps remove <app>",
 	}
-	storagePnpm = Storage{
+	diskPnpm = Disk{
 		Paths: []Stored{
 			cache("~/Library/pnpm/store", Host, MacOS), cache("{data}/pnpm/store", Linux), cache("{state}/pnpm"),
 			conf("~/Library/Preferences/pnpm", Host, MacOS),
@@ -317,49 +317,49 @@ var (
 			onLinux(ifExists(runIf("pnpm", "pnpm", "store", "prune"), "{data}/pnpm/store")),
 			onMac(remove("~/Library/pnpm/store/*")), onLinux(remove("{data}/pnpm/store/*")),
 		},
-		NoReset: toolsNoReset,
+		NoReset: appsNoReset,
 	}
-	storageRust = Storage{
+	diskRust = Disk{
 		Paths: []Stored{
 			cache("~/.cargo/registry/cache"), cache("~/.cargo/registry/src"), cache("~/.cargo/git/checkouts"),
 			conf("~/.cargo/config.toml"),
 		},
 		Installed: []string{"~/.rustup", "~/.cargo/bin"},
 		Clean:     []Action{remove("~/.cargo/registry/cache/*", "~/.cargo/registry/src/*", "~/.cargo/git/checkouts/*")},
-		NoReset:   toolsNoReset,
+		NoReset:   appsNoReset,
 	}
-	storagePython = Storage{
+	diskPython = Disk{
 		Paths:   []Stored{cache("~/Library/Caches/pip", Host, MacOS), cache("{cache}/pip", Linux)},
 		Clean:   []Action{runIf("pip3", "pip3", "cache", "purge")},
-		NoReset: toolsNoReset,
+		NoReset: appsNoReset,
 	}
-	storageOhmyzsh = Storage{
+	diskOhmyzsh = Disk{
 		Paths:     []Stored{cache("~/.oh-my-zsh/cache"), cache("~/.zcompdump*")},
 		Installed: []string{"~/.oh-my-zsh"},
 		Clean:     []Action{remove("~/.oh-my-zsh/cache/*", "~/.zcompdump*")},
-		NoReset:   toolsNoReset,
+		NoReset:   appsNoReset,
 	}
-	storageStarship = Storage{
+	diskStarship = Disk{
 		Paths:   []Stored{cache("{cache}/starship"), conf("{config}/starship.toml")},
 		Clean:   []Action{remove("{cache}/starship/*")},
-		NoReset: toolsNoReset,
+		NoReset: appsNoReset,
 	}
-	storageBat = Storage{
+	diskBat = Disk{
 		Paths:   []Stored{cache("{cache}/bat")},
 		Clean:   []Action{runIf("bat", "bat", "cache", "--clear")},
-		NoReset: toolsNoReset,
+		NoReset: appsNoReset,
 	}
-	storageMole = Storage{
+	diskMole = Disk{
 		Paths:   []Stored{cache("{cache}/mole"), cache("~/Library/Logs/mole", Host, MacOS), conf("{config}/mole")},
 		Clean:   []Action{remove("{cache}/mole/*", "~/Library/Logs/mole/*")},
-		NoReset: toolsNoReset,
+		NoReset: appsNoReset,
 	}
-	storageQmd = Storage{
+	diskQmd = Disk{
 		Paths:   []Stored{noted(cache("{cache}/qmd"), "GGUF models and the index: rebuilt by a reindex")},
 		Clean:   []Action{remove("{cache}/qmd/*")},
-		NoReset: toolsNoReset,
+		NoReset: appsNoReset,
 	}
-	storageGh = Storage{
+	diskGh = Disk{
 		Paths: []Stored{
 			cache("{cache}/gh"),
 			data("{state}/gh"),
@@ -369,27 +369,27 @@ var (
 		Clean: []Action{remove("{cache}/gh/*")},
 		Reset: []Action{remove("{state}/gh/*")},
 	}
-	storageZoxide = Storage{
+	diskZoxide = Disk{
 		Paths: []Stored{data("~/Library/Application Support/zoxide/db.zo", Host, MacOS), data("{data}/zoxide/db.zo", Linux)},
 		Reset: []Action{remove("~/Library/Application Support/zoxide/db.zo", "{data}/zoxide/db.zo")},
 	}
-	storageYazi = Storage{
+	diskYazi = Disk{
 		Paths: []Stored{data("{state}/yazi"), conf("{config}/yazi")},
 		Reset: []Action{remove("{state}/yazi/*")},
 	}
-	storageLazygit = Storage{
+	diskLazygit = Disk{
 		Paths: []Stored{data("~/Library/Application Support/lazygit/state.yml", Host, MacOS)},
 		Reset: []Action{remove("~/Library/Application Support/lazygit/state.yml")},
 	}
-	storageRtk = Storage{
+	diskRtk = Disk{
 		Paths: []Stored{noted(data("~/Library/Application Support/rtk", Host, MacOS), "the gain history")},
 		Reset: []Action{remove("~/Library/Application Support/rtk/*")},
 	}
-	storageGpg = Storage{
+	diskGpg = Disk{
 		Paths:   []Stored{noted(kept("~/.gnupg"), "the private keys")},
-		NoReset: toolsNoReset,
+		NoReset: appsNoReset,
 	}
-	storageTailscale = Storage{
+	diskTailscale = Disk{
 		Paths: []Stored{
 			noted(kept("~/Library/Containers/io.tailscale.ipn.macos*", Host), "the App Store app's login"),
 			noted(kept("~/Library/Containers/io.tailscale.ipn.macsys*", Host), "the Standalone app's login"),
@@ -403,33 +403,33 @@ var (
 		Removal:   map[string]string{"~/.local/bin/tailscale": "written by `station setup` for the App Store app, whose uninstall station refuses: removed by hand"},
 		NoReset:   "nothing to erase: the login is the Tailscale app's",
 	}
-	storageGit = Storage{
+	diskGit = Disk{
 		Paths:   []Stored{conf("~/.gitconfig")},
-		NoReset: toolsNoReset,
+		NoReset: appsNoReset,
 	}
-	storageTmux = Storage{
+	diskTmux = Disk{
 		Paths:   []Stored{conf("~/.tmux.conf")},
-		NoReset: toolsNoReset,
+		NoReset: appsNoReset,
 	}
-	storageTerraform = Storage{
+	diskTerraform = Disk{
 		Paths:   []Stored{conf("~/.terraform.d")},
-		NoReset: toolsNoReset,
+		NoReset: appsNoReset,
 	}
-	storageEas = Storage{
+	diskEas = Disk{
 		Paths:   []Stored{noted(kept("~/.expo"), "the eas session")},
-		NoReset: toolsNoReset,
+		NoReset: appsNoReset,
 	}
-	storageKubectl = Storage{
+	diskKubectl = Disk{
 		Paths:   []Stored{cache("~/.kube/cache"), kept("~/.kube/config")},
 		Clean:   []Action{remove("~/.kube/cache/*")},
-		NoReset: toolsNoReset,
+		NoReset: appsNoReset,
 	}
-	storageHelm = Storage{
+	diskHelm = Disk{
 		Paths:   []Stored{cache("~/Library/Caches/helm", Host, MacOS), conf("~/Library/Preferences/helm", Host, MacOS)},
 		Clean:   []Action{onMac(remove("~/Library/Caches/helm/*"))},
-		NoReset: toolsNoReset,
+		NoReset: appsNoReset,
 	}
-	storageGhostty = Storage{
+	diskGhostty = Disk{
 		Paths: []Stored{
 			cache("{cache}/ghostty"),
 			cache("~/Library/HTTPStorages/com.mitchellh.ghostty", Host, MacOS),
@@ -441,7 +441,7 @@ var (
 		Reset: []Action{remove("{state}/ghostty/*")},
 		Quit:  "ghostty",
 	}
-	storageZed = Storage{
+	diskZed = Disk{
 		Paths: []Stored{
 			cache("~/Library/Application Support/Zed/languages"),
 			cache("~/Library/Application Support/Zed/external_agents"),
@@ -462,7 +462,7 @@ var (
 		Reset: []Action{remove("~/Library/Application Support/Zed/db/*", "~/Library/Application Support/Zed/extensions/*")},
 		Quit:  "zed",
 	}
-	storageCursor = Storage{
+	diskCursor = Disk{
 		Paths: []Stored{
 			cache("~/Library/Application Support/Cursor/CachedExtensionVSIXs"),
 			cache("~/Library/Application Support/Cursor/logs"),
@@ -481,7 +481,7 @@ var (
 		Reset: []Action{remove("~/Library/Application Support/Cursor/User/globalStorage/*", "~/Library/Application Support/Cursor/User/History/*")},
 		Quit:  "Cursor",
 	}
-	storageClaude = Storage{
+	diskClaude = Disk{
 		Paths: []Stored{
 			cache("~/.claude/cache"), cache("~/.claude/shell-snapshots"), cache("~/.claude/paste-cache"), cache("~/.claude/debug"),
 			cache("~/Library/Caches/claude-cli-nodejs", Host, MacOS), cache("{state}/claude"),
@@ -496,7 +496,7 @@ var (
 		Reset: []Action{remove("~/.claude/projects/*", "~/.claude/history.jsonl", "~/.claude/file-history/*")},
 		Quit:  "claude",
 	}
-	storageCodex = Storage{
+	diskCodex = Disk{
 		Paths: []Stored{
 			cache("~/.codex/cache"), cache("~/.codex/logs_2.sqlite"), cache("{cache}/codex-runtimes"),
 			data("~/.codex/sessions"), data("~/.codex/archived_sessions"), data("~/.codex/thread_history_1.sqlite"), data("~/.codex/computer-use"),
@@ -508,37 +508,37 @@ var (
 		Reset:     []Action{remove("~/.codex/sessions/*", "~/.codex/archived_sessions/*", "~/.codex/thread_history_1.sqlite", "~/.codex/computer-use/*")},
 		Quit:      "codex",
 	}
-	storageGemini = Storage{
+	diskGemini = Disk{
 		Paths:   []Stored{noted(data("~/.gemini"), "beside its settings: not separable by a glob"), conf("~/.gemini/settings.json")},
 		NoReset: "gemini keeps its login beside its data: erase it by hand",
 	}
-	storageOpencode = Storage{
+	diskOpencode = Disk{
 		Paths: []Stored{cache("{cache}/opencode"), data("{data}/opencode"), data("{state}/opencode"), conf("{config}/opencode")},
 		Clean: []Action{remove("{cache}/opencode/*")},
 		Reset: []Action{remove("{data}/opencode/*", "{state}/opencode/*")},
 	}
-	storageHerdrApp = Storage{
+	diskHerdrApp = Disk{
 		Paths: []Stored{data("{state}/herdr-core"), conf("{config}/herdr-app")},
 		Reset: []Action{remove("{state}/herdr-core/*")},
 		Quit:  "Herdr",
 	}
-	storageOllama = Storage{
+	diskOllama = Disk{
 		Paths: []Stored{cache("~/.ollama/logs"), data("~/.ollama/models")},
 		Clean: []Action{remove("~/.ollama/logs/*")},
 		Reset: []Action{remove("~/.ollama/models/*")},
 		Quit:  "ollama",
 	}
-	storagePulumi = Storage{
+	diskPulumi = Disk{
 		Paths: []Stored{cache("~/.pulumi/plugins"), data("~/.pulumi/workspaces"), kept("~/.pulumi/credentials.json")},
 		Clean: []Action{runIf("pulumi", "pulumi", "plugin", "rm", "--all", "--yes")},
 		Reset: []Action{remove("~/.pulumi/workspaces/*")},
 	}
-	storageAnsible = Storage{
+	diskAnsible = Disk{
 		Paths: []Stored{cache("~/.ansible/tmp"), data("~/.ansible/collections")},
 		Clean: []Action{remove("~/.ansible/tmp/*")},
 		Reset: []Action{remove("~/.ansible/collections/*")},
 	}
-	storageXcode = Storage{
+	diskXcode = Disk{
 		Paths: []Stored{
 			cache("~/Library/Developer/Xcode/DerivedData"),
 			cache("~/Library/Developer/Xcode/iOS DeviceSupport"),
@@ -556,24 +556,24 @@ var (
 		},
 		Quit: "Xcode",
 	}
-	storageCocoapods = Storage{
+	diskCocoapods = Disk{
 		Paths:   []Stored{cache("~/Library/Caches/CocoaPods"), cache("~/.cocoapods/repos")},
 		Clean:   []Action{runIf("pod", "pod", "cache", "clean", "--all"), remove("~/.cocoapods/repos/*")},
-		NoReset: toolsNoReset,
+		NoReset: appsNoReset,
 	}
-	storageAndroidStudio = Storage{
+	diskAndroidStudio = Disk{
 		Paths:     []Stored{cache("~/.gradle/caches"), cache("~/.gradle/wrapper/dists"), data("~/.android/avd")},
 		Installed: []string{"/Applications/Android Studio.app"},
 		Clean:     []Action{remove("~/.gradle/caches/*", "~/.gradle/wrapper/dists/*")},
 		Reset:     []Action{remove("~/.android/avd/*")},
 		Quit:      "studio",
 	}
-	storageOrbstack = Storage{
+	diskOrbstack = Disk{
 		Paths:     []Stored{data("~/Library/Group Containers/HUAQ24HBR6.dev.orbstack"), conf("~/.orbstack")},
 		Installed: []string{"/Applications/OrbStack.app"},
 		NoReset:   "OrbStack erases its own data, in its Settings",
 	}
-	storageDocker = Storage{
+	diskDocker = Disk{
 		Paths: []Stored{conf("~/.docker")},
 		Size:  SizeDockerDF,
 		Clean: []Action{
@@ -585,25 +585,25 @@ var (
 		},
 		NoReset: "dreset, the Docker shortcuts",
 	}
-	storagePlaywrightBrowsers = Storage{
+	diskPlaywrightBrowsers = Disk{
 		Installed: []string{"~/Library/Caches/ms-playwright", "{cache}/ms-playwright"},
 		NoReset:   "the browsers are the app: station apps remove playwright-browsers",
 	}
-	storageAgentBrowser = Storage{
+	diskAgentBrowser = Disk{
 		Installed: []string{"~/.agent-browser/browsers"},
 		NoReset:   "the browsers are the app: station apps remove agent-browser",
 	}
-	storageHermes = Storage{
+	diskHermes = Disk{
 		Paths:     []Stored{data("~/.hermes/checkpoints"), data("~/.hermes/sessions"), data("~/.hermes/state.db")},
 		Installed: []string{"~/.hermes/hermes-agent"},
 		Reset:     []Action{remove("~/.hermes/checkpoints/*", "~/.hermes/sessions/*", "~/.hermes/state.db")},
 	}
-	storageSkills = Storage{
+	diskSkills = Disk{
 		Paths:     []Stored{conf("~/.agents/.skill-lock.json")},
 		Installed: []string{"~/.agents/skills", "~/.claude/skills"},
 		NoReset:   "skills are apps: station apps remove <skill>",
 	}
-	storageClaudeDesktop = Storage{
+	diskClaudeDesktop = Disk{
 		Paths: []Stored{
 			noted(data("~/Library/Application Support/Claude/vm_bundles"), "HYPOTHESIS: re-downloaded; data until settled"),
 			data("~/Library/Application Support/Claude/claude-code-vm"),
@@ -612,7 +612,7 @@ var (
 		NoReset: appNoReset,
 		Quit:    "Claude",
 	}
-	storageNotion = Storage{
+	diskNotion = Disk{
 		Paths: []Stored{
 			cache("~/Library/Application Support/Notion/Partitions/notion/Cache"),
 			cache("~/Library/Application Support/Notion/Partitions/notion/Service Worker"),
@@ -621,7 +621,7 @@ var (
 		NoReset: appNoReset,
 		Quit:    "Notion",
 	}
-	storageDiscord = Storage{
+	diskDiscord = Disk{
 		Paths: []Stored{
 			cache("~/Library/Application Support/discord/Cache"),
 			cache("~/Library/Application Support/discord/Code Cache"),
@@ -631,12 +631,12 @@ var (
 		NoReset: appNoReset,
 		Quit:    "Discord",
 	}
-	storageObsidian = Storage{
+	diskObsidian = Disk{
 		Paths:   []Stored{data("~/Library/Application Support/obsidian")},
 		NoReset: appNoReset,
 		Quit:    "Obsidian",
 	}
-	storageTart = Storage{
+	diskTart = Disk{
 		Paths: []Stored{
 			noted(cache("{data}/station/vms/cache/OCIs"), "the base images Tart pulled"),
 			cache("{data}/station/vms/cache/IPSWs"),
@@ -649,7 +649,7 @@ var (
 			remove("~/Library/Caches/com.github.cirruslabs.tart/*"),
 		},
 		NoReset: stationNoReset,
-		Strays: []Stray{
+		Strays: []Misplaced{
 			{
 				Path: "~/.tart",
 				Busy: "tart",

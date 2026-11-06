@@ -110,7 +110,7 @@ func (j *Jobs) List(ctx context.Context) ([]background.Job, error) {
 				listedAs(&job, l, found)
 			}
 			job.Program = j.programOf(file)
-			j.place(&job)
+			j.livesOn(&job)
 			jobs = append(jobs, job)
 		}
 	}
@@ -120,7 +120,7 @@ func (j *Jobs) List(ctx context.Context) ([]background.Job, error) {
 		}
 		job := background.Job{Label: label, Scope: background.ScopeUser}
 		listedAs(&job, l, true)
-		j.place(&job)
+		j.livesOn(&job)
 		jobs = append(jobs, job)
 	}
 	slices.SortFunc(jobs, func(a, b background.Job) int { return strings.Compare(a.Label, b.Label) })
@@ -199,7 +199,7 @@ func (j *Jobs) exists(p string) bool {
 	return err == nil
 }
 
-func (j *Jobs) place(job *background.Job) {
+func (j *Jobs) livesOn(job *background.Job) {
 	job.OwnerExists = true
 	if owner, known := catalog.LaunchOwnerOf(job.Label); known && owner.Bundle != "" {
 		job.OwnerExists = j.exists(path.Join("/", j.o.Root, owner.Bundle))

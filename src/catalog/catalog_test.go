@@ -10,7 +10,7 @@ import (
 )
 
 func TestPlaceEveryInstallOnAKindItsMethodAccepts(t *testing.T) {
-	for _, tool := range catalog.Tools {
+	for _, tool := range catalog.Apps {
 		seen := map[catalog.MachineKind]bool{}
 		for _, place := range tool.Installs {
 			accepts := catalog.MethodKinds[place.Install.Method()]
@@ -38,7 +38,7 @@ func TestUniqueNamesAcrossToolsSkillsAndConfigItems(t *testing.T) {
 		}
 		owner[name] = what
 	}
-	for _, tool := range catalog.Tools {
+	for _, tool := range catalog.Apps {
 		claim(tool.Name, "tool")
 	}
 	for _, item := range catalog.ConfigItems {
@@ -51,14 +51,14 @@ func TestUniqueNamesAcrossToolsSkillsAndConfigItems(t *testing.T) {
 
 func TestEveryRequirementAndThenNamesACatalogueEntry(t *testing.T) {
 	tools := map[string]bool{}
-	for _, tool := range catalog.Tools {
+	for _, tool := range catalog.Apps {
 		tools[tool.Name] = true
 	}
 	items := map[string]bool{}
 	for _, item := range catalog.ConfigItems {
 		items[item.Name] = true
 	}
-	for _, tool := range catalog.Tools {
+	for _, tool := range catalog.Apps {
 		for _, r := range tool.Requires {
 			if !tools[r] {
 				t.Errorf("%s requires the unknown tool %q", tool.Name, r)
@@ -74,12 +74,12 @@ func TestEveryRequirementAndThenNamesACatalogueEntry(t *testing.T) {
 
 type row struct {
 	name string
-	s    catalog.Storage
+	s    catalog.Disk
 }
 
 func rows() []row {
-	out := []row{{name: "station", s: catalog.StationStorage}}
-	for _, tool := range catalog.Tools {
+	out := []row{{name: "station", s: catalog.StationDisk}}
+	for _, tool := range catalog.Apps {
 		if tool.Storage.Declared() {
 			out = append(out, row{name: tool.Name, s: tool.Storage})
 		}
@@ -109,7 +109,7 @@ func TestStorageDeletesOnlyWhatItsLevelAllows(t *testing.T) {
 			}
 			return false
 		}
-		check := func(what string, actions []catalog.Action, strays []catalog.Stray, allowed ...catalog.Level) {
+		check := func(what string, actions []catalog.Action, strays []catalog.Misplaced, allowed ...catalog.Level) {
 			for _, a := range actions {
 				for _, d := range append(slices.Clone(a.Delete), a.Prune...) {
 					if strings.HasPrefix(d, "/") {
@@ -182,12 +182,12 @@ func TestStoragePatternsStartAtARootAndTheHomeRootIsDeclared(t *testing.T) {
 
 func TestSystemToolsAreExactlyTheFleetsAndPlacedOnAHost(t *testing.T) {
 	var system []string
-	for _, tool := range catalog.Tools {
+	for _, tool := range catalog.Apps {
 		if !tool.System {
 			continue
 		}
 		system = append(system, tool.Name)
-		if !slices.Contains(tool.Places(), catalog.Host) {
+		if !slices.Contains(tool.LivesOn(), catalog.Host) {
 			t.Errorf("%s is a system tool not placed on a host", tool.Name)
 		}
 	}

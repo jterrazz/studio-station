@@ -33,7 +33,7 @@ type Here struct {
 
 type Clock interface{ Now() time.Time }
 
-type Deps[Tool, Item, Stray any] struct {
+type Deps[App, Item, Misplaced any] struct {
 	// value: the reads Overview composes. Tool, Item and Stray are the rows of
 	// the Apps, Settings and Disk reads, until those reads are their families' calls.
 	Pool *lanes.Pool
@@ -62,10 +62,10 @@ type Deps[Tool, Item, Stray any] struct {
 	// value: the servers this Mac runs; nil where none can run.
 	Servers    Servers
 	Hypervisor Hypervisor
-	Tools      Tools[Tool]
+	Tools      Apps[App]
 	Config     Config[Item]
 	Setup      Setup
-	Disk       Disk[Stray]
+	Disk       Disk[Misplaced]
 }
 
 type Updates interface {
@@ -103,8 +103,8 @@ type Hypervisor interface {
 	Installed() bool
 }
 
-type Tools[Tool any] interface {
-	Inventory(ctx context.Context) ([]Tool, error)
+type Apps[App any] interface {
+	Inventory(ctx context.Context) ([]App, error)
 }
 
 type Config[Item any] interface {
@@ -117,12 +117,12 @@ type Setup interface {
 	Check(ctx context.Context) ([]overview.Step, error)
 }
 
-type DiskReading[Stray any] struct {
+type DiskReading[Misplaced any] struct {
 	Rows   []overview.Disk
-	Strays []Stray
+	Strays []Misplaced
 }
 
-type Disk[Stray any] interface {
+type Disk[Misplaced any] interface {
 	// invariant: each reading is the whole disk read so far; the last is final.
-	Watch(ctx context.Context) <-chan DiskReading[Stray]
+	Watch(ctx context.Context) <-chan DiskReading[Misplaced]
 }

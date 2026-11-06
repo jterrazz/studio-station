@@ -54,7 +54,7 @@ type Options struct {
 	Detached                    bool
 	Tools                       []catalog.Tool
 	Expand                      storage.Expander
-	Files                       map[catalog.ToolFile]string
+	Files                       map[catalog.AppFile]string
 	Configurer                  Configurer
 	Installer                   Installer
 	Settings                    Settings

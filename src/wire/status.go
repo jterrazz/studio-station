@@ -66,7 +66,7 @@ func statusDeps(env kit.Env, m machine) overviewcalls.Sections {
 		Owner:      settingscli.New(h.Run, h.FS, settingscli.Options{Home: h.Env.Home(), Pool: m.pool}),
 		Tailnet:    m.tailnetStatus(),
 		Power:      statusPower{s: m.power()},
-		Tools:      toolsService(env, m),
+		Tools:      appsService(env, m),
 		Config:     configRead{configService(m)},
 		Setup:      setupRead{setupService(env, m)},
 		Disk:       diskRead{m.storage(env)},

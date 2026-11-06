@@ -20,9 +20,9 @@ const (
 	settingAutoLogin   = "autologin"
 )
 
-func (r *Reader[Tool, Item, Stray]) machineJobs() []job[Tool, Item, Stray] {
-	type sn = snapshot[Tool, Item, Stray]
-	return []job[Tool, Item, Stray]{
+func (r *Reader[App, Item, Misplaced]) machineJobs() []job[App, Item, Misplaced] {
+	type sn = snapshot[App, Item, Misplaced]
+	return []job[App, Item, Misplaced]{
 		{Key: subject + "/machine/os", Budget: defaultBudget + margin,
 			Do: func(ctx context.Context) func(*sn) {
 				name := r.kernel(ctx)
@@ -85,9 +85,9 @@ func (r *Reader[Tool, Item, Stray]) machineJobs() []job[Tool, Item, Stray] {
 
 // invariant: the readiness reads the settings first, and the Mac's facts
 // only when the Mac needs a readiness at all.
-func (r *Reader[Tool, Item, Stray]) readinessJob() job[Tool, Item, Stray] {
-	type sn = snapshot[Tool, Item, Stray]
-	return job[Tool, Item, Stray]{Key: subject + "/readiness", Budget: partBudget,
+func (r *Reader[App, Item, Misplaced]) readinessJob() job[App, Item, Misplaced] {
+	type sn = snapshot[App, Item, Misplaced]
+	return job[App, Item, Misplaced]{Key: subject + "/readiness", Budget: partBudget,
 		Do: func(ctx context.Context) func(*sn) {
 			if r.d.Here.Kind != catalog.Host {
 				return func(*sn) {}
@@ -99,7 +99,7 @@ func (r *Reader[Tool, Item, Stray]) readinessJob() job[Tool, Item, Stray] {
 	}
 }
 
-func (r *Reader[Tool, Item, Stray]) readiness(ctx context.Context) []overview.Check {
+func (r *Reader[App, Item, Misplaced]) readiness(ctx context.Context) []overview.Check {
 	states := map[string]catalog.State{}
 	if items, err := r.d.Config.List(ctx); err == nil {
 		for _, it := range items {
@@ -140,7 +140,7 @@ func needsRoot(setting string) bool {
 	return i >= 0 && catalog.ConfigItems[i].NeedsRoot
 }
 
-func (r *Reader[Tool, Item, Stray]) factState(ctx context.Context, f catalog.Fact) catalog.State {
+func (r *Reader[App, Item, Misplaced]) factState(ctx context.Context, f catalog.Fact) catalog.State {
 	ctx, cancel := context.WithTimeout(ctx, defaultBudget)
 	defer cancel()
 	got, err := r.d.Facts.Read(ctx, f)
@@ -150,7 +150,7 @@ func (r *Reader[Tool, Item, Stray]) factState(ctx context.Context, f catalog.Fac
 	return got.State
 }
 
-func (r *Reader[Tool, Item, Stray]) label() string {
+func (r *Reader[App, Item, Misplaced]) label() string {
 	name, _ := r.d.Name.Get()
 	if short, ok := strings.CutPrefix(name, r.d.Here.User+"-"); ok && short != "" && r.d.Here.User != "" {
 		return short
@@ -158,13 +158,13 @@ func (r *Reader[Tool, Item, Stray]) label() string {
 	return name
 }
 
-func (r *Reader[Tool, Item, Stray]) diskJob() job[Tool, Item, Stray] {
-	type sn = snapshot[Tool, Item, Stray]
-	return job[Tool, Item, Stray]{Key: subject + "/workspace/disk", Lane: lanes.Inline,
+func (r *Reader[App, Item, Misplaced]) diskJob() job[App, Item, Misplaced] {
+	type sn = snapshot[App, Item, Misplaced]
+	return job[App, Item, Misplaced]{Key: subject + "/workspace/disk", Lane: lanes.Inline,
 		// invariant: the disk row follows the run's one storage reading, so its
 		// frame shows the last-known total until the walk answers.
 		Partial: func(ctx context.Context, emit func(func(*sn))) func(*sn) {
-			last := DiskReading[Stray]{Rows: []overview.Disk{}, Strays: []Stray{}}
+			last := DiskReading[Misplaced]{Rows: []overview.Disk{}, Strays: []Misplaced{}}
 			if r.d.Disk != nil {
 				for d := range r.d.Disk.Watch(ctx) {
 					last = d
@@ -179,9 +179,9 @@ func (r *Reader[Tool, Item, Stray]) diskJob() job[Tool, Item, Stray] {
 	}
 }
 
-func (r *Reader[Tool, Item, Stray]) sectionJobs() []job[Tool, Item, Stray] {
-	type sn = snapshot[Tool, Item, Stray]
-	return []job[Tool, Item, Stray]{
+func (r *Reader[App, Item, Misplaced]) sectionJobs() []job[App, Item, Misplaced] {
+	type sn = snapshot[App, Item, Misplaced]
+	return []job[App, Item, Misplaced]{
 		{Key: subject + "/background", Budget: 2*defaultBudget + margin,
 			Do: func(ctx context.Context) func(*sn) {
 				jobs := []background.Task{}
@@ -234,7 +234,7 @@ func (r *Reader[Tool, Item, Stray]) sectionJobs() []job[Tool, Item, Stray] {
 	}
 }
 
-func (r *Reader[Tool, Item, Stray]) protections(reports []Item) []overview.Check {
+func (r *Reader[App, Item, Misplaced]) protections(reports []Item) []overview.Check {
 	var out []overview.Check
 	for _, p := range overview.Protections() {
 		for _, rep := range reports {

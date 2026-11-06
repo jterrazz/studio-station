@@ -93,11 +93,11 @@ func GroupOf(it catalog.ConfigItem) Group {
 	return SetByStation
 }
 
-func PlaceReason(places []catalog.MachineKind) string {
+func LivesOnReason(livesOn []catalog.MachineKind) string {
 	// value: "not for this machine" with the kinds it lives on, in the
 	// owner's words.
-	mac := slices.Contains(places, catalog.Host)
-	vm := slices.Contains(places, catalog.Linux) || slices.Contains(places, catalog.MacOS)
+	mac := slices.Contains(livesOn, catalog.Host)
+	vm := slices.Contains(livesOn, catalog.Linux) || slices.Contains(livesOn, catalog.MacOS)
 	switch {
 	case mac && !vm:
 		return "Mac only"
@@ -117,7 +117,7 @@ func JudgeSet(it catalog.ConfigItem, lives bool, applied *Applied, now Observati
 	row := Row{Name: it.Name, Group: GroupOf(it), Where: now.Where}
 	switch {
 	case !lives:
-		row.State, row.Where, row.Why = StateNotForThisMachine, "", PlaceReason(it.Places)
+		row.State, row.Where, row.Why = StateNotForThisMachine, "", LivesOnReason(it.Places)
 	case off:
 		row.State = StateOffHere
 	case now.State == catalog.StatePending:

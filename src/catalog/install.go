@@ -120,7 +120,7 @@ func Npm(pkg string) Install             { return NpmInstall{Package: pkg} }
 func Uv(pkg string) Install              { return UvInstall{Package: pkg} }
 func Bun(pkg string) Install             { return BunInstall{Package: pkg} }
 func BunAs(source, name string) Install  { return BunInstall{Package: source, Name: name} }
-func Mise(tool, version string) Install  { return MiseInstall{Tool: tool, Version: version} }
+func Mise(app, version string) Install   { return MiseInstall{Tool: app, Version: version} }
 func Shell(line string) Install          { return ShellInstall{Line: line} }
 func App(hint string) Install            { return AppInstall{Hint: hint} }
 func Skill(repo, skill string) Install   { return SkillInstall{Repo: repo, Skill: skill} }

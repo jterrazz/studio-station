@@ -32,7 +32,7 @@ func readings(memory, disk, free int64) []activity.Reading {
 	cpu := []float64{12, 18, 25, 34, 30, 22, 41, 55, 48, 36, 28, 31, 44, 38, 29, 34}
 	top := activity.Busiest{
 		CPU:    []activity.Process{{PID: 812, Name: "station", Value: cpu[len(cpu)-1]}},
-		Memory: []activity.Process{{PID: 812, Name: catalog.HypervisorTool, Value: 12.4e9}},
+		Memory: []activity.Process{{PID: 812, Name: catalog.HypervisorApp, Value: 12.4e9}},
 	}
 	used := memory * 31 / 40
 	at := func(i int) time.Time { return powerNow.Add(time.Duration(i-len(cpu)) * 2 * time.Second) }

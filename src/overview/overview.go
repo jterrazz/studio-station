@@ -10,7 +10,7 @@ import (
 	"github.com/jterrazz/studio-station/src/ports"
 )
 
-type Snapshot[Tool, Item, Stray any] struct {
+type Snapshot[App, Item, Misplaced any] struct {
 	// value: one reading of this machine. Tool, Item and Stray are the rows of
 	// the Apps, Settings and Disk reads, which keep their own types.
 	GeneratedAt time.Time
@@ -18,8 +18,8 @@ type Snapshot[Tool, Item, Stray any] struct {
 	Machine     Machine
 	System      System
 	Environment Environment
-	Workspace   Workspace[Stray]
-	Tools       []Tool
+	Workspace   Workspace[Misplaced]
+	Tools       []App
 	Config      []Item
 	Setup       Setup
 	Identity    []Check
@@ -98,9 +98,9 @@ type Disk struct {
 	Bytes int64
 }
 
-type Workspace[Stray any] struct {
+type Workspace[Misplaced any] struct {
 	Disk   []Disk
-	Strays []Stray
+	Strays []Misplaced
 	// value: the disk row has not answered; never past a whole read.
 	DiskPending bool
 }

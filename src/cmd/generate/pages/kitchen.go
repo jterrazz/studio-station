@@ -105,7 +105,7 @@ func kitchen(edit func(*page.Page)) page.Page {
 		hint   string
 	}{
 		{page.Outdated, page.Attention, "120 outdated", "station apps update --method brew"},
-		{page.Stray, page.Attention, "misplaced", "station disk move ~/.bun"},
+		{page.Misplaced, page.Attention, "misplaced", "station disk move ~/.bun"},
 		{page.Unreachable, page.Attention, "unreachable", ""},
 		{page.Mismatch, page.Attention, "station v2.0.0-240, This Mac v2.0.0-242", ""},
 		{page.Unmanaged, page.Attention, "on PATH, not managed by cask", ""},
@@ -128,7 +128,7 @@ func kitchen(edit func(*page.Page)) page.Page {
 	for _, r := range reasons {
 		x := row(string(r.reason), r.mark, page.Text(string(r.mark)))
 		x.Reason, x.Detail = r.reason, page.Text(r.detail)
-		if r.reason == page.Stray {
+		if r.reason == page.Misplaced {
 			x.Label = "misplaced"
 		}
 		if r.hint != "" {
@@ -159,12 +159,12 @@ func kitchen(edit func(*page.Page)) page.Page {
 			},
 		}}},
 	}
-	storage := page.Section{
+	disk := page.Section{
 		ID: "storage", Title: "Disk",
 		Columns: []page.Column{{Key: "name", Label: "app", Kind: page.KindText, Keep: 100}, {Key: "levels", Kind: page.KindLevels, Keep: 80, Levels: []string{"data", "kept"}}},
 		Items: []page.Item{
 			it(row("station", page.OK, page.Levels(page.Labeled("data", page.Size(275)), page.Labeled("kept", page.Size(546))))),
-			it(row(catalog.HypervisorTool, page.OK, page.Levels(page.Labeled("data", page.Size(73300000000))))),
+			it(row(catalog.HypervisorApp, page.OK, page.Levels(page.Labeled("data", page.Size(73300000000))))),
 		},
 	}
 	prose := page.Section{
@@ -197,7 +197,7 @@ func kitchen(edit func(*page.Page)) page.Page {
 			Memory: page.Ratio(12400000000, 17200000000), Battery: page.Percent(1000), Power: page.Texts("awake", "3h 12m"),
 			Net: []page.Value{page.Text("28.2 KB/s"), page.Text("14.5 KB/s")},
 		},
-		Sections: []page.Section{todo, summary, values, marks, allMachines, storage, prose, peers},
+		Sections: []page.Section{todo, summary, values, marks, allMachines, disk, prose, peers},
 		Hints:    []page.Hint{*page.Cmd("station overview --all"), {Command: "station apps", Text: "for the catalogue"}},
 		Actions: []page.Action{
 			{Key: "enter", Label: "fix", On: page.OnRow, Priority: 1, Mutates: true, Confirm: &page.Confirm{Question: "Delete linux-1?", Lines: []page.Value{page.Text("its disk is removed"), page.Command("station machines delete linux-1")}, Danger: true, Yes: "delete"}},

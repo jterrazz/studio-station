@@ -412,9 +412,9 @@ func showChecked(r settings.Row, head page.Row, here page.Context) page.Page {
 	}})
 }
 
-func livesOn(places []catalog.MachineKind) string {
-	words := make([]string, 0, len(places))
-	for _, p := range places {
+func livesOn(livesOn []catalog.MachineKind) string {
+	words := make([]string, 0, len(livesOn))
+	for _, p := range livesOn {
 		switch p {
 		case catalog.Host:
 			words = append(words, "Macs")

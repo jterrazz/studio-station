@@ -19,7 +19,7 @@ func Show(r apps.Report, lives bool, here page.Context) page.Page {
 	facts := []page.Item{
 		fact("method", method(r)),
 		fact("version", version(r)),
-		fact("lives on", page.Text(apps.LivesOn(t.Places()))),
+		fact("lives on", page.Text(apps.LivesOn(t.LivesOn()))),
 		fact("category", page.Text(string(t.Category))),
 	}
 	if t.Description != "" {

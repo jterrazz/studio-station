@@ -36,12 +36,12 @@ func setupService(env kit.Env, m machine) *setup.Service {
 		// observable; unset, the running binary is the one re-executed.
 		Executable:      m.or("STATION_EXECUTABLE", m.host.Env.Executable()),
 		Detached:        m.vars["STATION_XDG_DETACHED"] == "1",
-		Tools:           catalog.Tools,
+		Tools:           catalog.Apps,
 		Expand:          m.expander(),
-		Files:           m.toolFiles(),
+		Files:           m.appFiles(),
 		Configurer:      setupConfigurer{config: configService(m)},
 		Settings:        setupSettings{config: configService(m)},
-		Installer:       systemTools{tools: toolsService(env, m)},
+		Installer:       systemApps{apps: appsService(env, m)},
 		AppStoreCLI:     m.tailnetCLI().AppStoreCLI,
 		MovePreferences: m.stores.prefs.MoveRetired,
 	})
@@ -76,11 +76,11 @@ func (c setupSettings) Apply(ctx context.Context, name string) error {
 	return err
 }
 
-type systemTools struct{ tools *tools.Service }
+type systemApps struct{ apps *tools.Service }
 
-func (s systemTools) names() []string {
+func (s systemApps) names() []string {
 	var out []string
-	for _, t := range s.tools.Placed() {
+	for _, t := range s.apps.Placed() {
 		if t.System {
 			out = append(out, t.Name)
 		}
@@ -88,8 +88,8 @@ func (s systemTools) names() []string {
 	return out
 }
 
-func (s systemTools) Missing(ctx context.Context) ([]string, error) {
-	states, err := s.tools.States(ctx, s.names())
+func (s systemApps) Missing(ctx context.Context) ([]string, error) {
+	states, err := s.apps.States(ctx, s.names())
 	if err != nil {
 		return nil, err
 	}
@@ -102,14 +102,14 @@ func (s systemTools) Missing(ctx context.Context) ([]string, error) {
 	return missing, nil
 }
 
-func (s systemTools) Superseded(ctx context.Context) []string { return s.tools.Superseded(ctx) }
+func (s systemApps) Superseded(ctx context.Context) []string { return s.apps.Superseded(ctx) }
 
-func (s systemTools) RemoveFormula(ctx context.Context, formula string) error {
-	return s.tools.RemoveFormula(ctx, formula)
+func (s systemApps) RemoveFormula(ctx context.Context, formula string) error {
+	return s.apps.RemoveFormula(ctx, formula)
 }
 
-func (s systemTools) Install(ctx context.Context, names []string) error {
-	outcomes, err := s.tools.Install(ctx, tools.InstallRequest{Names: names, Interactive: true})
+func (s systemApps) Install(ctx context.Context, names []string) error {
+	outcomes, err := s.apps.Install(ctx, tools.InstallRequest{Names: names, Interactive: true})
 	if err != nil {
 		return err
 	}

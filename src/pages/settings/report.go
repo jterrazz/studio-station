@@ -12,17 +12,17 @@ import (
 type ItemJSON struct {
 	Name     string   `json:"name"`
 	Category string   `json:"category"`
-	Places   []string `json:"places"`
+	LivesOn  []string `json:"places"`
 	State    string   `json:"state"`
 	Detail   string   `json:"detail"`
 }
 
 func ItemObject(r config.Report) ItemJSON {
-	places := make([]string, len(r.Item.Places))
+	livesOn := make([]string, len(r.Item.Places))
 	for i, p := range r.Item.Places {
-		places[i] = string(p)
+		livesOn[i] = string(p)
 	}
-	return ItemJSON{Name: r.Item.Name, Category: string(r.Item.Category), Places: places, State: string(r.State), Detail: r.Detail}
+	return ItemJSON{Name: r.Item.Name, Category: string(r.Item.Category), LivesOn: livesOn, State: string(r.State), Detail: r.Detail}
 }
 
 func ReportColumns() []page.Column {

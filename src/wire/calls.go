@@ -51,7 +51,7 @@ func (m machine) registry(env kit.Env) *call.Registry {
 		activitycalls.All(m.activityDeps(sections.Meter)),
 		overviewcalls.All(sections),
 		accountscalls.All(accountscalls.Deps{Accounts: m.accounts(), Shares: m.secrets(), Kind: kind}),
-		appscalls.All(appscalls.Deps{Apps: toolsService(env, m), Kind: kind}),
+		appscalls.All(appscalls.Deps{Apps: appsService(env, m), Kind: kind}),
 		awakecalls.All(m.awakeDeps()),
 		backgroundcalls.All(m.backgroundDeps()),
 		diskcalls.All(diskcalls.Deps{Disk: m.storage(env), Kind: kind}),

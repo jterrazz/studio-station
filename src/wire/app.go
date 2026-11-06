@@ -32,7 +32,7 @@ import (
 )
 
 func Run(args, env []string, stdin, stdout, stderr *os.File) int {
-	env = withToolBins(env, len(args) > 0 && args[0] == "guest")
+	env = withAppBins(env, len(args) > 0 && args[0] == "guest")
 	frames, frameIn := stdout, stdin
 	var childIn io.Reader = stdin
 	if serving(args) {
@@ -205,7 +205,7 @@ func widthOf(f *os.File, isTerminal bool) int {
 // non-interactive caller too, and the caller's PATH still wins. A VM's guest is
 // started over ssh with the system's PATH, which also lacks the shell block's
 // ~/.local/bin and mise's runtimes: it appends those first.
-func withToolBins(env []string, guest bool) []string {
+func withAppBins(env []string, guest bool) []string {
 	home, mise, path, at := "", "", "", -1
 	for i, kv := range env {
 		switch k, v, _ := strings.Cut(kv, "="); k {

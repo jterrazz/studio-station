@@ -82,7 +82,7 @@ func Read(r disk.Reading, here page.Context, all bool) page.Page {
 		page.List(page.SizeOf(r.Free, r.Total, "free"), page.Text(plural(len(misplaced), "misplaced folder"))),
 	}}
 	if len(misplaced) > 0 {
-		head.Mark, head.Reason = page.Attention, page.Stray
+		head.Mark, head.Reason = page.Attention, page.Misplaced
 		head.Hint = page.Cmd("station disk move " + misplaced[0].Paths[0])
 	}
 	p.Sections = append(p.Sections, page.Section{ID: "volume", Title: "Disk", Role: page.Banner, Uncounted: true, Columns: columns(), Items: []page.Item{{Row: &head}}})
@@ -148,7 +148,7 @@ func Row(r disk.Row) page.Row {
 	row := page.Row{ID: string(r.Group) + "/" + r.App, Label: r.App, Mark: page.OK, Cells: []page.Value{cell, page.Texts(r.Paths...)}}
 	if r.Group == disk.Misplaced {
 		row.ID, row.Label = string(disk.Misplaced)+"/"+r.Paths[0], r.Paths[0]
-		row.Mark, row.Reason = page.Attention, page.Stray
+		row.Mark, row.Reason = page.Attention, page.Misplaced
 		row.Detail = page.Texts("misplaced", r.App)
 		row.Hint = page.Cmd("station disk move " + r.Paths[0])
 	}
@@ -236,17 +236,17 @@ func detail(o disk.Outcome, verb string) page.Value {
 	return sized(o.Freed, verb)
 }
 
-type StrayJSON struct {
+type MisplacedJSON struct {
 	Name   string `json:"name"`
 	Path   string `json:"path"`
 	Bytes  int64  `json:"bytes"`
 	Repair string `json:"repair"`
 }
 
-func StraysContract(strays []disk.StrayReport) []StrayJSON {
-	out := make([]StrayJSON, 0, len(strays))
-	for _, s := range strays {
-		out = append(out, StrayJSON{Name: s.Name, Path: s.Path, Bytes: s.Bytes, Repair: s.Repair})
+func MisplacedContract(misplaced []disk.MisplacedReport) []MisplacedJSON {
+	out := make([]MisplacedJSON, 0, len(misplaced))
+	for _, s := range misplaced {
+		out = append(out, MisplacedJSON{Name: s.Name, Path: s.Path, Bytes: s.Bytes, Repair: s.Repair})
 	}
 	return out
 }

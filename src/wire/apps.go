@@ -31,7 +31,7 @@ import (
 )
 
 func appsCommand(env kit.Env, m machine) *cobra.Command {
-	names := placedNames(toolsService(env, m))
+	names := placedNames(appsService(env, m))
 	return appscmd.Command(appscmd.Deps{Names: names, Here: m.where}, env,
 		appsinstall.Command(appsinstall.Deps{Names: names, Here: m.where, Now: m.host.Clock.Now}, env),
 		appsupdate.Command(appsupdate.Deps{Here: m.where, Now: m.host.Clock.Now}, env),
@@ -42,7 +42,7 @@ func appsCommand(env kit.Env, m machine) *cobra.Command {
 // invariant: station tools and its verbs are the hidden v2 words of station
 // apps for one release (SPEC §4.3); upgrade's --via is update's --method.
 func toolsAlias(env kit.Env, m machine) *cobra.Command {
-	names := placedNames(toolsService(env, m))
+	names := placedNames(appsService(env, m))
 	update := appsupdate.Via(appsupdate.Command(appsupdate.Deps{Here: m.where, Now: m.host.Clock.Now}, env))
 	return kit.Alias("tools", appscmd.Command(appscmd.Deps{Names: names, Here: m.where}, env,
 		kit.Alias("install", appsinstall.Command(appsinstall.Deps{Names: names, Here: m.where, Now: m.host.Clock.Now}, env), "install"),
@@ -62,13 +62,13 @@ func placedNames(s *tools.Service) func() []string {
 	}
 }
 
-func toolsService(env kit.Env, m machine) *tools.Service {
+func appsService(env kit.Env, m machine) *tools.Service {
 	var ask kit.Asker
 	if env.Interactive {
 		ask = env.Prompt
 	}
 	registry, bundler := installers(m)
-	return tools.New(m.host, catalog.Tools, configurer{config: configService(m), ask: ask}, tools.Options{
+	return tools.New(m.host, catalog.Apps, configurer{config: configService(m), ask: ask}, tools.Options{
 		Pool:       m.pool,
 		Here:       m.kind,
 		Root:       m.systemRoot(),

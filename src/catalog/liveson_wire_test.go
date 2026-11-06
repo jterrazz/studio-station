@@ -9,7 +9,7 @@ import (
 )
 
 func TestEveryToolOfTheCatalogueReadsBackAsItWasSent(t *testing.T) {
-	for _, tool := range catalog.Tools {
+	for _, tool := range catalog.Apps {
 		raw, err := json.Marshal(tool)
 		if err != nil {
 			t.Fatalf("%s: %v", tool.Name, err)

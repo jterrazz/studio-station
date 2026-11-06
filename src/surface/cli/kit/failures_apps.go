@@ -6,7 +6,7 @@ import (
 	"github.com/jterrazz/studio-station/src/domain/tools"
 )
 
-func toolsFailure(err error) (*fail.Error, bool) {
+func appsFailure(err error) (*fail.Error, bool) {
 	var irreversible *tools.NotReversibleError
 	var manual *tools.ManualInstallError
 	var noUpgrade *tools.NoUpgradePathError

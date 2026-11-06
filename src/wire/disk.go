@@ -40,13 +40,13 @@ func storageAlias(env kit.Env, m machine) *cobra.Command {
 }
 
 func (m machine) storage(env kit.Env) *storage.Service {
-	return storage.New(m.host, catalog.Tools, storage.Options{
+	return storage.New(m.host, catalog.Apps, storage.Options{
 		Disk:       m.disk(),
 		Pool:       m.pool,
 		Here:       m.kind,
 		Expand:     m.expander(),
-		Files:      m.toolFiles(),
-		Inventory:  inventory{tools: toolsService(env, m)},
+		Files:      m.appFiles(),
+		Inventory:  inventory{apps: appsService(env, m)},
 		Configurer: setupConfigurer{config: configService(m)},
 	})
 }
@@ -68,7 +68,7 @@ func (m machine) expander() storage.Expander {
 // invariant: Go's env file is where `go env GOENV` says: $GOENV when set and
 // absolute ("off" writes nothing), else os.UserConfigDir()/go/env, which is
 // ~/Library/Application Support on darwin and the XDG config root on linux.
-func (m machine) toolFiles() map[catalog.ToolFile]string {
+func (m machine) appFiles() map[catalog.AppFile]string {
 	home := m.host.Env.Home()
 	goenv := filepath.Join(home, "Library", "Application Support", "go", "env")
 	if m.kind == catalog.Linux {
@@ -91,7 +91,7 @@ func (m machine) toolFiles() map[catalog.ToolFile]string {
 	if file := m.vars["MISE_GLOBAL_CONFIG_FILE"]; filepath.IsAbs(file) {
 		mise = file
 	}
-	return map[catalog.ToolFile]string{
+	return map[catalog.AppFile]string{
 		catalog.FileGoEnv:  goenv,
 		catalog.FileNpmrc:  filepath.Join(home, ".npmrc"),
 		catalog.FileBunfig: bunfig,
@@ -99,10 +99,10 @@ func (m machine) toolFiles() map[catalog.ToolFile]string {
 	}
 }
 
-type inventory struct{ tools *tools.Service }
+type inventory struct{ apps *tools.Service }
 
 func (i inventory) Installed(ctx context.Context, each func(map[string]bool)) {
-	for reports := range i.tools.Watch(ctx) {
+	for reports := range i.apps.Watch(ctx) {
 		out := make(map[string]bool, len(reports))
 		for _, r := range reports {
 			if !r.Pending {

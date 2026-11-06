@@ -93,7 +93,7 @@ func (s *Service) Find(names []string) ([]catalog.Tool, error) {
 			return nil, &apps.UnknownError{Name: name}
 		}
 		if _, ok := t.InstallOn(s.o.Here); !ok {
-			return nil, &apps.ElsewhereError{App: name, Places: t.Places()}
+			return nil, &apps.ElsewhereError{App: name, Places: t.LivesOn()}
 		}
 		found = append(found, t)
 	}

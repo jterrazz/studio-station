@@ -11,7 +11,7 @@ type ToolJSON struct {
 	Name     string   `json:"name"`
 	Category string   `json:"category"`
 	Method   string   `json:"method"`
-	Places   []string `json:"places"`
+	LivesOn  []string `json:"places"`
 	State    string   `json:"state"`
 	Version  string   `json:"version"`
 	Managed  bool     `json:"managed"`
@@ -51,18 +51,18 @@ func ListContract(schema string, reports []apps.Report) ListJSON {
 		}
 		body.Apps = append(body.Apps, AppJSON{
 			Name: r.Tool.Name, Category: string(r.Tool.Category), Method: string(r.Method),
-			State: string(apps.StateOf(r)), Installed: installed(r.Version), Newest: r.Newest, LivesOn: apps.LivesOnToken(r.Tool.Places()),
+			State: string(apps.StateOf(r)), Installed: installed(r.Version), Newest: r.Newest, LivesOn: apps.LivesOnToken(r.Tool.LivesOn()),
 			Provides: append([]string{}, r.Tool.Provides...), Detail: detail,
 		})
 	}
 	return body
 }
 
-func ToolObject(r apps.Report) ToolJSON {
-	kinds := r.Tool.Places()
-	places := make([]string, 0, len(kinds))
+func AppObject(r apps.Report) ToolJSON {
+	kinds := r.Tool.LivesOn()
+	livesOn := make([]string, 0, len(kinds))
 	for _, k := range kinds {
-		places = append(places, string(k))
+		livesOn = append(livesOn, string(k))
 	}
 	detail := r.Detail
 	if detail == "" {
@@ -72,7 +72,7 @@ func ToolObject(r apps.Report) ToolJSON {
 		Name:     r.Tool.Name,
 		Category: string(r.Tool.Category),
 		Method:   string(r.Method),
-		Places:   places,
+		LivesOn:  livesOn,
 		State:    string(r.State),
 		Version:  r.Version,
 		Managed:  r.Managed,

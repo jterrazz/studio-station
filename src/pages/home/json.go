@@ -25,7 +25,7 @@ type SnapshotJSON struct {
 	System      systemJSON              `json:"system"`
 	Environment environmentJSON         `json:"environment"`
 	Workspace   workspaceJSON           `json:"workspace"`
-	Tools       []pageapps.ToolJSON     `json:"tools"`
+	Apps        []pageapps.ToolJSON     `json:"tools"`
 	Config      []pagesettings.ItemJSON `json:"config"`
 	Setup       setupJSON               `json:"setup"`
 	Identity    []checkJSON             `json:"identity"`
@@ -154,11 +154,11 @@ type diskJSON struct {
 type workspaceJSON struct {
 	// invariant: v1 keeps every key it ever had; the workspace is no longer
 	// scanned, so repositories, dependencies and docker read as nothing seen.
-	Repositories []repositoryJSON     `json:"repositories"`
-	Dependencies []dependencyJSON     `json:"dependencies"`
-	Docker       dockerJSON           `json:"docker"`
-	Disk         []diskJSON           `json:"disk"`
-	Strays       []pagedisk.StrayJSON `json:"strays"`
+	Repositories []repositoryJSON         `json:"repositories"`
+	Dependencies []dependencyJSON         `json:"dependencies"`
+	Docker       dockerJSON               `json:"docker"`
+	Disk         []diskJSON               `json:"disk"`
+	Misplaced    []pagedisk.MisplacedJSON `json:"strays"`
 }
 
 type stepJSON struct {
@@ -198,9 +198,9 @@ func SnapshotContract(s Overview) SnapshotJSON {
 			Dependencies: []dependencyJSON{},
 			Docker:       dockerJSON{State: string(catalog.StateUnknown)},
 			Disk:         make([]diskJSON, 0, len(s.Workspace.Disk)),
-			Strays:       pagedisk.StraysContract(s.Workspace.Strays),
+			Misplaced:    pagedisk.MisplacedContract(s.Workspace.Strays),
 		},
-		Tools:      make([]pageapps.ToolJSON, 0, len(s.Tools)),
+		Apps:       make([]pageapps.ToolJSON, 0, len(s.Tools)),
 		Config:     make([]pagesettings.ItemJSON, 0, len(s.Config)),
 		Setup:      setupJSON{State: string(s.Setup.State), Steps: make([]stepJSON, 0, len(s.Setup.Steps))},
 		Identity:   checks(s.Identity),
@@ -219,7 +219,7 @@ func SnapshotContract(s Overview) SnapshotJSON {
 		body.Workspace.Disk = append(body.Workspace.Disk, diskJSON{Name: d.Name, Level: string(d.Level), Bytes: d.Bytes})
 	}
 	for _, t := range s.Tools {
-		body.Tools = append(body.Tools, pageapps.ToolObject(t))
+		body.Apps = append(body.Apps, pageapps.AppObject(t))
 	}
 	for _, c := range s.Config {
 		body.Config = append(body.Config, pagesettings.ItemObject(c))

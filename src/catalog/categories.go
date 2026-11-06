@@ -6,7 +6,7 @@ const (
 	CategoryPackageManagers Category = "Package Managers"
 	CategoryRuntimes        Category = "Runtimes"
 	CategoryShellTerminal   Category = "Shell & Terminal"
-	CategoryCLITools        Category = "CLI Tools"
+	CategoryCLIApps         Category = "CLI Tools"
 	CategoryGit             Category = "Git"
 	CategoryEditors         Category = "Editors & IDEs"
 	CategoryContainersVMs   Category = "Containers & VMs"
@@ -28,7 +28,7 @@ var Categories = []Category{
 	CategoryPackageManagers,
 	CategoryRuntimes,
 	CategoryShellTerminal,
-	CategoryCLITools,
+	CategoryCLIApps,
 	CategoryGit,
 	CategoryEditors,
 	CategoryContainersVMs,

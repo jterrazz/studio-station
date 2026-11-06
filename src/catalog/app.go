@@ -15,7 +15,7 @@ func (k MachineKind) Article() string {
 	return "a " + string(k) + " VM"
 }
 
-type Place struct {
+type LivesOn struct {
 	Kinds   []MachineKind
 	Install Install
 }
@@ -38,14 +38,14 @@ type Tool struct {
 	Replaces    string
 	Supersedes  string
 	AppStore    bool
-	Installs    []Place
+	Installs    []LivesOn
 	Provides    []string
 	Bundle      string
 	Version     Probe
 	Requires    []string
 	Then        []string
 	Live        Liveness
-	Storage     Storage
+	Storage     Disk
 	System      bool
 }
 
@@ -67,21 +67,21 @@ var MethodKinds = map[Method][]MachineKind{
 	MethodSkill:  {Host, Linux, MacOS},
 }
 
-func Everywhere(mac, linux Install) []Place {
-	return []Place{{Kinds: []MachineKind{Host, MacOS}, Install: mac}, {Kinds: []MachineKind{Linux}, Install: linux}}
+func Everywhere(mac, linux Install) []LivesOn {
+	return []LivesOn{{Kinds: []MachineKind{Host, MacOS}, Install: mac}, {Kinds: []MachineKind{Linux}, Install: linux}}
 }
 
-func Mac(i Install) []Place { return []Place{{Kinds: []MachineKind{Host, MacOS}, Install: i}} }
+func Mac(i Install) []LivesOn { return []LivesOn{{Kinds: []MachineKind{Host, MacOS}, Install: i}} }
 
-func HostOnly(i Install) []Place { return []Place{{Kinds: []MachineKind{Host}, Install: i}} }
+func HostOnly(i Install) []LivesOn { return []LivesOn{{Kinds: []MachineKind{Host}, Install: i}} }
 
-func LinuxOnly(i Install) []Place { return []Place{{Kinds: []MachineKind{Linux}, Install: i}} }
+func LinuxOnly(i Install) []LivesOn { return []LivesOn{{Kinds: []MachineKind{Linux}, Install: i}} }
 
-func VMs(mac, linux Install) []Place {
-	return []Place{{Kinds: []MachineKind{MacOS}, Install: mac}, {Kinds: []MachineKind{Linux}, Install: linux}}
+func VMs(mac, linux Install) []LivesOn {
+	return []LivesOn{{Kinds: []MachineKind{MacOS}, Install: mac}, {Kinds: []MachineKind{Linux}, Install: linux}}
 }
 
-func (t Tool) Places() []MachineKind {
+func (t Tool) LivesOn() []MachineKind {
 	var kinds []MachineKind
 	for _, k := range []MachineKind{Host, Linux, MacOS} {
 		if _, ok := t.InstallOn(k); ok {
@@ -112,6 +112,6 @@ func (t Tool) InstallOn(k MachineKind) (Install, bool) {
 	return nil, false
 }
 
-func Anywhere(i Install) []Place {
-	return []Place{{Kinds: []MachineKind{Host, Linux, MacOS}, Install: i}}
+func Anywhere(i Install) []LivesOn {
+	return []LivesOn{{Kinds: []MachineKind{Host, Linux, MacOS}, Install: i}}
 }

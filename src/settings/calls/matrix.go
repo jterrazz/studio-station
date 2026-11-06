@@ -40,9 +40,9 @@ var Matrix = call.Call[Deps, MatrixIn, settings.Matrix]{
 		if err != nil {
 			return settings.Matrix{}, err
 		}
-		places, servers := settings.Places(allMachines)
+		livesOn, servers := settings.Places(allMachines)
 		var asked []machine.Ref
-		for _, p := range places {
+		for _, p := range livesOn {
 			if p.Away == settings.Present {
 				asked = append(asked, p.Ref)
 			}
@@ -52,9 +52,9 @@ var Matrix = call.Call[Deps, MatrixIn, settings.Matrix]{
 			return settings.Matrix{}, err
 		}
 		now := d.Now()
-		cols := make([]settings.Column, 0, len(places))
-		for _, p := range places {
-			col := settings.Column{Place: p}
+		cols := make([]settings.Column, 0, len(livesOn))
+		for _, p := range livesOn {
+			col := settings.Column{LivesOn: p}
 			switch p.Away {
 			case settings.Present:
 				a := answers[p.Ref]

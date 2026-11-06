@@ -32,7 +32,7 @@ var Off = call.Call[Deps, OffIn, []settings.Change]{
 		for _, name := range in.Names {
 			if c, ok := settings.CheckedNamed(name); ok {
 				if !d.Settings.Lives(catalog.ConfigItem{Name: c.Name, Places: c.Places}) {
-					return nil, fail.New(fail.NotForThisMachine, NotForThisMachine, name, map[string]string{"why": settings.PlaceReason(c.Places)})
+					return nil, fail.New(fail.NotForThisMachine, NotForThisMachine, name, map[string]string{"why": settings.LivesOnReason(c.Places)})
 				}
 				checked = append(checked, name)
 				continue

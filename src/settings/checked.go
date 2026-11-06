@@ -64,7 +64,7 @@ func JudgeChecked(it catalog.CheckedSetting, lives bool, facts map[catalog.Fact]
 	row := Row{Name: it.Name, Group: Checked}
 	switch {
 	case !lives:
-		row.Checked, row.Why = CheckedNotForThisMachine, PlaceReason(it.Places)
+		row.Checked, row.Why = CheckedNotForThisMachine, LivesOnReason(it.Places)
 		return row
 	case off:
 		row.Checked = CheckedOffHere

@@ -52,9 +52,9 @@ func LivesOnToken(places []catalog.MachineKind) string {
 	return livesOn(places)
 }
 
-func livesOn(places []catalog.MachineKind) string {
+func livesOn(livesOn []catalog.MachineKind) string {
 	var mac, linux, macVM bool
-	for _, p := range places {
+	for _, p := range livesOn {
 		switch p {
 		case catalog.Host:
 			mac = true

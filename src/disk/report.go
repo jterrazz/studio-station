@@ -9,7 +9,7 @@ import (
 type Entry struct {
 	Name     string
 	Category string
-	Storage  catalog.Storage
+	Storage  catalog.Disk
 	Places   []catalog.MachineKind
 }
 
@@ -19,7 +19,7 @@ type PathReport struct {
 	Bytes int64
 }
 
-type StrayReport struct {
+type MisplacedReport struct {
 	Name  string
 	Path  string
 	Bytes int64
@@ -37,7 +37,7 @@ type Tally struct {
 	Bytes     map[catalog.Level]int64
 	Install   int64
 	Paths     []PathReport
-	Strays    []StrayReport
+	Strays    []MisplacedReport
 	Pending   bool
 	// value: a pending size the walk has never measured, so the row cannot
 	// know yet which groups it will fill.
@@ -57,7 +57,7 @@ func (r Tally) Total() int64 {
 
 type Survey struct {
 	Rows   []Tally
-	Strays []StrayReport
+	Strays []MisplacedReport
 	Other  int64
 }
 

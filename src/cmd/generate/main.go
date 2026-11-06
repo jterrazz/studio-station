@@ -13,8 +13,8 @@ import (
 )
 
 const (
-	toolsStart  = "<!-- GENERATED:tools by `make generate` from src/catalog: DO NOT EDIT between markers -->"
-	toolsEnd    = "<!-- /GENERATED:tools -->"
+	appsStart   = "<!-- GENERATED:tools by `make generate` from src/catalog: DO NOT EDIT between markers -->"
+	appsEnd     = "<!-- /GENERATED:tools -->"
 	preferStart = "<!-- GENERATED:prefer by `make generate` from src/catalog: DO NOT EDIT between markers -->"
 	preferEnd   = "<!-- /GENERATED:prefer -->"
 
@@ -65,11 +65,11 @@ func main() {
 }
 
 func render(source string) (string, error) {
-	withTools, err := splice(source, toolsStart, toolsEnd, toolsBlock())
+	withApps, err := splice(source, appsStart, appsEnd, appsBlock())
 	if err != nil {
 		return "", err
 	}
-	return splice(withTools, preferStart, preferEnd, preferBlock())
+	return splice(withApps, preferStart, preferEnd, preferBlock())
 }
 
 func splice(source, start, end, block string) (string, error) {
@@ -85,11 +85,11 @@ func splice(source, start, end, block string) (string, error) {
 	return source[:afterStart] + "\n\n" + block + "\n\n" + source[afterStart+to:], nil
 }
 
-func toolsBlock() string {
+func appsBlock() string {
 	var sections []string
 	for _, category := range catalog.Categories {
 		lines := []string{"### " + string(category), ""}
-		for _, t := range catalog.Tools {
+		for _, t := range catalog.Apps {
 			if t.Category != category {
 				continue
 			}
@@ -110,7 +110,7 @@ func toolsBlock() string {
 // writes, so the formatter and the sync test agree on every byte.
 func preferBlock() string {
 	rows := [][2]string{{"Instead of", "Use"}}
-	for _, t := range catalog.Tools {
+	for _, t := range catalog.Apps {
 		if t.Replaces != "" {
 			rows = append(rows, [2]string{t.Replaces, "`" + t.Name + "`: " + t.Description})
 		}

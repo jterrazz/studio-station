@@ -29,10 +29,10 @@ func footprint() string {
 	})
 	parts := []string{
 		strings.Replace(footprintPreamble, "%LEVELS%", levels, 1),
-		"## Station", table([]string{"Path", "Group", "Note"}, storedRows(catalog.StationStorage)), catalog.StationRetiredNote,
+		"## Station", table([]string{"Path", "Group", "Note"}, storedRows(catalog.StationDisk)), catalog.StationRetiredNote,
 		"## Apps",
 	}
-	for _, t := range catalog.Tools {
+	for _, t := range catalog.Apps {
 		if !t.Storage.Declared() {
 			continue
 		}
@@ -112,7 +112,7 @@ func memoNote(memos []string) string {
 	return strings.Join(shownMemos, ", ") + " rewritten on every call, not counted"
 }
 
-func storedRows(s catalog.Storage) [][]string {
+func storedRows(s catalog.Disk) [][]string {
 	rows := make([][]string, 0, len(s.Paths)+len(s.Installed)+len(s.Strays))
 	for _, p := range s.Paths {
 		rows = append(rows, []string{code(shown(p.Path)), group(p.Level), note(on(p.On), p.Note, memoNote(p.Memos))})
@@ -138,7 +138,7 @@ func storedRows(s catalog.Storage) [][]string {
 	return rows
 }
 
-func actionLines(s catalog.Storage) string {
+func actionLines(s catalog.Disk) string {
 	var lines []string
 	if c := actions(s.Clean); c != "" {
 		lines = append(lines, "Free: "+c+".")
@@ -200,7 +200,7 @@ func exceptionRows() [][]string {
 
 func relocationRows() [][]string {
 	var rows [][]string
-	for _, t := range catalog.Tools {
+	for _, t := range catalog.Apps {
 		for _, r := range t.Storage.Relocate {
 			status := "written"
 			if r.Pending != "" {

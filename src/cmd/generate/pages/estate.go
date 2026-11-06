@@ -68,7 +68,7 @@ func check(name string, state catalog.State, value, detail string) overview.Chec
 }
 
 func snapshot() pagehome.Overview {
-	toolReports := reports(thisMac(), false)
+	appReports := reports(thisMac(), false)
 	return pagehome.Overview{
 		GeneratedAt: built,
 		Station:     overview.Station{Version: "v2.0.0-250", Daemon: check("daemon", catalog.StateDegraded, "not installed", "station setup")},
@@ -88,11 +88,11 @@ func snapshot() pagehome.Overview {
 		Workspace: pagehome.Workspace{
 			Disk: []overview.Disk{{Name: "homebrew", Level: catalog.LevelCache, Bytes: 26 * gb}},
 			Strays: []storage.StrayReport{
-				{Name: catalog.HypervisorTool, Path: "~/." + catalog.HypervisorTool, Bytes: 73 * gb, Repair: "station disk move ~/." + catalog.HypervisorTool},
+				{Name: catalog.HypervisorApp, Path: "~/." + catalog.HypervisorApp, Bytes: 73 * gb, Repair: "station disk move ~/." + catalog.HypervisorApp},
 				{Name: "bun", Path: "~/.bun", Bytes: 2 * gb, Repair: "station disk move ~/.bun"},
 			},
 		},
-		Tools: toolReports,
+		Tools: appReports,
 		Config: []config.Report{
 			{Item: catalog.ConfigItem{Name: "hushlogin", Description: "Silence the login banner"}, State: catalog.StateOK, Applies: true},
 			{Item: catalog.ConfigItem{Name: "restart-after-power-cut", Description: "Restarts after a power cut, and wakes for the network"}, State: catalog.StateDegraded, Detail: "partly applied", Applies: true},
@@ -133,7 +133,7 @@ func calmSnapshot() pagehome.Overview {
 	s.Station.Daemon = check("daemon", catalog.StateOK, "running v2.0.0-250", "")
 	s.Environment.Updates = []overview.Check{check("macos", catalog.StateOK, "up to date", "checked 22m ago"), check("brew", catalog.StateOK, "up to date", "")}
 	s.Workspace.Strays = nil
-	s.Tools = reports([]tool{{name: "homebrew", category: catalog.CategoryPackageManagers, method: catalog.MethodScript, system: true, state: catalog.StateOK, version: "7.0.12"}}, false)
+	s.Tools = reports([]app{{name: "homebrew", category: catalog.CategoryPackageManagers, method: catalog.MethodScript, system: true, state: catalog.StateOK, version: "7.0.12"}}, false)
 	s.Config = s.Config[:1]
 	s.Background = s.Background[:1]
 	s.Gateways = nil
@@ -178,7 +178,7 @@ func settingRows(reading bool) []settings.Row {
 		case r.State == settings.StateApplied || r.State == settings.StateChangedSince:
 			r.Since = since
 		case r.State == settings.StateNotForThisMachine:
-			r.Why = settings.PlaceReason([]catalog.MachineKind{catalog.Linux})
+			r.Why = settings.LivesOnReason([]catalog.MachineKind{catalog.Linux})
 		}
 		if r.Group == settings.AlwaysOnMac && !reading {
 			r.State, r.Since = settings.StateNotApplied, time.Time{}
@@ -244,10 +244,10 @@ func settingsMatrix() []Fixture {
 		space = append(space, r)
 	}
 	cols := []settings.Column{
-		{Place: settings.Place{Name: "jterrazz-macbook-pro", Here: true, Mac: true}, Rows: mac, Read: now},
-		{Place: settings.Place{Name: "jterrazz-mac-mini", Mac: true}, Rows: mac, Read: now},
-		{Place: settings.Place{Name: "linux-1"}, Rows: space, Read: now},
-		{Place: settings.Place{Name: "api", Away: settings.Stopped}, Rows: space, Read: now.Add(-2 * time.Hour)},
+		{LivesOn: settings.LivesOn{Name: "jterrazz-macbook-pro", Here: true, Mac: true}, Rows: mac, Read: now},
+		{LivesOn: settings.LivesOn{Name: "jterrazz-mac-mini", Mac: true}, Rows: mac, Read: now},
+		{LivesOn: settings.LivesOn{Name: "linux-1"}, Rows: space, Read: now},
+		{LivesOn: settings.LivesOn{Name: "api", Away: settings.Stopped}, Rows: space, Read: now.Add(-2 * time.Hour)},
 	}
 	short := func(name string) string { return strings.TrimPrefix(name, "jterrazz-") }
 	m := settings.MatrixOf(cols, []string{"infra"})
@@ -258,7 +258,7 @@ func settingsMatrix() []Fixture {
 		full)
 }
 
-func storageReport(pending bool) storage.Report {
+func diskReport(pending bool) storage.Report {
 	entry := func(name, category string) storage.Entry {
 		return storage.Entry{Name: name, Category: category, Places: []catalog.MachineKind{catalog.Host}}
 	}
@@ -274,8 +274,8 @@ func storageReport(pending bool) storage.Report {
 		storage.Row{Entry: entry("bun", string(catalog.CategoryRuntimes)), Installed: true, State: catalog.StateOK, Bytes: map[catalog.Level]int64{catalog.LevelCache: 1700 * (1 << 20)},
 			Paths: []storage.PathReport{at("~/Library/Caches/bun", catalog.LevelCache, 1700*(1<<20))}},
 	)
-	misplaced := []storage.StrayReport{{Name: catalog.HypervisorTool, Path: "~/." + catalog.HypervisorTool, Bytes: 73 * gb, To: "~/.local/share/station/vms", Repair: "station disk move ~/." + catalog.HypervisorTool}}
-	rows = append(rows, storage.Row{Entry: entry(catalog.HypervisorTool, string(catalog.CategoryContainersVMs)), Installed: true, State: catalog.StateDegraded, Bytes: map[catalog.Level]int64{}, Strays: misplaced})
+	misplaced := []storage.StrayReport{{Name: catalog.HypervisorApp, Path: "~/." + catalog.HypervisorApp, Bytes: 73 * gb, To: "~/.local/share/station/vms", Repair: "station disk move ~/." + catalog.HypervisorApp}}
+	rows = append(rows, storage.Row{Entry: entry(catalog.HypervisorApp, string(catalog.CategoryContainersVMs)), Installed: true, State: catalog.StateDegraded, Bytes: map[catalog.Level]int64{}, Strays: misplaced})
 	r := storage.Report{Rows: rows, Strays: misplaced, Other: 9 * gb}
 	if pending {
 		for i := range r.Rows {
@@ -287,7 +287,7 @@ func storageReport(pending bool) storage.Report {
 
 func disks() []Fixture {
 	reading := func(pending bool) disk.Reading {
-		return disk.Reading{Total: 994e9, Free: 388e9, Rows: disk.Classify(storageReport(pending)), Pending: pending}
+		return disk.Reading{Total: 994e9, Free: 388e9, Rows: disk.Classify(diskReport(pending)), Pending: pending}
 	}
 	return states("disk",
 		pagedisk.Read(reading(true), here(), false),
@@ -362,7 +362,7 @@ func imageLists() []Fixture {
 	return states("images",
 		pending(pageimages.List(imageReports(), thisMacImages())),
 		pageimages.List(nil, thisMacImages()),
-		failure("images", "images", catalog.HypervisorTool+" is not installed", "station apps install "+catalog.HypervisorTool),
+		failure("images", "images", catalog.HypervisorApp+" is not installed", "station apps install "+catalog.HypervisorApp),
 		pageimages.List(imageReports(), thisMacImages()))
 }
 
@@ -484,7 +484,7 @@ func setupReport() setup.Report {
 	return setup.Report{Steps: []setup.Step{
 		{Name: "name", State: catalog.StateOK, Detail: "macbook"},
 		{Name: "zshrc", State: catalog.StateOK, Detail: "the station block", Changed: true},
-		{Name: "layout", State: catalog.StateDegraded, Detail: "~/." + catalog.HypervisorTool + " not moved", Log: "73 GB: move it with station setup --move"},
+		{Name: "layout", State: catalog.StateDegraded, Detail: "~/." + catalog.HypervisorApp + " not moved", Log: "73 GB: move it with station setup --move"},
 		{Name: "apps", State: catalog.StateOK},
 	}}
 }

@@ -99,7 +99,7 @@ func find(d Deps, name string, living bool) (catalog.ConfigItem, error) {
 			continue
 		}
 		if living && !d.Settings.Lives(it) {
-			return it, fail.New(fail.NotForThisMachine, NotForThisMachine, name, map[string]string{"why": settings.PlaceReason(it.Places)})
+			return it, fail.New(fail.NotForThisMachine, NotForThisMachine, name, map[string]string{"why": settings.LivesOnReason(it.Places)})
 		}
 		return it, nil
 	}

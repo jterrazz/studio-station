@@ -69,7 +69,7 @@ func TestNoSectionFlickers(t *testing.T) {
 		name := "t" + strconv.Itoa(i)
 		fs.Files["h/"+name+"/cache/f"] = &fstest.MapFile{Data: []byte("abc")}
 		tools = append(tools, catalog.Tool{Name: name, Category: categories[i%len(categories)], Installs: catalog.HostOnly(catalog.Shell(name)),
-			Storage: catalog.Storage{Paths: []catalog.Stored{{Path: "~/" + name + "/*", Level: catalog.LevelCache}}}})
+			Storage: catalog.Disk{Paths: []catalog.Stored{{Path: "~/" + name + "/*", Level: catalog.LevelCache}}}})
 		names = append(names, name)
 	}
 	pool := probe.NewPool(context.Background(), clock{}, 4, 1)

@@ -78,7 +78,7 @@ type answer struct {
 	readiness []overview.Check
 }
 
-func (r *Reader[Tool, Item, Stray]) Compose(ctx context.Context) <-chan overview.Summary {
+func (r *Reader[App, Item, Misplaced]) Compose(ctx context.Context) <-chan overview.Summary {
 	// invariant: overview.read owns no fact: every line is a section's own
 	// read through the Router, in the one order of the machine's kind; the
 	// first value has every line pending, each answer fills its own, and the
