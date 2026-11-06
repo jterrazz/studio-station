@@ -10,7 +10,7 @@ import (
 )
 
 func globals(home string) string {
-	var bins []string
+	bins := make([]string, 0, len(catalog.GlobalBins))
 	for _, b := range catalog.GlobalBins {
 		bins = append(bins, path.Join(home, b))
 	}

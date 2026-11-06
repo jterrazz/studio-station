@@ -57,6 +57,7 @@ func technologyWords() []string {
 // gate until it is removed.
 func wordsTolerated() map[string][]string {
 	return map[string][]string{
+		"wire":                 {"mise"},
 		"surface/cli/kit":      {"fdesetup", "ssh"},
 		"surface/cli/machines": {"ssh"},
 		"cmd/generate/pages":   {"brew", "bun", "docker", "launchctl", "mas", "mise", "npm", "ssh", "tailscale", "uv"},
