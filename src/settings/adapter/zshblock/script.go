@@ -86,7 +86,7 @@ func (s *Block) token(ctx context.Context) (string, bool) {
 	if s.o.Here != catalog.Linux && s.o.Here != catalog.MacOS {
 		return "", false
 	}
-	exported, err := s.source.Export(ctx, []string{settings.ClaudeTokenName})
+	exported, err := s.source.Export(ctx, []string{catalog.ClaudeTokenName})
 	if err != nil {
 		return "", false
 	}

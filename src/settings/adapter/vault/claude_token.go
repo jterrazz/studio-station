@@ -17,7 +17,7 @@ import (
 const readBudget = 5 * time.Second
 
 const (
-	tokenName = settings.ClaudeTokenName
+	tokenName = catalog.ClaudeTokenName
 	kept      = "kept by the studio credential store"
 )
 

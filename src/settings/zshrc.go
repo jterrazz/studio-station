@@ -3,12 +3,13 @@ package settings
 import (
 	"encoding/json"
 	"strings"
+
+	"github.com/jterrazz/studio-station/src/catalog"
 )
 
 const (
-	blockStart      = "# >>> station >>>"
-	blockEnd        = "# <<< station <<<"
-	ClaudeTokenName = "operator:claude:oauth-token"
+	blockStart = "# >>> station >>>"
+	blockEnd   = "# <<< station <<<"
 )
 
 // invariant: ~/.local/bin is on PATH before the eval runs, and the `command -v`
@@ -53,7 +54,7 @@ func ClaudeTokenLine(exportJSON []byte) (string, bool) {
 	if json.Unmarshal(exportJSON, &values) != nil {
 		return "", false
 	}
-	token := values[ClaudeTokenName]
+	token := values[catalog.ClaudeTokenName]
 	if token == "" {
 		return "", false
 	}
