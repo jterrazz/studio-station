@@ -1,9 +1,9 @@
 package setup
 
 import (
-	"github.com/jterrazz/studio-station/src/domain/setup"
 	"github.com/jterrazz/studio-station/src/page"
 	"github.com/jterrazz/studio-station/src/pages"
+	"github.com/jterrazz/studio-station/src/setup"
 )
 
 func Outcome(report setup.Report, thisMac page.Context) page.Page {

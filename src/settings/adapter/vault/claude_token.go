@@ -7,7 +7,6 @@ import (
 	"slices"
 	"time"
 
-	accountscontract "github.com/jterrazz/studio-station/src/accounts/contract"
 	"github.com/jterrazz/studio-station/src/catalog"
 	"github.com/jterrazz/studio-station/src/platform/local"
 	"github.com/jterrazz/studio-station/src/settings"
@@ -17,18 +16,25 @@ import (
 const readBudget = 5 * time.Second
 
 const (
-	tokenName = "operator:claude:oauth-token"
+	tokenName = catalog.ClaudeTokenName
 	kept      = "kept by the studio credential store"
 )
 
+type ShareList interface {
+	// value: the accounts share list, as the accounts family edits it.
+	Get() ([]string, error)
+	Add(name string) error
+	Remove(name string) error
+}
+
 type ClaudeToken struct {
 	run   local.Runner
-	share accountscontract.ShareListPrefs
+	share ShareList
 }
 
 var _ contract.Applier = (*ClaudeToken)(nil)
 
-func NewClaudeToken(run local.Runner, share accountscontract.ShareListPrefs) *ClaudeToken {
+func NewClaudeToken(run local.Runner, share ShareList) *ClaudeToken {
 	return &ClaudeToken{run: run, share: share}
 }
 
@@ -74,14 +80,8 @@ func (c *ClaudeToken) Apply(ctx context.Context, it catalog.Setting, values map[
 		return settings.Change{}, errors.New("studio credentials import failed: " + err.Error())
 	}
 	change := settings.Change{Steps: []settings.ChangeStep{{Label: tokenName, State: catalog.StateOK, Detail: kept}}}
-	list, err := c.share.Get()
-	if err != nil {
+	if err := c.share.Add(tokenName); err != nil {
 		return change, err
-	}
-	if !slices.Contains(list, tokenName) {
-		if err := c.share.Set(append(list, tokenName)); err != nil {
-			return change, err
-		}
 	}
 	change.Steps = append(change.Steps, settings.ChangeStep{Label: "share list", State: catalog.StateOK, Detail: "holds " + tokenName})
 	return change, nil
@@ -95,11 +95,7 @@ func (c *ClaudeToken) Undo(ctx context.Context, it catalog.Setting) (settings.Ch
 		return settings.Change{}, err
 	}
 	change := settings.Change{Steps: []settings.ChangeStep{{Label: tokenName, State: catalog.StateOK, Detail: "deleted from the studio credential store"}}}
-	list, err := c.share.Get()
-	if err != nil {
-		return change, err
-	}
-	if err := c.share.Set(slices.DeleteFunc(list, func(n string) bool { return n == tokenName })); err != nil {
+	if err := c.share.Remove(tokenName); err != nil {
 		return change, err
 	}
 	change.Steps = append(change.Steps, settings.ChangeStep{Label: "share list", State: catalog.StateOK, Detail: "no longer holds " + tokenName})

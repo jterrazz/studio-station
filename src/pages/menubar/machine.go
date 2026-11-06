@@ -9,7 +9,8 @@ import (
 	"github.com/jterrazz/studio-station/src/activity"
 	"github.com/jterrazz/studio-station/src/catalog"
 	"github.com/jterrazz/studio-station/src/core/machine"
-	"github.com/jterrazz/studio-station/src/domain/machines"
+
+	model "github.com/jterrazz/studio-station/src/machines"
 	"github.com/jterrazz/studio-station/src/overview"
 	"github.com/jterrazz/studio-station/src/page"
 	pagehome "github.com/jterrazz/studio-station/src/pages/home"
@@ -44,7 +45,7 @@ type Machine struct {
 	// value: the machine the page is of, a VM or a Mac, by its name among
 	// the machines; a nil part is still being read.
 	Name     string
-	All      *machines.Fleet
+	All      *model.AllMachines
 	Summary  *overview.Summary
 	Samples  []activity.Reading
 	Ports    *ports.AllMachines
@@ -75,24 +76,24 @@ func MachinePage(m Machine) page.Page {
 		Error: &page.Error{Message: "no machine is named " + m.Name, Hint: "station machines"}})
 }
 
-func target(h machines.HostView, name string) *page.Target {
+func target(h model.MacView, name string) *page.Target {
 	if h.ThisMac {
 		return nil
 	}
 	return &page.Target{Name: name, On: h.Name}
 }
 
-func vmPage(m Machine, h machines.HostView, vm machines.VM) page.Page {
+func vmPage(m Machine, h model.MacView, vm model.VM) page.Page {
 	kind := vm.Lifetime.Kind()
-	on := machines.Label(*m.All, h)
+	on := model.Label(*m.All, h)
 	head := page.Row{ID: "state", Label: "State", Mark: page.OK, Cells: []page.Value{pagemachines.State(vm.State)}}
-	if vm.State != machines.Running {
+	if vm.State != model.Running {
 		head.Mark, head.Reason = page.Absent, page.Stopped
 	}
-	if machines.Down(vm) {
+	if model.Down(vm) {
 		head.Mark, head.Reason = page.Broken, page.Down
 	}
-	caption := []page.Value{page.Text(machines.KindWord(kind) + " VM"), pagemachines.Lifetime(vm.Lifetime), page.Text("on " + on)}
+	caption := []page.Value{page.Text(model.KindWord(kind) + " VM"), pagemachines.Lifetime(vm.Lifetime), page.Text("on " + on)}
 	if kind == machine.Server {
 		r := vm.Resources
 		caption = append(caption, page.Text(strconv.Itoa(r.CPUs)+" CPU"), pagemachines.Memory(r.MemoryBytes))
@@ -189,7 +190,7 @@ func lineOf(s overview.Summary, id string) page.Value {
 }
 
 // value: the workspace's shared ports, each a link: private, on Tailscale.
-func portsSection(m Machine, vm machines.VM) page.Section {
+func portsSection(m Machine, vm model.VM) page.Section {
 	s := page.Section{ID: SectionPorts, Title: "Private", Caption: []page.Value{page.Text("shared on " + catalog.TailnetProduct)}, Uncounted: true}
 	if m.Ports == nil {
 		s.Items = []page.Item{{Row: &page.Row{ID: "reading", Label: "reading", Mark: page.Awaiting}}}
@@ -216,8 +217,8 @@ func portsSection(m Machine, vm machines.VM) page.Section {
 
 // value: the accounts This Mac shared with the workspace, each with its time
 // left and its Take back.
-func sharedSection(m Machine, h machines.HostView, vm machines.VM) page.Section {
-	from := machines.Label(*m.All, h)
+func sharedSection(m Machine, h model.MacView, vm model.VM) page.Section {
+	from := model.Label(*m.All, h)
 	s := page.Section{ID: SectionShared, Title: "Accounts shared from " + from, Columns: columns()}
 	for _, a := range sharedAccounts(m, vm.Name) {
 		left := a.Shared.Until.Sub(m.Now)
@@ -255,7 +256,7 @@ func hours(d time.Duration) string {
 	return strconv.Itoa(int(d/time.Hour)) + " h"
 }
 
-func takeBacks(m Machine, vm machines.VM) []page.Action {
+func takeBacks(m Machine, vm model.VM) []page.Action {
 	shared := sharedAccounts(m, vm.Name)
 	out := make([]page.Action, 0, len(shared))
 	for _, a := range shared {
@@ -267,7 +268,7 @@ func takeBacks(m Machine, vm machines.VM) []page.Action {
 	return out
 }
 
-func upSection(m Machine, vm machines.VM) page.Section {
+func upSection(m Machine, vm model.VM) page.Section {
 	up := page.Row{ID: "up", Label: "Up", Cells: []page.Value{page.None()}}
 	if m.Summary != nil && m.Summary.Head.Up > 0 {
 		up.Cells = []page.Value{pagehome.Up(m.Summary.Head.Up)}
@@ -277,7 +278,7 @@ func upSection(m Machine, vm machines.VM) page.Section {
 	return page.Section{ID: SectionUp, Title: "Overview", Role: page.Summary, Columns: columns(), Items: items([]page.Row{up, restarts})}
 }
 
-func healthSection(vm machines.VM) page.Section {
+func healthSection(vm model.VM) page.Section {
 	return page.Section{ID: SectionHealth, Title: "Health", Caption: []page.Value{page.Text("after every boot")}, Columns: columns(), Items: items(pagemachines.Steps(vm))}
 }
 
@@ -300,8 +301,8 @@ func serverSection(m Machine) page.Section {
 
 // value: a Mac's page: its readiness checklist, its VMs, its Needs you;
 // Unlock… while it waits for its disk's password.
-func macPage(m Machine, h machines.HostView) page.Page {
-	label := machines.Label(*m.All, h)
+func macPage(m Machine, h model.MacView) page.Page {
+	label := model.Label(*m.All, h)
 	state := page.Row{ID: "state", Label: "State", Mark: page.OK, Cells: []page.Value{page.Text("Engine running")}}
 	switch {
 	case !h.Reachable && !h.ThisMac:
@@ -317,7 +318,7 @@ func macPage(m Machine, h machines.HostView) page.Page {
 			}
 		}
 	}
-	vms := Tree(&machines.Fleet{Macs: []machines.HostView{h}}, m.Ports, func(machines.HostView) page.Value { return page.None() })
+	vms := Tree(&model.AllMachines{Macs: []model.MacView{h}}, m.Ports, func(model.MacView) page.Value { return page.None() })
 	vms.ID, vms.Title = SectionVMs, "VMs"
 	if len(vms.Items) == 1 && vms.Items[0].Group != nil {
 		vms.Items = vms.Items[0].Group.Items
@@ -340,19 +341,19 @@ func macPage(m Machine, h machines.HostView) page.Page {
 
 // value: the Mac waits for its disk's password, as its readiness or its
 // unreachable row says: Unlock… is its one action that helps.
-func locked(m Machine, h machines.HostView) bool {
+func locked(m Machine, h model.MacView) bool {
 	if m.Summary != nil && slices.ContainsFunc(m.Summary.Readiness, func(c overview.Check) bool {
-		return c.Name == machines.ItemDiskUnlock && c.State != catalog.StateOK
+		return c.Name == model.ItemDiskUnlock && c.State != catalog.StateOK
 	}) {
 		return true
 	}
 	return !h.Reachable && !h.ThisMac && h.LAN != ""
 }
 
-func Switcher(f *machines.Fleet, svc *ports.AllMachines) page.Page {
+func Switcher(f *model.AllMachines, svc *ports.AllMachines) page.Page {
 	// invariant: SPEC §10.2's switcher: All machines as a tree, each Mac then its
 	// Servers then its Workspaces, and Add a Mac…; Recent is the app's own.
-	s := Tree(f, svc, func(h machines.HostView) page.Value {
+	s := Tree(f, svc, func(h model.MacView) page.Value {
 		if h.Engine.Running {
 			return page.Text("Engine running")
 		}

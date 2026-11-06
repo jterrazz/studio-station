@@ -13,7 +13,8 @@ import (
 	"github.com/jterrazz/studio-station/src/catalog"
 	"github.com/jterrazz/studio-station/src/core/call"
 	coremachine "github.com/jterrazz/studio-station/src/core/machine"
-	"github.com/jterrazz/studio-station/src/domain/machines"
+
+	model "github.com/jterrazz/studio-station/src/machines"
 	pageawake "github.com/jterrazz/studio-station/src/pages/awake"
 	"github.com/jterrazz/studio-station/src/remote/each"
 	awakecmd "github.com/jterrazz/studio-station/src/surface/cli/awake"
@@ -23,7 +24,7 @@ import (
 
 func (m machine) awakeDeps() awakecalls.Deps {
 	return awakecalls.Deps{
-		Keeper: awakeKeeper{m.awakeService()}, Mac: m.profile.Ref.Name, Label: m.label(m.profile.Ref.Name), Caps: m.profile.Caps,
+		Holder: awakeKeeper{m.awakeWaker()}, Mac: m.profile.Ref.Name, Label: m.label(m.profile.Ref.Name), Caps: m.profile.Caps,
 		Servers:     func(context.Context) []string { return m.servers() },
 		NeverSleeps: func() bool { on, _ := m.stores.neverSleeps().Get(); return on },
 	}
@@ -37,7 +38,7 @@ func (m machine) servers() []string {
 	}
 	var out []string
 	for _, r := range records {
-		if r.Lifetime == machines.AlwaysOn {
+		if r.Lifetime == model.AlwaysOn {
 			out = append(out, r.Name)
 		}
 	}
@@ -74,7 +75,7 @@ func (m machine) everyMacAwake(ctx context.Context, env kit.Env) (pageawake.AllM
 	}
 	thisMac.ThisMac = true
 	f.Reports = append(f.Reports, thisMac)
-	others := m.machines(false).OtherHosts()
+	others := m.machines(false).OtherMacs()
 	slices.Sort(others)
 	got := each.All(ctx, others, func(ctx context.Context, mac string) (awake.Report, error) {
 		return call.Read(ctx, env.Calls, coremachine.Ref{Name: mac}, awakecalls.Read, awakecalls.ReadIn{}, nil)

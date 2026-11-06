@@ -3,16 +3,18 @@ package kit
 import (
 	"errors"
 
+	"github.com/jterrazz/studio-station/src/awake"
+	"github.com/jterrazz/studio-station/src/catalog"
+
 	"github.com/jterrazz/studio-station/src/core/fail"
-	"github.com/jterrazz/studio-station/src/domain/power"
 )
 
 func awakeFailure(err error) (*fail.Error, bool) {
-	var rng *power.RangeError
-	var off *power.OffHostError
-	var none *power.UnsupportedError
-	var guard *power.GuardError
-	var down *power.DaemonDownError
+	var rng *awake.RangeError
+	var off *awake.OffMacError
+	var none *awake.UnsupportedError
+	var guard *awake.GuardError
+	var down *awake.EngineDownError
 	switch {
 	case errors.As(err, &rng):
 		if rng.Long {
@@ -20,11 +22,11 @@ func awakeFailure(err error) (*fail.Error, bool) {
 		}
 		return usage(rng.Error(), "station awake 1h"), true
 	case errors.As(err, &off):
-		return usage(off.Error(), "station awake --on <mac>"), true
+		return usage(off.Error(), catalog.AwakeOnItsMac), true
 	case errors.As(err, &none):
 		return usage(none.Error(), "run it on a Mac"), true
 	case errors.As(err, &guard):
-		if guard.Guard == power.ReasonLid {
+		if guard.Guard == awake.ReasonLid {
 			return failed(guard.Error(), "station awake 4h --lid --battery", err), true
 		}
 		return failed(guard.Error(), "station awake", err), true

@@ -4,17 +4,16 @@ import (
 	"errors"
 
 	"github.com/jterrazz/studio-station/src/core/fail"
-	"github.com/jterrazz/studio-station/src/domain/config"
 	"github.com/jterrazz/studio-station/src/settings"
 	"github.com/jterrazz/studio-station/src/surface/cli/words"
 )
 
 func settingsFailure(err error) (*fail.Error, bool) {
-	var unknown *config.UnknownItemError
-	var root *config.NeedsRootError
-	var livesOn *config.WrongPlaceError
-	var irreversible *config.NotReversibleError
-	var terminal *config.NeedsTerminalError
+	var unknown *settings.UnknownItemError
+	var root *settings.NeedsRootError
+	var livesOn *settings.WrongLivesOnError
+	var irreversible *settings.NotReversibleError
+	var terminal *settings.NeedsTerminalError
 	var studio *settings.StudioMissingError
 	switch {
 	case errors.As(err, &unknown):
@@ -24,7 +23,7 @@ func settingsFailure(err error) (*fail.Error, bool) {
 		if root.Verb == "uninstall" {
 			verb = "off"
 		}
-		return failed(root.Error(), "sudo station settings "+verb+" "+root.Item, err), true
+		return failed(root.Error(), words.SettingsAsRoot(verb, root.Item), err), true
 	case errors.As(err, &livesOn):
 		return usage(livesOn.Error(), "station settings apply "+livesOn.Item+" --on this-mac"), true
 	case errors.As(err, &irreversible):

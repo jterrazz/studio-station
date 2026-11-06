@@ -5,7 +5,7 @@ import (
 
 	"github.com/jterrazz/studio-station/src/core/call"
 	coremachine "github.com/jterrazz/studio-station/src/core/machine"
-	"github.com/jterrazz/studio-station/src/engine/process"
+	"github.com/jterrazz/studio-station/src/engine"
 	"github.com/jterrazz/studio-station/src/machines"
 	machinescalls "github.com/jterrazz/studio-station/src/machines/calls"
 	"github.com/jterrazz/studio-station/src/remote/each"
@@ -50,12 +50,12 @@ func (f settingsAllMachines) Read(ctx context.Context, refs []coremachine.Ref) m
 }
 
 func (f settingsAllMachines) Keep(ctx context.Context, vm string, read settings.LastRead) {
-	_ = f.m.engineAPI().do(ctx, process.KeepSettings, process.KeepSettingsIn{VM: vm, Read: read}, nil)
+	_ = f.m.engineAPI().do(ctx, engine.CallKeepSettings, engine.KeepSettingsIn{VM: vm, Read: read}, nil)
 }
 
 func (f settingsAllMachines) Last(ctx context.Context, vm string) (settings.LastRead, bool) {
-	var out process.LastSettingsOut
-	if err := f.m.engineAPI().do(ctx, process.LastSettings, process.VMIn{VM: vm}, &out); err != nil {
+	var out engine.LastSettingsOut
+	if err := f.m.engineAPI().do(ctx, engine.CallLastSettings, engine.VMIn{VM: vm}, &out); err != nil {
 		return settings.LastRead{}, false
 	}
 	return out.Read, out.Kept

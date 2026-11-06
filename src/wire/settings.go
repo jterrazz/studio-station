@@ -2,18 +2,21 @@ package wire
 
 import (
 	"context"
-	"github.com/jterrazz/studio-station/src/settings/adapter/gitaliases"
-	"github.com/jterrazz/studio-station/src/settings/adapter/zshblock"
 	"io/fs"
 	"path/filepath"
 	"strings"
+
+	accountscalls "github.com/jterrazz/studio-station/src/accounts/calls"
+
+	"github.com/jterrazz/studio-station/src/settings/adapter/gitaliases"
+	"github.com/jterrazz/studio-station/src/settings/adapter/zshblock"
 
 	"github.com/spf13/cobra"
 
 	"github.com/jterrazz/studio-station/src/catalog"
 	"github.com/jterrazz/studio-station/src/core/call/lanes"
-	"github.com/jterrazz/studio-station/src/domain/config"
 	pagesettings "github.com/jterrazz/studio-station/src/pages/settings"
+	"github.com/jterrazz/studio-station/src/platform/local"
 	settingsdefaults "github.com/jterrazz/studio-station/src/settings/adapter/defaults"
 	"github.com/jterrazz/studio-station/src/settings/adapter/dotfile"
 	"github.com/jterrazz/studio-station/src/settings/adapter/git"
@@ -21,13 +24,13 @@ import (
 	"github.com/jterrazz/studio-station/src/settings/adapter/neversleeps"
 	"github.com/jterrazz/studio-station/src/settings/adapter/touch"
 	"github.com/jterrazz/studio-station/src/settings/adapter/vault"
+	settingscalls "github.com/jterrazz/studio-station/src/settings/calls"
 	settingscontract "github.com/jterrazz/studio-station/src/settings/contract"
 	"github.com/jterrazz/studio-station/src/surface/cli/kit"
 	settingscmd "github.com/jterrazz/studio-station/src/surface/cli/settings"
 	settingsapply "github.com/jterrazz/studio-station/src/surface/cli/settings/apply"
 	settingsdiff "github.com/jterrazz/studio-station/src/surface/cli/settings/diff"
 	settingsoff "github.com/jterrazz/studio-station/src/surface/cli/settings/off"
-	"github.com/jterrazz/studio-station/src/system"
 )
 
 func settingsCommand(env kit.Env, m machine) *cobra.Command {
@@ -60,7 +63,7 @@ func settingsAliases(env kit.Env, m machine) []*cobra.Command {
 
 // value: an item's values asked in a form at the owner's terminal.
 type settingsAsk struct {
-	settings *config.Service
+	settings *settingscalls.Catalogue
 	ask      kit.Asker
 }
 
@@ -68,9 +71,14 @@ func (a settingsAsk) Values(it catalog.Setting) (map[string]string, error) {
 	return a.ask.Form(pagesettings.InputsForm(it.Name, it.Inputs, a.settings.Defaults(it.Name)))
 }
 
-func settingsOf(m machine) *config.Service {
-	return config.New(m.sys, catalog.Settings, config.Options{
-		Here:     m.kind,
+func settingsOf(m machine) *settingscalls.Catalogue {
+	return settingscalls.NewCatalogue(catalog.Settings, settingscalls.CatalogueOptions{
+		ThisMachine: m.kind,
+		Admin:       m.sys.Env.Euid() == 0,
+		Has: func(app string) bool {
+			_, ok := m.sys.Run.LookPath(app)
+			return ok
+		},
 		Defaults: settingsDefaults(m),
 		Appliers: settingAppliers(m),
 	})
@@ -96,13 +104,13 @@ func settingAppliers(m machine) []settingscontract.Applier {
 		Home:             m.sys.Env.Home(),
 		DNSProfile:       filepath.Join(m.paths.State, "dns", "quad9-dns.mobileconfig"),
 		BackupExclusions: []string{m.paths.Roots.Cache, filepath.Join(m.paths.Data, "vms")},
-		Jobs:             m.jobs(config.ReadBudget),
+		Jobs:             m.jobs(settingscalls.ReadBudget),
 		Identity:         m.stores.identity(),
 	})
 	appliers = append(appliers, mac.Appliers()...)
 	appliers = append(appliers, settingsdefaults.NewDock(m.sys.Run)...)
 	return append(appliers,
-		vault.NewClaudeToken(m.sys.Run, m.stores.shareList()),
+		vault.NewClaudeToken(m.sys.Run, accountscalls.NewShareList(m.stores.shareList())),
 		git.NewSigning(m.sys.Run, m.stores.identity()),
 		git.NewLogin(m.sys.Run, m.sharedRead()),
 	)
@@ -113,8 +121,8 @@ func (m machine) sharedRead() git.Read {
 	if m.pool == nil {
 		return nil
 	}
-	return func(ctx context.Context, c system.Cmd) (system.Output, error) {
-		return lanes.Shared(ctx, m.pool, lanes.Command(c.Name, c.Args), func(ctx context.Context) (system.Output, error) { return m.sys.Run.Output(ctx, c) })
+	return func(ctx context.Context, c local.Cmd) (local.Output, error) {
+		return lanes.Shared(ctx, m.pool, lanes.Command(c.Name, c.Args), func(ctx context.Context) (local.Output, error) { return m.sys.Run.Output(ctx, c) })
 	}
 }
 

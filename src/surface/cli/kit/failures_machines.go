@@ -5,24 +5,23 @@ import (
 	"strconv"
 
 	"github.com/jterrazz/studio-station/src/core/fail"
-	"github.com/jterrazz/studio-station/src/domain/machines"
 	model "github.com/jterrazz/studio-station/src/machines"
 	"github.com/jterrazz/studio-station/src/surface/cli/words"
 )
 
 func machinesFailure(err error) (*fail.Error, bool) {
-	var unknown *machines.UnknownMachineError
-	var thisMac *machines.HereMachineError
-	var notMac *machines.NotAHostError
-	var macOnly *machines.OnlyOnHostError
-	var taken *machines.NameTakenError
-	var bad *machines.BadNameError
-	var unreachable *machines.UnreachableError
-	var timeout *machines.RestartTimeoutError
-	var refused *machines.RestartRefusedError
-	var terminal *machines.NeedsTerminalError
-	var sshConfig *machines.SSHConfigError
-	var record *machines.RecordError
+	var unknown *model.UnknownMachineError
+	var thisMac *model.ThisMachineError
+	var notMac *model.NotAMacError
+	var macOnly *model.OnlyOnMacError
+	var taken *model.NameTakenError
+	var bad *model.BadNameError
+	var unreachable *model.UnreachableError
+	var timeout *model.RestartTimeoutError
+	var refused *model.RestartRefusedError
+	var terminal *model.NeedsTerminalError
+	var sshConfig *model.SSHConfigError
+	var record *model.RecordError
 	if f, ok := vmFailure(err); ok {
 		return f, true
 	}
@@ -46,7 +45,7 @@ func machinesFailure(err error) (*fail.Error, bool) {
 	case errors.As(err, &timeout):
 		return failed(timeout.Error(), "station machines "+timeout.Name, err), true
 	case errors.As(err, &refused):
-		return failed(refused.Error(), "check that sudo needs no password for fdesetup on "+refused.Name, err), true
+		return failed(refused.Error(), words.PasswordlessRestart(refused.Name), err), true
 	case errors.As(err, &terminal):
 		return Translate(fail.New(fail.NeedsTerminal, words.NeedsTerminal, terminal.Verb, nil), ""), true
 	case errors.As(err, &sshConfig):
@@ -57,38 +56,38 @@ func machinesFailure(err error) (*fail.Error, bool) {
 	return nil, false
 }
 
-func notAMacHint(e *machines.NotAHostError) string {
+func notAMacHint(e *model.NotAMacError) string {
 	if e.Verb == "forget" {
 		return "station machines delete " + e.Name
 	}
 	return "run station machines for the hosts"
 }
 
-func takenHint(e *machines.NameTakenError) string {
-	if e.VM || e.Host {
+func takenHint(e *model.NameTakenError) string {
+	if e.VM || e.Mac {
 		return "pick another name"
 	}
 	return "station machines forget " + e.Name + " first, to change it"
 }
 
 func vmFailure(err error) (*fail.Error, bool) {
-	var notVM *machines.NotAVMError
-	var badLifetime *machines.BadLifetimeError
-	var unknownImage *machines.UnknownImageError
-	var noImage *machines.NoImageError
-	var noEngine *machines.NoEngineError
-	var tooBig *machines.TooBigError
-	var badSize *machines.BadSizeError
-	var noUnit *machines.SizeNeedsUnitError
-	var created *machines.CreateFailedError
-	var noBoot *machines.DidNotBootError
-	var unhealthy *machines.UnhealthyError
-	var down *machines.DaemonDownError
-	var network *machines.BadNetworkError
-	var nothing *machines.NothingToChangeError
-	var shrinks *machines.DiskShrinksError
-	var kindRule *machines.KindRuleError
-	var badCheck *machines.BadCheckError
+	var notVM *model.NotAVMError
+	var badLifetime *model.BadLifetimeError
+	var unknownImage *model.UnknownImageError
+	var noImage *model.NoImageError
+	var noEngine *model.NoEngineError
+	var tooBig *model.TooBigError
+	var badSize *model.BadSizeError
+	var noUnit *model.SizeNeedsUnitError
+	var created *model.CreateFailedError
+	var noBoot *model.DidNotBootError
+	var unhealthy *model.UnhealthyError
+	var down *model.EngineDownError
+	var network *model.BadNetworkError
+	var nothing *model.NothingToChangeError
+	var shrinks *model.DiskShrinksError
+	var kindRule *model.KindRuleError
+	var badCheck *model.BadCheckError
 	var serverLifetime *model.ServerLifetimeError
 	if f, ok := pipeFailure(err); ok {
 		return f, true
@@ -148,7 +147,7 @@ func keptFix(vm string) string {
 	return "station machines start " + vm + ", or station machines delete " + vm
 }
 
-func notAVMHint(e *machines.NotAVMError) string {
+func notAVMHint(e *model.NotAVMError) string {
 	switch e.Verb {
 	case "delete", "stop":
 		return "station machines restart " + e.Name
@@ -157,13 +156,13 @@ func notAVMHint(e *machines.NotAVMError) string {
 }
 
 func pipeFailure(err error) (*fail.Error, bool) {
-	var notHere *machines.NotHereError
-	var stopped *machines.StoppedError
-	var closed *machines.SSHDClosedError
-	var running *machines.RunningUnderAgentError
+	var notThisMac *model.NotThisMacError
+	var stopped *model.StoppedError
+	var closed *model.SSHDClosedError
+	var running *model.RunningUnderAgentError
 	switch {
-	case errors.As(err, &notHere):
-		return usage(notHere.Error(), "ssh "+notHere.Name+" goes through "+notHere.Host+": station machines"), true
+	case errors.As(err, &notThisMac):
+		return usage(notThisMac.Error(), words.ReachedThrough(notThisMac.Name, notThisMac.Mac)), true
 	case errors.As(err, &stopped):
 		return failed(stopped.Error(), "station machines start "+stopped.Name, err), true
 	case errors.As(err, &closed):

@@ -40,23 +40,11 @@ func engineJobs() []string {
 	return []string{"keep", "share", "expire", "awake", "sample", "exposure", "events"}
 }
 
-// invariant: the allowlist of coverage: the calls whose folder or outcomes
-// are not written yet. It only shrinks; a call fully covered, or gone, fails
-// the gate until its line is removed.
-func uncovered() []string {
-	return []string{
-		"activity.sample", "machines.probe",
-		"run.containers", "run.git",
-		"shell.zsh",
-	}
-}
-
 const (
-	outcomeDone       = "done"
-	outcomeNotFor     = "not-for-this-machine"
-	outcomeElsewhere  = "on-another-machine"
-	coverageRule      = "coverage"
-	coverageAllowlist = "specs/architecture/coverage_test.go"
+	outcomeDone      = "done"
+	outcomeNotFor    = "not-for-this-machine"
+	outcomeElsewhere = "on-another-machine"
+	coverageRule     = "coverage"
 )
 
 // value: the outcomes a call declares: done, each code it may end in, one
@@ -140,7 +128,7 @@ func useCaseDocs(t *testing.T) []string {
 // folder under specs/usecases/ (the folder pair is its name) and a story for
 // each outcome it declares; a document names only a real call, engine job
 // or spanning folder, and only an outcome its call declares.
-func ruleCoverage(metas []call.Meta, refs []reference, docs, tolerated []string) []finding {
+func ruleCoverage(metas []call.Meta, refs []reference, docs []string) []finding {
 	var out []finding
 	byName := map[string]call.Meta{}
 	for _, m := range metas {
@@ -184,18 +172,9 @@ func ruleCoverage(metas []call.Meta, refs []reference, docs, tolerated []string)
 				missing = append(missing, o)
 			}
 		}
-		listed := slices.Contains(tolerated, m.Name)
-		switch {
-		case len(missing) > 0 && !listed:
+		if len(missing) > 0 {
 			folder := "specs/usecases/" + strings.Replace(m.Name, ".", "/", 1) + "/"
 			out = append(out, finding{coverageRule, folder, "tells no story of " + strings.Join(missing, ", ")})
-		case len(missing) == 0 && listed:
-			out = append(out, finding{coverageRule, coverageAllowlist, m.Name + " is covered: remove its line from uncovered"})
-		}
-	}
-	for _, name := range tolerated {
-		if _, ok := byName[name]; !ok {
-			out = append(out, finding{coverageRule, coverageAllowlist, name + " is no call: remove its line from uncovered"})
 		}
 	}
 	return out
@@ -207,7 +186,7 @@ func registeredMetas(t *testing.T) []call.Meta {
 }
 
 func TestEveryCallHasItsUseCaseSpecs(t *testing.T) {
-	for _, f := range ruleCoverage(registeredMetas(t), references(), useCaseDocs(t), uncovered()) {
+	for _, f := range ruleCoverage(registeredMetas(t), references(), useCaseDocs(t)) {
 		t.Errorf("%s: %s", f.where, f.what)
 	}
 }
@@ -217,7 +196,7 @@ func TestEveryCallHasItsUseCaseSpecs(t *testing.T) {
 func TestCoverageDemandsANewKindEverywhere(t *testing.T) {
 	agent := reference{"agent", machine.Profile{Kind: machine.Kind("agent"), System: machine.System{OS: machine.Linux}}}
 	metas := registeredMetas(t)
-	got := ruleCoverage(metas, append(references(), agent), useCaseDocs(t), nil)
+	got := ruleCoverage(metas, append(references(), agent), useCaseDocs(t))
 	refused := 0
 	for _, m := range metas {
 		if m.Applies == nil || m.Applies(agent.profile).OK {
@@ -238,19 +217,10 @@ func TestCoverageDemandsANewKindEverywhere(t *testing.T) {
 
 func TestCoverageRefusesADocumentOfNoCall(t *testing.T) {
 	docs := append(useCaseDocs(t), "machines/teleport/done.spec.yaml", "machines/stop/not-for-this-machine-toaster.spec.yaml")
-	got := ruleCoverage(registeredMetas(t), references(), docs, uncovered())
+	got := ruleCoverage(registeredMetas(t), references(), docs)
 	for _, want := range []string{"specs/usecases/machines/teleport/done.spec.yaml", "specs/usecases/machines/stop/not-for-this-machine-toaster.spec.yaml"} {
 		if !slices.ContainsFunc(got, func(f finding) bool { return f.where == want }) {
 			t.Errorf("the coverage rule let %s through", want)
-		}
-	}
-}
-
-func TestCoverageAllowlistShrinks(t *testing.T) {
-	got := ruleCoverage(registeredMetas(t), references(), useCaseDocs(t), append(uncovered(), "machines.stop", "machines.teleport"))
-	for _, want := range []string{"machines.stop is covered", "machines.teleport is no call"} {
-		if !slices.ContainsFunc(got, func(f finding) bool { return strings.Contains(f.what, want) }) {
-			t.Errorf("the coverage rule kept a line it should refuse: %s", want)
 		}
 	}
 }

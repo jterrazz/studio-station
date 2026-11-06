@@ -1,8 +1,9 @@
 package pages
 
 import (
-	"github.com/jterrazz/studio-station/src/catalog"
 	"time"
+
+	"github.com/jterrazz/studio-station/src/catalog"
 
 	"github.com/jterrazz/studio-station/src/page"
 	"github.com/jterrazz/studio-station/src/ui/token"

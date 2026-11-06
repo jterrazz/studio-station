@@ -25,7 +25,7 @@ const (
 	StateApplied           State = "applied"
 	StateChangedSince      State = "changed-since"
 	StateNotApplied        State = "not-applied"
-	StateOffHere           State = "off-here"
+	StateOffThisMac        State = "off-here"
 	StateNotForThisMachine State = "not-for-this-machine"
 	// value: the row is still being read.
 	StateReading State = "reading"
@@ -119,7 +119,7 @@ func JudgeSet(it catalog.Setting, lives bool, applied *Applied, now Observation,
 	case !lives:
 		row.State, row.Where, row.Why = StateNotForThisMachine, "", LivesOnReason(it.Kinds)
 	case off:
-		row.State = StateOffHere
+		row.State = StateOffThisMac
 	case now.State == catalog.StatePending:
 		row.State = StateReading
 	case applied != nil && now.Blind:

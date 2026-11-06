@@ -3,39 +3,42 @@ package wire
 import (
 	"context"
 	"errors"
-	"github.com/jterrazz/studio-station/src/accounts"
-	"github.com/jterrazz/studio-station/src/activity"
-	coremachine "github.com/jterrazz/studio-station/src/core/machine"
-	enginejobs "github.com/jterrazz/studio-station/src/engine/jobs"
-	"github.com/jterrazz/studio-station/src/ports"
-	portscalls "github.com/jterrazz/studio-station/src/ports/calls"
 	"os"
 	"path/filepath"
 	"strings"
 	"time"
 
+	"github.com/jterrazz/studio-station/src/awake"
+
+	"github.com/jterrazz/studio-station/src/accounts"
+	accountscalls "github.com/jterrazz/studio-station/src/accounts/calls"
+	"github.com/jterrazz/studio-station/src/activity"
+	coremachine "github.com/jterrazz/studio-station/src/core/machine"
+	enginejobs "github.com/jterrazz/studio-station/src/engine/jobs"
+	"github.com/jterrazz/studio-station/src/ports"
+	portscalls "github.com/jterrazz/studio-station/src/ports/calls"
+
 	"github.com/spf13/cobra"
 
 	"github.com/jterrazz/studio-station/src/background/contract"
 	"github.com/jterrazz/studio-station/src/catalog"
-	"github.com/jterrazz/studio-station/src/domain/machines"
-	"github.com/jterrazz/studio-station/src/domain/power"
-	"github.com/jterrazz/studio-station/src/domain/secrets"
-	"github.com/jterrazz/studio-station/src/domain/services"
-	"github.com/jterrazz/studio-station/src/domain/setup"
+
 	"github.com/jterrazz/studio-station/src/engine"
 	enginelog "github.com/jterrazz/studio-station/src/engine/adapter/log"
+	enginecalls "github.com/jterrazz/studio-station/src/engine/calls"
 	"github.com/jterrazz/studio-station/src/engine/feeds"
 	"github.com/jterrazz/studio-station/src/engine/process"
+	model "github.com/jterrazz/studio-station/src/machines"
 	"github.com/jterrazz/studio-station/src/machines/adapter/dial"
+	machinescalls "github.com/jterrazz/studio-station/src/machines/calls"
 	machinescontract "github.com/jterrazz/studio-station/src/machines/contract"
 	pageawake "github.com/jterrazz/studio-station/src/pages/awake"
 	portscontract "github.com/jterrazz/studio-station/src/ports/contract"
 	"github.com/jterrazz/studio-station/src/remote"
 	"github.com/jterrazz/studio-station/src/remote/api"
+	"github.com/jterrazz/studio-station/src/setup"
 	enginerun "github.com/jterrazz/studio-station/src/surface/cli/engine/run"
 	"github.com/jterrazz/studio-station/src/surface/cli/kit"
-	"github.com/jterrazz/studio-station/src/system"
 	"github.com/jterrazz/studio-station/src/ui/token"
 )
 
@@ -45,30 +48,30 @@ func (m machine) guestPort() int { return m.port(22, "STATION_GUEST_SSH_PORT") }
 // Router, so its fleet reaches the other Macs as the CLI's does; a recall
 // rides the engine's own connections, never its socket: the lends are bound
 // to the engine they serve.
-func (m machine) engine(env kit.Env) *engine.Engine {
+func (m machine) engine(env kit.Env) *process.Engine {
 	shares := &engineShares{}
 	registry := m.registry(env)
 	calls := env.Calls
 	if calls == nil {
 		calls = remote.NewRouter(registry, m.profile, remote.Reach{})
 	}
-	menubar := feeds.Menubar{Calls: calls, Clock: m.sys.Clock, ThisMachine: m.where, Report: func(v power.View) *power.Report {
-		return &power.Report{Now: m.sys.Clock.Now(), Zone: time.Local, Engine: power.DaemonRunning, Reading: v.Reading, Session: v.Session, LastEnd: v.LastEnd, Guards: v.Guards}
+	menubar := feeds.Menubar{Calls: calls, Clock: m.sys.Clock, ThisMachine: m.where, Report: func(v awake.View) *awake.Report {
+		return &awake.Report{Now: m.sys.Clock.Now(), Zone: time.Local, Engine: awake.EngineRunning, Reading: v.Reading, Session: v.Session, LastEnd: v.LastEnd, Guards: v.Guards}
 	}, EveryMac: func(ctx context.Context) (pageawake.AllMachines, error) {
 		inside := env
 		inside.Calls = calls
 		return m.everyMacAwake(ctx, inside)
 	}}
 	guests := engineGuests{dialer: m.guestDialer(), vms: m.machines(false)}
-	notifier := func(write func(subject, text string)) engine.Notifier { return enginelog.New(write) }
+	notifier := func(write func(subject, text string)) process.Notifier { return enginelog.New(write) }
 	var tailnet portscontract.Tailnet = m.tailnetCLI().Tracked(engine.ChildrenDir(m.paths.State))
 	var checks machinescontract.CheckRunner = dial.Checker{}
 	if m.world != nil {
-		notifier = func(func(subject, text string)) engine.Notifier { return m.world.notifier() }
+		notifier = func(func(subject, text string)) process.Notifier { return m.world.notifier() }
 		tailnet = m.world.tailnet()
 		checks = m.world.checks()
 	}
-	var d *engine.Engine
+	var d *process.Engine
 	sample := &enginejobs.Sample{
 		Calls: calls, Meter: m.meter(), Clock: m.sys.Clock,
 		History: func() *activity.History { return d.History() },
@@ -86,7 +89,7 @@ func (m machine) engine(env kit.Env) *engine.Engine {
 			return seen
 		},
 	}
-	d = engine.New(m.sys, engineHypervisor{m.hypervisor()}, guests, m.machines(false), tailnet, engine.Stores{Ports: m.stores.ports(), Reservations: m.stores.reservations}, engine.Options{
+	d = process.New(engineMac{m.sys}, engineHypervisor{m.hypervisor()}, guests, m.machines(false), tailnet, process.Stores{Ports: m.stores.ports(), Reservations: m.stores.reservations}, process.Options{
 		Remember: func(vm string, port int, stopped bool) error {
 			return portscalls.Remember(m.stores.ports(), vm, port, stopped)
 		},
@@ -98,7 +101,7 @@ func (m machine) engine(env kit.Env) *engine.Engine {
 			engine.PagePorts: menubar.Ports(), engine.PageAwake: menubar.Awake(), engine.PageActivity: menubar.Activity()},
 		Notifier: notifier, Checks: checks, Join: func(parts ...string) string { return strings.Join(parts, token.Sep) },
 		Listening: m.listeners("/").Read, Declarations: m.stores.declarations.List,
-		Jobs: []engine.Tick{sample.Run},
+		Jobs: []process.Tick{sample.Run},
 	})
 	shares.s = m.secretsVia(d, func(_ context.Context, vm string) (bool, error) {
 		for _, v := range d.VMs() {
@@ -139,7 +142,7 @@ func engineRunCommand(env kit.Env, m machine) *cobra.Command {
 	return enginerun.Command(enginerun.Deps{Engine: m.engine(env)}, env)
 }
 
-// invariant: a v2 job runs `station daemon` until setup moves it to the
+// invariant: a v2 job runs `station engine` until setup moves it to the
 // engine's label; it runs the engine, hidden, for one release.
 func retiredEngineCommand(env kit.Env, m machine) *cobra.Command {
 	cmd := engineRunCommand(env, m)
@@ -147,7 +150,7 @@ func retiredEngineCommand(env kit.Env, m machine) *cobra.Command {
 	return cmd
 }
 
-type engineShares struct{ s *secrets.Service }
+type engineShares struct{ s *accountscalls.Sharing }
 
 func (l *engineShares) Held() (map[string][]accounts.Share, error) {
 	return l.s.Shares(context.Background())
@@ -164,7 +167,7 @@ type macEngine struct{ c engineAPI }
 func (m machine) macEngine() macEngine { return macEngine{c: m.engineAPI()} }
 
 func downAs(err, sentinel error) error {
-	var down *engine.DownError
+	var down *enginecalls.DownError
 	var gone *api.Down
 	if errors.As(err, &down) || errors.As(err, &gone) {
 		return sentinel
@@ -174,39 +177,39 @@ func downAs(err, sentinel error) error {
 
 func (d macEngine) Ping(ctx context.Context) (string, error) {
 	p, err := d.c.Hello(ctx)
-	return p.Version, downAs(err, machines.ErrDaemonDown)
+	return p.Version, downAs(err, model.ErrEngineDown)
 }
 
-func (d macEngine) VMs(ctx context.Context) (map[string]machines.DaemonVM, error) {
+func (d macEngine) VMs(ctx context.Context) (map[string]machinescalls.EngineVM, error) {
 	views, err := d.c.VMs(ctx)
 	if err != nil {
-		return nil, downAs(err, machines.ErrDaemonDown)
+		return nil, downAs(err, model.ErrEngineDown)
 	}
-	out := make(map[string]machines.DaemonVM, len(views))
+	out := make(map[string]machinescalls.EngineVM, len(views))
 	for _, v := range views {
-		out[v.Name] = machines.DaemonVM{State: v.State, Guest: v.Guest, IP: v.IP, Detail: v.Detail, SSH: v.SSH, Restarts: v.Restarts, Check: v.Check}
+		out[v.Name] = machinescalls.EngineVM{State: v.State, Guest: v.Guest, IP: v.IP, Detail: v.Detail, SSH: v.SSH, Restarts: v.Restarts, Check: v.Check}
 	}
 	return out, nil
 }
 
-func (d macEngine) GuestExec(ctx context.Context, vm, line, stdin string) (system.Output, error) {
-	var ran process.ExecOut
-	if err := d.c.do(ctx, process.GuestExec, process.ExecIn{VM: vm, Line: line, Stdin: stdin}, &ran); err != nil {
-		return system.Output{}, downAs(err, machines.ErrDaemonDown)
+func (d macEngine) GuestExec(ctx context.Context, vm, line, stdin string) (engine.GuestRan, error) {
+	var ran engine.ExecOut
+	if err := d.c.do(ctx, engine.CallGuestExec, engine.ExecIn{VM: vm, Line: line, Stdin: stdin}, &ran); err != nil {
+		return engine.GuestRan{}, downAs(err, model.ErrEngineDown)
 	}
-	return system.Output{Stdout: ran.Stdout, Stderr: ran.Stderr, ExitCode: ran.Code}, nil
+	return engine.GuestRan(ran), nil
 }
 
 func (d macEngine) Do(ctx context.Context, op, vm string) error {
-	return downAs(d.c.do(ctx, process.VM(op), process.VMIn{VM: vm}, nil), machines.ErrDaemonDown)
+	return downAs(d.c.do(ctx, engine.CallVM(op), engine.VMIn{VM: vm}, nil), model.ErrEngineDown)
 }
 
-func (d macEngine) Reserve(ctx context.Context, vm string, port int, profile string) (machines.Reserved, error) {
-	var v services.View
-	if err := d.c.do(ctx, process.Reserve, process.ReserveIn{VM: vm, GuestPort: port, Pinned: true, Profile: profile}, &v); err != nil {
-		return machines.Reserved{}, downAs(err, machines.ErrDaemonDown)
+func (d macEngine) Reserve(ctx context.Context, vm string, port int, profile string) (model.Reserved, error) {
+	var v ports.SharedPort
+	if err := d.c.do(ctx, engine.CallReserve, engine.ReserveIn{VM: vm, GuestPort: port, Pinned: true, Profile: profile}, &v); err != nil {
+		return model.Reserved{}, downAs(err, model.ErrEngineDown)
 	}
-	return machines.Reserved{
+	return model.Reserved{
 		GuestPort: v.GuestPort, MacPort: v.Reserved, Profile: profile, URL: v.URLs.Public, PublicName: nameOf(v.URLs.Public),
 		Off: localOnlyBecause(v.Detail),
 	}, nil
@@ -234,22 +237,22 @@ func nameOf(url string) string {
 
 type portsEngine struct{ c engineAPI }
 
-func (d portsEngine) Services(ctx context.Context) (services.HostView, error) {
-	var v services.HostView
-	err := d.c.do(ctx, process.Ports, nil, &v)
-	return v, downAs(err, services.ErrDaemonDown)
+func (d portsEngine) MacPorts(ctx context.Context) (ports.MacPorts, error) {
+	var v ports.MacPorts
+	err := d.c.do(ctx, engine.CallPorts, nil, &v)
+	return v, downAs(err, ports.ErrEngineDown)
 }
 
-func (d portsEngine) Reserve(ctx context.Context, vm string, port int, pinned bool) (services.View, error) {
-	var v services.View
-	err := d.c.do(ctx, process.Reserve, process.ReserveIn{VM: vm, GuestPort: port, Pinned: pinned}, &v)
-	return v, downAs(err, services.ErrDaemonDown)
+func (d portsEngine) Reserve(ctx context.Context, vm string, port int, pinned bool) (ports.SharedPort, error) {
+	var v ports.SharedPort
+	err := d.c.do(ctx, engine.CallReserve, engine.ReserveIn{VM: vm, GuestPort: port, Pinned: pinned}, &v)
+	return v, downAs(err, ports.ErrEngineDown)
 }
 
-func (d portsEngine) Release(ctx context.Context, vm string, port int) (services.Lease, error) {
-	var l services.Lease
-	err := d.c.do(ctx, process.Release, process.ReserveIn{VM: vm, GuestPort: port}, &l)
-	return l, downAs(err, services.ErrDaemonDown)
+func (d portsEngine) Release(ctx context.Context, vm string, port int) (ports.Reservation, error) {
+	var l ports.Reservation
+	err := d.c.do(ctx, engine.CallRelease, engine.ReserveIn{VM: vm, GuestPort: port}, &l)
+	return l, downAs(err, ports.ErrEngineDown)
 }
 
 type reservationReleaser struct{ m machine }
@@ -265,7 +268,7 @@ func (r reservationReleaser) ReleaseVM(ctx context.Context, vm string) error {
 	if err != nil {
 		return err
 	}
-	kept, gone := services.Without(reservations, func(l services.Lease) bool { return l.VM != vm })
+	kept, gone := ports.Without(reservations, func(l ports.Reservation) bool { return l.VM != vm })
 	if len(gone) == 0 {
 		return nil
 	}
@@ -274,10 +277,10 @@ func (r reservationReleaser) ReleaseVM(ctx context.Context, vm string) error {
 	tn := r.m.tailnet()
 	if ready, err := tn.Ready(ctx); err == nil && ready.On {
 		for _, l := range gone {
-			_ = tn.Unshare(ctx, services.ShareOf(l, mode))
+			_ = tn.Unshare(ctx, ports.ShareOf(l, mode))
 		}
 	}
-	return services.SaveLeases(ctx, store, kept)
+	return portscalls.SaveReservations(ctx, store, kept)
 }
 
 func (r reservationReleaser) forgetDeclarations(ctx context.Context, vm string) error {
@@ -298,7 +301,7 @@ func (r reservationReleaser) forgetDeclarations(ctx context.Context, vm string) 
 
 type engineInstaller struct {
 	m        machine
-	machines *machines.Service
+	machines *machinescalls.Machinist
 }
 
 func (i engineInstaller) env() map[string]string {
@@ -311,8 +314,8 @@ func (i engineInstaller) env() map[string]string {
 	return env
 }
 
-// invariant: setup installs ONE daemon per host, after migrating the round-3
-// per-VM agents; it restarts the daemon only when its plist changed or it runs
+// invariant: setup installs ONE engine per system, after migrating the round-3
+// per-VM agents; it restarts the engine only when its plist changed or it runs
 // another version, and the VMs survive that restart.
 func (i engineInstaller) Install(ctx context.Context) (setup.Step, error) {
 	const step = "engine"

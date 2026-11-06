@@ -8,12 +8,14 @@ import (
 	"strings"
 	"time"
 
+	"github.com/jterrazz/studio-station/src/catalog"
 	"github.com/jterrazz/studio-station/src/machines/contract"
 	"github.com/jterrazz/studio-station/src/platform/local"
 )
 
+var restartLine = catalog.AsRoot("fdesetup authrestart -delayminutes 0")
+
 const (
-	restartLine   = "sudo fdesetup authrestart -delayminutes 0"
 	restartBudget = 30 * time.Second
 	// outside: ssh exits 255 when the Mac drops the connection.
 	dropped = 255

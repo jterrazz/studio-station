@@ -59,7 +59,7 @@ func levelOf(pkg string) int {
 }
 
 // invariant: rule 14: a kit level imports no level above its own, and the kit
-// renders page nodes only, never the domain, a page function or the catalogue.
+// renders page nodes only, never a page function, the catalogue or the platform.
 func ruleLevels(w *world) []finding {
 	var out []finding
 	for _, f := range w.files {
@@ -73,7 +73,7 @@ func ruleLevels(w *world) []finding {
 				continue
 			}
 			switch {
-			case under(rel, "domain/*", "pages/*", "catalog", "system", "system/*"):
+			case under(rel, "pages/*", "catalog", "platform/*"):
 				out = append(out, finding{"levels", f.at(f.syntax.Imports[i].Pos()), f.pkg + " renders page nodes only, not " + rel})
 			case levelOf(rel) > own && (!f.test || f.pkg != "ui/render"):
 				out = append(out, finding{"levels", f.at(f.syntax.Imports[i].Pos()), f.pkg + " imports " + rel + ", a level above its own"})

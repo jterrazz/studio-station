@@ -15,7 +15,7 @@ type Deps struct {
 
 type Input struct{ Name string }
 
-func Command(d Deps, env kit.Env) *cobra.Command {
+func Alias(d Deps, env kit.Env) *cobra.Command {
 	return kit.Alias("probe", kit.Command(kit.Leaf[Input]{
 		Use:   "probe <machine>",
 		Short: "One machine's Overview",

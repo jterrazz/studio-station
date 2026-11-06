@@ -234,9 +234,6 @@ func entries() map[string]entry {
 			return run("Forget "+m.Label, []string{"machines", "forget", m.Name}, gesture.V("Forget", "Forgetting", "Forgot"), m.Label)
 		}},
 		"machines.list": {kinds: []machine.Kind{"", machine.Mac, machine.Workspace, machine.Server}, item: func(_, _ Target) Item { return open(Target{}, section.Overview, "Open All machines") }},
-		"machines.probe": {kinds: mac(), subject: otherMac, key: keyed("r"), item: func(_, m Target) Item {
-			return open(m, section.Overview, "Read "+m.Label+" again")
-		}},
 		"machines.restart": {subject: vm, key: keyed("r"), item: func(_, v Target) Item {
 			return run("Restart "+named(v)+onMac(v), vmWords(v, "machines", "restart", v.Name), gesture.V("Restart", "Restarting", "Restarted"), v.Name)
 		}},
@@ -279,10 +276,10 @@ func entries() map[string]entry {
 		"ports.undeclare": {kinds: mac(), key: keyed("u"), item: func(t, _ Target) Item {
 			return asked("Undeclare a public port"+ellipsis, field("Port"), one(gesture.V("Undeclare", "Undeclaring", "Undeclared"), func(a string) []string { return []string{"ports", "undeclare", t.Name, a} }))
 		}},
-		"run.containers": {item: func(t, _ Target) Item {
+		"settings.run-containers": {item: func(t, _ Target) Item {
 			return run("Remove the stopped containers", words(t, "run", catalog.ContainerShortcutsWas, "rm"), gesture.V("Remove", "Removing", "Removed"), "the stopped containers")
 		}},
-		"run.git": {item: func(_, _ Target) Item {
+		"settings.run-git": {item: func(_, _ Target) Item {
 			return asked("Run a Git shortcut in a new terminal"+ellipsis, []Field{{Label: "Shortcut", Note: "log, push, status"}}, func(a []string) gesture.Gesture {
 				return gesture.Gesture{Terminal: "station run git " + strings.TrimSpace(a[0])}
 			})
@@ -304,7 +301,7 @@ func entries() map[string]entry {
 		"setup.run": {kinds: []machine.Kind{machine.Mac, machine.Workspace, machine.Server}, item: func(t, _ Target) Item {
 			return terminal("Run setup in a new terminal", words(t, "setup")...)
 		}},
-		"shell.zsh": {kinds: []machine.Kind{machine.Mac, machine.Workspace, machine.Server}, item: func(_, _ Target) Item {
+		"settings.zsh-block": {kinds: []machine.Kind{machine.Mac, machine.Workspace, machine.Server}, item: func(_, _ Target) Item {
 			return terminal("Print the shell block in a new terminal", "shell", "zsh")
 		}},
 	}

@@ -1,0 +1,378 @@
+package calls
+
+import (
+	"context"
+	"errors"
+	"path"
+	"regexp"
+	"slices"
+	"strconv"
+	"strings"
+	"sync"
+	"time"
+
+	"github.com/jterrazz/studio-station/src/apps"
+	"github.com/jterrazz/studio-station/src/apps/contract"
+	"github.com/jterrazz/studio-station/src/catalog"
+	"github.com/jterrazz/studio-station/src/core/call/lanes"
+)
+
+const (
+	DetailAppStore = "app-store"
+	subject        = "apps"
+)
+
+const (
+	inventoryBudget = 30 * time.Second
+	versionBudget   = 5 * time.Second
+	applications    = "/Applications"
+)
+
+const currencyBudget = 5 * time.Second
+
+type listing struct {
+	keys     map[string]string
+	currency map[string]apps.Currency
+	missing  bool
+	failed   bool
+	unlisted bool
+}
+
+func (s *Shelf) Inventory(ctx context.Context) ([]apps.Report, error) {
+	return lanes.Last(s.Watch(ctx)), ctx.Err()
+}
+
+func (s *Shelf) Watch(ctx context.Context) <-chan []apps.Report {
+	return lanes.Stream(ctx, s.o.Pool, subject, s.watch)
+}
+
+func (s *Shelf) Forget() { s.o.Pool.Forget(subject) }
+
+// invariant: the frame is the catalogue placed here, every row pending; one job
+// per method lists its manager once (shared by every reader of the run), and
+// each row fills as its own probe answers, so one hung tool holds back no other
+// row of its method; a row whose method tells currency waits for it, inside
+// the listing.
+func (s *Shelf) watch(ctx context.Context) <-chan []apps.Report {
+	list := s.Placed()
+	frame := make([]apps.Report, len(list))
+	byMethod := map[catalog.Method][]int{}
+	var methods []catalog.Method
+	for i, t := range list {
+		m := s.install(t).Method()
+		frame[i] = apps.Report{App: t, Method: m, State: catalog.StateUnknown, Pending: true}
+		if _, seen := byMethod[m]; !seen {
+			methods = append(methods, m)
+		}
+		byMethod[m] = append(byMethod[m], i)
+	}
+	jobs := make([]lanes.Job[[]apps.Report], 0, len(methods))
+	for _, m := range methods {
+		rows := byMethod[m]
+		jobs = append(jobs, lanes.Job[[]apps.Report]{
+			Key: subject + "/method/" + string(m), Budget: inventoryBudget + versionBudget + currencyBudget,
+			Partial: func(ctx context.Context, emit func(func(*[]apps.Report))) func(*[]apps.Report) {
+				group := make([]catalog.App, len(rows))
+				for k, i := range rows {
+					group[k] = list[i]
+				}
+				each := func(k int, r apps.Report) {
+					emit(func(out *[]apps.Report) { (*out)[rows[k]] = r })
+				}
+				reports := s.reportsEach(ctx, group, s.sharedListings(ctx, group), each)
+				return func(out *[]apps.Report) {
+					for k, i := range rows {
+						(*out)[i] = reports[k]
+					}
+				}
+			},
+			Late: func(out *[]apps.Report) {
+				for _, i := range rows {
+					if !(*out)[i].Pending {
+						continue
+					}
+					(*out)[i] = apps.Report{App: list[i], Method: m, State: catalog.StateUnknown, Why: apps.WhyLate, Detail: "no answer in " + (inventoryBudget + versionBudget + currencyBudget).String()}
+				}
+			},
+		})
+	}
+	return lanes.Run(ctx, s.o.Pool, frame, jobs, slices.Clone[[]apps.Report])
+}
+
+// invariant: a shared listing is keyed by its method alone, so it asks the
+// currency of every placed app of that method, whichever reader starts it.
+func (s *Shelf) sharedListings(ctx context.Context, list []catalog.App) map[catalog.Method]listing {
+	placed := s.Placed()
+	out := map[catalog.Method]listing{}
+	for m := range s.needed(list) {
+		out[m] = lanes.Share(ctx, s.o.Pool, subject+"/list/"+string(m), func(ctx context.Context) listing { return s.list(ctx, m, placed) })
+	}
+	return out
+}
+
+func (s *Shelf) reports(ctx context.Context, list []catalog.App) []apps.Report {
+	return s.reportsWith(ctx, list, s.listings(ctx, list))
+}
+
+func (s *Shelf) reportsWith(ctx context.Context, list []catalog.App, listings map[catalog.Method]listing) []apps.Report {
+	return s.reportsEach(ctx, list, listings, func(int, apps.Report) {})
+}
+
+func (s *Shelf) reportsEach(ctx context.Context, list []catalog.App, listings map[catalog.Method]listing, each func(int, apps.Report)) []apps.Report {
+	out := make([]apps.Report, len(list))
+	var wg sync.WaitGroup
+	for i, t := range list {
+		wg.Go(func() {
+			out[i] = s.report(ctx, t, listings)
+			each(i, out[i])
+		})
+	}
+	wg.Wait()
+	return out
+}
+
+func (s *Shelf) needed(list []catalog.App) map[catalog.Method]bool {
+	needed := map[catalog.Method]bool{}
+	for _, t := range list {
+		needed[s.install(t).Method()] = true
+		if old, ok := t.Superseded(); ok {
+			needed[old.Method()] = true
+		}
+	}
+	return needed
+}
+
+func (s *Shelf) listings(ctx context.Context, list []catalog.App) map[catalog.Method]listing {
+	needed := s.needed(list)
+	var mu sync.Mutex
+	out := map[catalog.Method]listing{}
+	var wg sync.WaitGroup
+	for m := range needed {
+		wg.Go(func() {
+			l := s.list(ctx, m, list)
+			mu.Lock()
+			out[m] = l
+			mu.Unlock()
+		})
+	}
+	wg.Wait()
+	return out
+}
+
+func (s *Shelf) list(ctx context.Context, m catalog.Method, list []catalog.App) listing {
+	inst := s.o.Installers[m]
+	l := listing{missing: inst.Ready(ctx) != nil}
+	listed, cancel := context.WithTimeout(ctx, inventoryBudget)
+	keys, err := inst.Inventory(listed)
+	cancel()
+	switch {
+	case errors.Is(err, contract.ErrUnlisted):
+		l.unlisted = true
+		return l
+	case errors.Is(err, contract.ErrMissing):
+		l.missing = true
+		return l
+	case err != nil && l.missing:
+		return l
+	case err != nil:
+		l.failed = true
+		return l
+	}
+	l.keys = keys
+	var held []string
+	for _, t := range list {
+		if i := s.install(t); i.Method() == m {
+			if _, ok := keys[i.Key()]; ok {
+				held = append(held, i.Key())
+			}
+		}
+	}
+	if len(held) > 0 {
+		told, cancel := context.WithTimeout(ctx, currencyBudget)
+		l.currency, _ = inst.Outdated(told, held)
+		cancel()
+	}
+	return l
+}
+
+func (s *Shelf) report(ctx context.Context, t catalog.App, listings map[catalog.Method]listing) apps.Report {
+	i := s.install(t)
+	m := i.Method()
+	manager := s.installer(t).Manager()
+	r := apps.Report{App: t, Method: m, State: catalog.StateAbsent}
+	l := listings[m]
+	switch {
+	case l.unlisted && s.bundled(t):
+		r.State, r.Managed = catalog.StateOK, true
+		return r
+	case l.unlisted:
+		return s.readInstalled(ctx, t, r)
+	case l.failed:
+		r.State, r.Detail, r.Why = catalog.StateUnknown, manager.Name+" did not answer", apps.WhyLate
+		return r
+	}
+	if version, ok := l.keys[i.Key()]; ok {
+		r.State, r.Version, r.Managed = catalog.StateOK, version, true
+		// invariant: an inconclusive currency leaves the app ok, never outdated.
+		switch l.currency[i.Key()].Verdict {
+		case apps.Unknown:
+			r.Detail = "currency unknown"
+		case apps.Behind:
+			r.State, r.Detail, r.Why = catalog.StateDegraded, "outdated", apps.WhyOutdated
+			r.Newest = l.currency[i.Key()].Newest
+		case apps.Current:
+		}
+		return r
+	}
+	if s.fromAppStore(t) {
+		r.State, r.Detail = catalog.StateOK, DetailAppStore
+		return r
+	}
+	if listedOld(t, listings) && !s.bundled(t) {
+		r.State, r.Detail, r.Why = catalog.StateDegraded, "formula installed, app absent", apps.WhyPartial
+		return r
+	}
+	if s.present(ctx, t, &r) {
+		r.State = catalog.StateDegraded
+		if l.missing {
+			r.Detail, r.Why, r.Needs = "installed, "+manager.Name+" not installed", apps.WhyMissing, manager.App
+		} else {
+			r.Detail, r.Why = "on PATH, not managed by "+string(m), apps.WhyUnmanaged
+			if s.bundled(t) {
+				r.Detail = t.Bundle + ".app in /Applications, not installed by " + string(m)
+			}
+		}
+		return r
+	}
+	if l.missing {
+		r.Detail, r.Why, r.Needs = manager.Name+" not installed", apps.WhyMissing, manager.App
+	}
+	return r
+}
+
+func listedOld(t catalog.App, listings map[catalog.Method]listing) bool {
+	old, ok := t.Superseded()
+	if !ok {
+		return false
+	}
+	_, listed := listings[old.Method()].keys[old.Key()]
+	return listed
+}
+
+func (s *Shelf) readInstalled(ctx context.Context, t catalog.App, r apps.Report) apps.Report {
+	if t.Version.Path != "" {
+		matches := s.m.Glob(s.home(t.Version.Path))
+		if len(matches) == 0 {
+			return r
+		}
+		r.State, r.Managed = catalog.StateOK, true
+		r.Version = path.Base(matches[0])
+		if len(t.Version.Args) > 0 {
+			if version, code, ok := s.readVersion(ctx, t.Version); ok && code == 0 {
+				r.Version = version
+			}
+		}
+		return r
+	}
+	if !s.provided(t) {
+		return r
+	}
+	if len(t.Version.Args) == 0 {
+		r.State, r.Managed = catalog.StateOK, true
+		return r
+	}
+	version, code, ok := s.readVersion(ctx, t.Version)
+	switch {
+	case ok && code == 0:
+		r.State, r.Version, r.Managed = catalog.StateOK, version, true
+	case ok:
+		r.State, r.Why, r.Detail = catalog.StateBroken, apps.WhyFailing, strings.Join(t.Version.Args, " ")+" exited "+strconv.Itoa(code)
+	}
+	return r
+}
+
+func (s *Shelf) present(ctx context.Context, t catalog.App, r *apps.Report) bool {
+	if s.bundled(t) {
+		return true
+	}
+	for _, name := range t.Provides {
+		where, ok := s.m.LookPath(name)
+		if !ok {
+			continue
+		}
+		// hazard: stock macOS ships /usr/bin shims (java, python3, xcodebuild, git)
+		// that exist without the tool; such a hit counts only when the probe answers.
+		if strings.HasPrefix(where, "/usr/bin/") {
+			if len(t.Version.Args) == 0 {
+				continue
+			}
+			version, code, ok := s.readVersion(ctx, t.Version)
+			if !ok || code != 0 {
+				continue
+			}
+			r.Version = version
+			return true
+		}
+		if len(t.Version.Args) > 0 {
+			if version, code, ok := s.readVersion(ctx, t.Version); ok && code == 0 {
+				r.Version = version
+			}
+		}
+		return true
+	}
+	return false
+}
+
+func (s *Shelf) provided(t catalog.App) bool {
+	for _, name := range t.Provides {
+		if _, ok := s.m.LookPath(name); ok {
+			return true
+		}
+	}
+	return len(t.Provides) == 0 && len(t.Version.Args) > 0
+}
+
+func (s *Shelf) bundled(t catalog.App) bool {
+	if t.Bundle == "" {
+		return false
+	}
+	return s.m.Exists(path.Join(s.o.Root, applications, t.Bundle+".app"))
+}
+
+// invariant: an App Store copy of an AppStore tool's bundle is its install,
+// not station's: present, never managed, upgraded or removed by station.
+func (s *Shelf) fromAppStore(t catalog.App) bool {
+	if !t.AppStore || t.Bundle == "" {
+		return false
+	}
+	return s.m.Exists(path.Join(s.o.Root, applications, t.Bundle+".app", catalog.AppStoreReceipt))
+}
+
+func (s *Shelf) readVersion(ctx context.Context, p catalog.VersionRead) (version string, code int, ran bool) {
+	args := make([]string, 0, len(p.Args)-1)
+	for _, a := range p.Args[1:] {
+		args = append(args, s.home(a))
+	}
+	text, code, ran := s.m.RunBriefly(ctx, p.Args[0], args, versionBudget)
+	if !ran {
+		return "", 0, false
+	}
+	if p.Pattern == "" {
+		return strings.TrimSpace(text), code, true
+	}
+	re, err := regexp.Compile("(?m)" + p.Pattern)
+	if err != nil {
+		return "", code, true
+	}
+	if m := re.FindStringSubmatch(text); len(m) > 1 {
+		return m[1], code, true
+	}
+	return "", code, true
+}
+
+func (s *Shelf) home(p string) string {
+	if p == "~" || strings.HasPrefix(p, "~/") {
+		return s.m.Home() + p[1:]
+	}
+	return p
+}

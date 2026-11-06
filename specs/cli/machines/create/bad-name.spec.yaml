@@ -1,4 +1,4 @@
-description: 'a malformed name, a host''s name and a name a VM record holds are refused before the daemon'
+description: 'a malformed name, a Mac''s name and a name a VM record holds are refused before the engine'
 fixture:
     - ../../../__fixtures__/vms/
     - ./__fixtures__/other-host/
@@ -14,12 +14,12 @@ runs:
     - command: 'machines create --name x'
       exit: 2
       stderr: |
-          Error: "x" already names a host
+          Error: "x" already names a Mac
           Hint: pick another name
     - command: '--version >/dev/null; /usr/bin/sed -i.bak ''s/"x": {}/"x": {}, "y": {}/'' .config/station/preferences.json; "$STATION" machines create --name y'
       exit: 2
       stderr: |
-          Error: "y" already names a host
+          Error: "y" already names a Mac
           Hint: pick another name
     - command: 'machines create --name linux-1'
       exit: 2

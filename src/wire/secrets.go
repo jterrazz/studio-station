@@ -2,14 +2,17 @@ package wire
 
 import (
 	"context"
+	"errors"
+	"io/fs"
 	"path/filepath"
+	"strings"
 
 	"github.com/spf13/cobra"
 
 	"github.com/jterrazz/studio-station/src/accounts"
 	"github.com/jterrazz/studio-station/src/accounts/adapter/studio"
+	accountscalls "github.com/jterrazz/studio-station/src/accounts/calls"
 	coremachine "github.com/jterrazz/studio-station/src/core/machine"
-	"github.com/jterrazz/studio-station/src/domain/secrets"
 	"github.com/jterrazz/studio-station/src/engine"
 	"github.com/jterrazz/studio-station/src/remote/adapter/unix"
 	accountscmd "github.com/jterrazz/studio-station/src/surface/cli/accounts"
@@ -37,9 +40,9 @@ func secretsAlias(env kit.Env, m machine) *cobra.Command {
 	), "accounts")
 }
 
-func (m machine) secretStores() secrets.Stores {
-	return secrets.Stores{
-		ShareList: m.stores.shareList(), Hosts: m.stores.macs(), Name: m.stores.name(),
+func (m machine) secretStores() accountscalls.SharingStores {
+	return accountscalls.SharingStores{
+		ShareList: m.stores.shareList(), Macs: m.stores.macs(), Name: m.stores.name(),
 		Shares: m.stores.shares, Machines: m.stores.machines,
 	}
 }
@@ -54,7 +57,7 @@ func (m machine) vmRunning(ctx context.Context, vm string) (bool, error) {
 	return live[vm].State == engine.StateRunning, nil
 }
 
-func receives(guest secrets.Guest) func(context.Context, string) (bool, error) {
+func receives(guest localGuest) func(context.Context, string) (bool, error) {
 	// value: a VM whose station is older than its kind's answer receives.
 	ask := unix.New(sharedGuest{guest}, nil)
 	return func(ctx context.Context, vm string) (bool, error) {
@@ -66,15 +69,52 @@ func receives(guest secrets.Guest) func(context.Context, string) (bool, error) {
 	}
 }
 
-type sharedGuest struct{ g secrets.Guest }
+// value: a command inside a VM as the engine runs it: the socket's, or
+// the engine's own when it is the engine that shares.
+type localGuest interface {
+	GuestExec(ctx context.Context, vm, line, stdin string) (engine.GuestRan, error)
+}
+
+type sharedGuest struct{ g localGuest }
 
 func (s sharedGuest) GuestExec(ctx context.Context, vm, line, stdin string) (stdout string, code int, err error) {
 	out, err := s.g.GuestExec(ctx, vm, line, stdin)
-	return out.Stdout, out.ExitCode, err
+	return out.Stdout, out.Code, err
 }
 
-func (m machine) secrets() *secrets.Service { return m.secretsVia(m.macEngine(), m.vmRunning) }
+func (m machine) secrets() *accountscalls.Sharing { return m.secretsVia(m.macEngine(), m.vmRunning) }
 
-func (m machine) secretsVia(guest secrets.Guest, running func(context.Context, string) (bool, error)) *secrets.Service {
-	return secrets.New(m.sys, guest, m.secretStores(), m.secretSource(studio.Options{Budget: secrets.ExportBudget}), m.identities(engine.ChildrenDir(m.paths.State)), secrets.Options{Here: m.kind, Running: running, Receives: receives(guest), Log: filepath.Join(m.paths.State, "logs", "accounts.log")})
+func (m machine) secretsVia(guest localGuest, running func(context.Context, string) (bool, error)) *accountscalls.Sharing {
+	return accountscalls.NewSharing(sharingGuest{guest}, m.secretStores(), m.secretSource(studio.Options{Budget: accountscalls.ExportBudget}), m.identities(engine.ChildrenDir(m.paths.State)), accountscalls.SharingOptions{
+		ThisMachine: m.kind, Running: running, Receives: receives(guest), Now: m.sys.Clock.Now,
+		Keep: m.keepIn(filepath.Join(m.paths.State, "logs", "accounts.log")),
+	})
+}
+
+type sharingGuest struct{ g localGuest }
+
+func (s sharingGuest) GuestExec(ctx context.Context, vm, line, stdin string) (accountscalls.GuestRun, error) {
+	out, err := s.g.GuestExec(ctx, vm, line, stdin)
+	return accountscalls.GuestRun{Stdout: out.Stdout, Stderr: out.Stderr, ExitCode: out.Code}, err
+}
+
+// value: appends a line to the log file, and answers where it is kept,
+// shown from home; empty when it could not be kept.
+func (m machine) keepIn(log string) func(line string) string {
+	return func(line string) string {
+		before, err := m.sys.FS.ReadFile(log)
+		if err != nil && !errors.Is(err, fs.ErrNotExist) {
+			return ""
+		}
+		if err := m.sys.FS.MkdirAll(filepath.Dir(log), 0o700); err != nil {
+			return ""
+		}
+		if err := m.sys.FS.WriteFile(log, append(before, line...), 0o600); err != nil {
+			return ""
+		}
+		if home := m.sys.Env.Home(); home != "" && strings.HasPrefix(log, home+"/") {
+			return "~" + strings.TrimPrefix(log, home)
+		}
+		return log
+	}
 }

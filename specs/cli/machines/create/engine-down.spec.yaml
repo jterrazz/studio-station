@@ -1,0 +1,12 @@
+description: 'with the engine down create refuses before anything is made'
+fixture: ../../../__fixtures__/vms/
+runs:
+    - command: 'machines create'
+      exit: 1
+      stderr: |
+          Error: the engine is not installed on This Mac
+          Hint: station setup
+    - command: '--version >/dev/null; /usr/bin/grep -c ''tart clone'' .calls'
+      exit: 1
+      stdout: |
+          0

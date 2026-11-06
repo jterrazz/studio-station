@@ -10,10 +10,18 @@ import (
 
 type Deps struct {
 	Machines Machines
-	Kind     machine.Kind
+	// value: this Mac's images, a missing one built before a create the
+	// owner confirmed.
+	Images ImageBuilds
+	Kind   machine.Kind
 	// value: this Mac reports a battery: a server made here stops whenever
 	// it sleeps.
 	Laptop bool
+}
+
+type ImageBuilds interface {
+	// value: builds image on this Mac, each step's label to step as it starts.
+	Build(ctx context.Context, image string, step func(label string)) error
 }
 
 type Machines interface {
@@ -64,7 +72,6 @@ type Machines interface {
 	StartOn(ctx context.Context, mac, vm string) error
 	// value: refuses a name that is no known machine.
 	CheckRemote(name string) error
-	Probe(ctx context.Context, name string) (machines.ProbeReport, error)
 	SSH(ctx context.Context, name string) (machines.SSHTarget, error)
 	CheckEdit(name string, c machines.Change) error
 	Edit(ctx context.Context, name string, c machines.Change) (machines.Edited, error)
@@ -73,6 +80,6 @@ type Machines interface {
 func All(d Deps) []call.Handler {
 	return []call.Handler{
 		call.BindWatch(List, d), call.Bind(CreateWorkspace, d), call.Bind(CreateServer, d), call.Bind(Start, d), call.Bind(Stop, d), call.Bind(Delete, d),
-		call.Bind(Restart, d), call.Bind(RestartMac, d), call.Bind(Add, d), call.Bind(Forget, d), call.Bind(Unlock, d), call.Bind(Probe, d), call.Bind(SSH, d), call.Bind(Edit, d),
+		call.Bind(Restart, d), call.Bind(RestartMac, d), call.Bind(Add, d), call.Bind(Forget, d), call.Bind(Unlock, d), call.Bind(SSH, d), call.Bind(Edit, d),
 	}
 }

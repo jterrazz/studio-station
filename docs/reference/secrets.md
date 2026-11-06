@@ -6,20 +6,20 @@ A secret travels only as far as its tier allows: kept on the Mac, shared with a 
 | ---------------- | ------------------------------------------------------------------- |
 | The three tiers  | What each tier holds and what delete does to it                     |
 | Sharing accounts | The share list, `accounts share` and `take-back`, and when one ends |
-| Where to revoke  | Where each service lets you invalidate a token                      |
+| Where to revoke  | Where each provider lets you invalidate a token                     |
 | Studio in a VM   | What a share needs inside the VM                                    |
 | Claude in a VM   | Logging Claude Code in on a VM                                      |
 | Accounts         | Who has access to what, and where each right comes from             |
 
 ## The three tiers
 
-| Tier   | Lives                                        | Examples                                                       | What `machines delete` does                                        |
-| ------ | -------------------------------------------- | -------------------------------------------------------------- | ------------------------------------------------------------------ |
-| kept   | the Mac only                                 | the owner's GitHub token, Apple ID, `AGENT_PASSWORD`           | nothing: it never leaves                                           |
-| shared | the Mac; a copy in the VM's credential store | `session:*` browser sessions; the Claude token                 | the copy goes with the disk; the secret stays valid at its service |
-| bound  | inside one VM                                | its ssh host keys, its `github-login` token, a `claude /login` | the disk goes; a token stays valid at its service until revoked    |
+| Tier   | Lives                                        | Examples                                                       | What `machines delete` does                                         |
+| ------ | -------------------------------------------- | -------------------------------------------------------------- | ------------------------------------------------------------------- |
+| kept   | the Mac only                                 | the owner's GitHub token, Apple ID, `AGENT_PASSWORD`           | nothing: it never leaves                                            |
+| shared | the Mac; a copy in the VM's credential store | `session:*` browser sessions; the Claude token                 | the copy goes with the disk; the secret stays valid at its provider |
+| bound  | inside one VM                                | its ssh host keys, its `github-login` token, a `claude /login` | the disk goes; a token stays valid at its provider until revoked    |
 
-Deleting a VM is not revoking a token. Use fine-grained, expiring tokens in a VM, and revoke at the service.
+Deleting a VM is not revoking a token. Use fine-grained, expiring tokens in a VM, and revoke at the provider.
 
 ## Sharing accounts
 
@@ -43,7 +43,7 @@ A shared copy is a snapshot: later captures on the Mac do not reach it until you
 | Secret                               | Revoke at                                                                                      |
 | ------------------------------------ | ---------------------------------------------------------------------------------------------- |
 | A VM's GitHub token                  | github.com, your account page for developer tokens and authorized apps                         |
-| A shared `session:*` browser session | log out of that service in the Mac's browser; the service's session list shows the others      |
+| A shared `session:*` browser session | log out of that provider in the Mac's browser; the provider's session list shows the others    |
 | The Claude token                     | claude.ai, your account page for sessions and tokens; then `station settings off claude-token` |
 
 ## Studio in a VM

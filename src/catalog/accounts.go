@@ -19,7 +19,19 @@ type Provider struct {
 	// value: where the owner ends a right station did not lend: shown on a
 	// revoke of an own row, never run.
 	Logout string
+	// value: what the owner runs to fix a row, per reason, on this machine
+	// and in a VM (HintVM stands for the VM's name); empty is no hint.
+	Hints []ProviderHint
+	// value: a row shown only once it is read: a VM whose guest is not
+	// connected shows none for it.
+	Optional bool
 }
+
+type ProviderHint struct {
+	Reason, ThisMachine, InVM string
+}
+
+const HintVM = "<vm>"
 
 const (
 	ProviderGitHub     = "github"
@@ -34,17 +46,29 @@ const (
 )
 
 var Providers = []Provider{
-	{ID: ProviderGitHub, Label: "GitHub", Logout: "gh auth logout", Mac: true, VM: true, Command: "gh", Reads: []ProviderRead{{Name: "gh", Args: []string{"auth", "status", "--hostname", "github.com"}}}, Budget: 5 * time.Second},
-	{ID: ProviderNPM, Label: "npm", Logout: "npm logout", Mac: true, VM: true, Command: "npm", Reads: []ProviderRead{{Name: "npm", Args: []string{"whoami"}}}, Budget: 5 * time.Second},
-	{ID: ProviderClaude, Label: "Claude", Logout: "claude /logout", Mac: true, VM: true, Command: "claude", Reads: []ProviderRead{{Name: "claude", Args: []string{"auth", "status"}}}, Budget: 5 * time.Second},
+	{ID: ProviderGitHub, Label: "GitHub", Logout: "gh auth logout", Mac: true, VM: true, Command: "gh", Reads: []ProviderRead{{Name: "gh", Args: []string{"auth", "status", "--hostname", "github.com"}}}, Budget: 5 * time.Second, Hints: []ProviderHint{
+		{Reason: "unset", ThisMachine: "station settings apply github-login", InVM: "ssh " + HintVM + " gh auth login"},
+		{Reason: "missing", ThisMachine: "station apps install gh"},
+	}},
+	{ID: ProviderNPM, Label: "npm", Logout: "npm logout", Mac: true, VM: true, Command: "npm", Reads: []ProviderRead{{Name: "npm", Args: []string{"whoami"}}}, Budget: 5 * time.Second, Hints: []ProviderHint{
+		{Reason: "unset", ThisMachine: "npm login", InVM: "npm login"},
+		{Reason: "refused", ThisMachine: "npm login", InVM: "npm login"},
+	}},
+	{ID: ProviderClaude, Label: "Claude", Logout: "claude /logout", Mac: true, VM: true, Command: "claude", Reads: []ProviderRead{{Name: "claude", Args: []string{"auth", "status"}}}, Budget: 5 * time.Second, Hints: []ProviderHint{
+		{Reason: "unset", ThisMachine: "claude /login"},
+	}},
 	{ID: ProviderTailscale, Label: "Tailscale", Logout: "tailscale logout", Mac: true},
-	{ID: ProviderCloudflare, Label: "Cloudflare", Logout: "wrangler logout", Mac: true, VM: true, Command: "wrangler", Reads: []ProviderRead{{Name: "wrangler", Args: []string{"whoami"}}}, Budget: 10 * time.Second},
+	{ID: ProviderCloudflare, Label: "Cloudflare", Logout: "wrangler logout", Mac: true, VM: true, Command: "wrangler", Reads: []ProviderRead{{Name: "wrangler", Args: []string{"whoami"}}}, Budget: 10 * time.Second, Hints: []ProviderHint{
+		{Reason: "unset", ThisMachine: "wrangler login", InVM: "wrangler login"},
+	}},
 	{ID: ProviderGit, Label: "git", Mac: true, VM: true, Command: "git", Reads: []ProviderRead{
 		{Name: "git", Args: []string{"config", "--global", "user.name"}},
 		{Name: "git", Args: []string{"config", "--global", "user.email"}},
-	}, Budget: 2 * time.Second},
+	}, Budget: 2 * time.Second, Hints: []ProviderHint{
+		{Reason: "unset", ThisMachine: "git config --global user.name <name>", InVM: "git config --global user.name <name>"},
+	}},
 	{ID: ProviderSSH, Label: "ssh", Logout: "ssh-add -D", Mac: true, VM: true, Command: "ssh-add", Reads: []ProviderRead{{Name: "ssh-add", Args: []string{"-l"}}}, Budget: 2 * time.Second},
-	{ID: ProviderDocker, Label: "Docker", Logout: "docker logout", Mac: true, VM: true, Budget: 5 * time.Second},
+	{ID: ProviderDocker, Label: "Docker", Logout: "docker logout", Mac: true, VM: true, Budget: 5 * time.Second, Optional: true},
 	{ID: ProviderEntry, Label: "entry", VM: true},
 }
 

@@ -5,6 +5,8 @@ import (
 	"errors"
 
 	"github.com/jterrazz/studio-station/src/core/call"
+	"github.com/jterrazz/studio-station/src/core/confirm"
+	"github.com/jterrazz/studio-station/src/core/fail"
 	"github.com/jterrazz/studio-station/src/core/machine"
 	"github.com/jterrazz/studio-station/src/machines"
 )
@@ -52,14 +54,28 @@ var List = call.Watch[Deps, ListIn, ListOut]{
 	},
 }
 
-type CreateIn struct{ Request machines.CreateRequest }
+type CreateIn struct {
+	Request machines.CreateRequest
+	// value: the answer to "build the missing image first?", asked only when
+	// the image is not built on this Mac.
+	Confirm string
+}
 
 var CreateWorkspace = call.Call[Deps, CreateIn, machines.Created]{
 	// invariant: a workspace, throwaway or permanent; always on is a server's.
-	Name: "machines.create-workspace", Where: call.InEngine, Applies: machines.CanCreate,
+	Name: "machines.create-workspace", Where: call.InEngine, Applies: machines.CanCreate, Confirm: confirm.BuildImage,
+	Errors: []fail.Code{confirm.YesNeeded},
 	Run: func(ctx context.Context, d Deps, in CreateIn, p call.Progress) (machines.Created, error) {
 		r := in.Request
 		r.Server = false
+		if image := missingImage(ctx, d, r); image != "" {
+			if err := confirm.Ask(confirm.BuildImage, d.Kind, image, in.Confirm); err != nil {
+				return machines.Created{}, err
+			}
+			if err := build(ctx, d, image, p); err != nil {
+				return machines.Created{}, err
+			}
+		}
 		return create(ctx, d, r, p)
 	},
 }
@@ -69,17 +85,55 @@ type CreateServerIn struct {
 	Resources            machines.Resources
 	// value: its health check, a URL or host:port; empty for none.
 	Check string
+	// value: the answer to "build the missing image first?", asked only when
+	// the image is not built on this Mac.
+	Confirm string
 }
 
 var CreateServer = call.Call[Deps, CreateServerIn, machines.Created]{
 	// invariant: a server is always on, behind its Mac, and named; station
 	// sets up nothing inside it (SPEC §7.1).
-	Name: "machines.create-server", Where: call.InEngine, Applies: machines.CanCreate,
+	Name: "machines.create-server", Where: call.InEngine, Applies: machines.CanCreate, Confirm: confirm.BuildImage,
+	Errors: []fail.Code{confirm.YesNeeded},
 	Run: func(ctx context.Context, d Deps, in CreateServerIn, p call.Progress) (machines.Created, error) {
-		created, err := create(ctx, d, machines.CreateRequest{Image: in.Image, Name: in.Name, Server: true, Network: in.Network, Resources: in.Resources, Check: in.Check}, p)
+		r := machines.CreateRequest{Image: in.Image, Name: in.Name, Server: true, Network: in.Network, Size: in.Resources, Check: in.Check}
+		if image := missingImage(ctx, d, r); image != "" {
+			if err := confirm.Ask(confirm.BuildImage, d.Kind, image, in.Confirm); err != nil {
+				return machines.Created{}, err
+			}
+			if err := build(ctx, d, image, p); err != nil {
+				return machines.Created{}, err
+			}
+		}
+		created, err := create(ctx, d, r, p)
 		created.OnALaptop = err == nil && d.Laptop
 		return created, err
 	},
+}
+
+// value: the image a create would be refused for alone, not built on this
+// Mac; empty when it is built, or when another refusal comes first.
+func missingImage(ctx context.Context, d Deps, r machines.CreateRequest) string {
+	_, err := d.Machines.CheckCreate(ctx, r)
+	if unbuilt := new(machines.NoImageError); errors.As(err, &unbuilt) && d.Images != nil {
+		return unbuilt.Image
+	}
+	return ""
+}
+
+func build(ctx context.Context, d Deps, image string, p call.Progress) error {
+	last := ""
+	err := d.Images.Build(ctx, image, func(label string) {
+		if last != "" {
+			p.Done(last, nil)
+		}
+		last = label
+		p.Step(label, "")
+	})
+	if last != "" {
+		p.Done(last, err)
+	}
+	return err
 }
 
 func create(ctx context.Context, d Deps, r machines.CreateRequest, p call.Progress) (machines.Created, error) {
@@ -95,16 +149,4 @@ func create(ctx context.Context, d Deps, r machines.CreateRequest, p call.Progre
 		p.Done(last, err)
 	}
 	return created, err
-}
-
-type ProbeIn struct{ Name string }
-
-var Probe = call.Call[Deps, ProbeIn, machines.ProbeReport]{
-	Name: "machines.probe", Where: call.InProcess, Applies: machine.Anywhere,
-	Run: func(ctx context.Context, d Deps, in ProbeIn, _ call.Progress) (machines.ProbeReport, error) {
-		if err := d.Machines.CheckRemote(in.Name); err != nil {
-			return machines.ProbeReport{}, err
-		}
-		return d.Machines.Probe(ctx, in.Name)
-	},
 }

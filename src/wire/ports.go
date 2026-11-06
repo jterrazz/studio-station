@@ -9,15 +9,16 @@ import (
 	"github.com/jterrazz/studio-station/src/core/confirm"
 	"github.com/jterrazz/studio-station/src/core/fail"
 	coremachine "github.com/jterrazz/studio-station/src/core/machine"
-	"github.com/jterrazz/studio-station/src/domain/guest"
+	"github.com/jterrazz/studio-station/src/platform/local"
 	"github.com/jterrazz/studio-station/src/ports"
+	"github.com/jterrazz/studio-station/src/ports/adapter/guest"
 	portscalls "github.com/jterrazz/studio-station/src/ports/calls"
 
 	"github.com/spf13/cobra"
 
 	"github.com/jterrazz/studio-station/src/catalog"
-	"github.com/jterrazz/studio-station/src/domain/machines"
-	"github.com/jterrazz/studio-station/src/domain/services"
+
+	model "github.com/jterrazz/studio-station/src/machines"
 	"github.com/jterrazz/studio-station/src/surface/cli/kit"
 	portscmd "github.com/jterrazz/studio-station/src/surface/cli/ports"
 	portsdeclare "github.com/jterrazz/studio-station/src/surface/cli/ports/declare"
@@ -26,19 +27,19 @@ import (
 	portsundeclare "github.com/jterrazz/studio-station/src/surface/cli/ports/undeclare"
 )
 
-func (m machine) portsOf(_ kit.Env) *services.Service {
-	o := services.Options{Here: m.kind, State: m.paths.State, HereName: m.thisMac(), Ask: m.askPorts, ReleaseOn: m.releaseOn, Exposure: m.exposure,
-		Listening: m.listeners("/").Read, Routes: m.routes()}
+func (m machine) portsOf(_ kit.Env) *portscalls.Reserver {
+	o := portscalls.ReserverOptions{ThisMachine: m.kind, State: m.paths.State, ThisMacName: m.thisMac(), Ask: m.askPorts, ReleaseOn: m.releaseOn, Exposure: m.exposure,
+		Listening: listedOrNone(m.listeners("/").Read), Routes: m.routes(), EngineInstalled: m.engineInstalled}
 	d := portsEngine{c: m.engineAPI()}
 	if m.kind != catalog.Mac {
 		g := m.guest()
 		p := m.placement(g)
-		o.HereName, o.VMName, o.HostName = p.Host, p.VM, p.Host
+		o.ThisMacName, o.VMName, o.MacName = p.Mac, p.VM, p.Mac
 		d = portsEngine{c: socketAPI(m.sys, g.SocketPath())}
 	}
 	allMachines := m.machines(false)
-	o.VMHost = func(ctx context.Context, vm string) (string, bool, error) {
-		f, err := allMachines.Fleet(ctx, false)
+	o.VMMac = func(ctx context.Context, vm string) (string, bool, error) {
+		f, err := allMachines.AllMachines(ctx, false)
 		if err != nil {
 			return "", false, err
 		}
@@ -49,19 +50,19 @@ func (m machine) portsOf(_ kit.Env) *services.Service {
 				}
 			}
 		}
-		var unknown *machines.UnknownMachineError
+		var unknown *model.UnknownMachineError
 		if _, err := allMachines.Lookup(ctx, vm); err != nil && !errors.As(err, &unknown) {
 			return "", false, err
 		}
-		return "", false, &services.UnknownVMError{Name: vm}
+		return "", false, &ports.UnknownVMError{Name: vm}
 	}
-	return services.New(m.sys, services.Stores{Services: m.stores.ports(), Name: m.stores.name(), Hosts: m.stores.macs(), Reservations: m.stores.reservations, Declarations: m.stores.declarations}, d, o)
+	return portscalls.NewReserver(portscalls.Stores{Ports: m.stores.ports(), Name: m.stores.name(), Macs: m.stores.macs(), Reservations: m.stores.reservations, Declarations: m.stores.declarations}, d, o)
 }
 
 // value: what listens on this Mac, read by lsof, the world's in a world.
 
 // value: where this VM runs, as its guest's hello placed it.
-func (m machine) placement(g *guest.Service) guest.Placement {
+func (m machine) placement(g *guest.Agent) ports.VMLivesOn {
 	if m.world != nil {
 		if p, inside := m.world.placement(); inside {
 			return p
@@ -107,4 +108,20 @@ func (p settingsPublic) Undeclare(ctx context.Context, d catalog.Declares) error
 		return nil
 	}
 	return err
+}
+
+// invariant: a Mac with nothing to list its listeners with lists none.
+func listedOrNone(read func(ctx context.Context) ([]ports.Listener, error)) func(ctx context.Context) ([]ports.Listener, error) {
+	return func(ctx context.Context) ([]ports.Listener, error) {
+		listed, err := read(ctx)
+		if errors.Is(err, local.ErrNotFound) {
+			return nil, nil
+		}
+		return listed, err
+	}
+}
+
+func (m machine) engineInstalled() bool {
+	_, err := m.sys.FS.Stat(catalog.EnginePlist(m.sys.Env.Home()))
+	return err == nil
 }

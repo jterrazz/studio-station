@@ -1,4 +1,4 @@
-description: 'a second hello rewrites the host block alone, the owner''s line kept'
+description: 'a second hello rewrites the Mac''s block alone, the owner''s line kept'
 fixture: ./__fixtures__/vm/
 env: engine
 runs:

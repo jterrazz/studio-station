@@ -136,22 +136,22 @@ func keeps(r awake.Report, now time.Time, zone *time.Location) []page.Action {
 	for _, t := range terms() {
 		in := flags(lid, battery)
 		in["For"] = nanos(t)
-		out = append(out, page.Action{ID: ActionKeep + strings.TrimSuffix(t.String(), "0m0s"), Label: pageTerm(t), On: page.OnRow, Rows: rows, Priority: 1, Mutates: true, Run: &page.Run{Call: CallAwake, In: in}})
+		out = append(out, page.Action{ID: ActionKeep + strings.TrimSuffix(t.String(), "0m0s"), Label: pageTerm(t), On: page.OnRow, Rows: rows, Priority: 1, Mutates: true, Run: &page.Run{Call: CallKeepAwake, In: in}})
 	}
 	out = append(out, page.Action{ID: ActionUntil, Label: "Until", On: page.OnRow, Rows: rows, Priority: 1, Mutates: true,
-		Form: &page.Form{Title: "Keep awake until", Fields: []page.Field{untilField(now, zone)}}, Run: &page.Run{Call: CallAwake, In: flags(lid, battery)}})
+		Form: &page.Form{Title: "Keep awake until", Fields: []page.Field{untilField(now, zone)}}, Run: &page.Run{Call: CallKeepAwake, In: flags(lid, battery)}})
 	if r.Caps.Lid {
 		in := flags(!lid, battery)
 		in["For"] = nanos(left)
-		out = append(out, page.Action{ID: ActionLid, Label: "Lid closed", On: page.OnRow, Rows: rows, Priority: 2, Mutates: true, Run: &page.Run{Call: CallAwake, In: in}})
+		out = append(out, page.Action{ID: ActionLid, Label: "Lid closed", On: page.OnRow, Rows: rows, Priority: 2, Mutates: true, Run: &page.Run{Call: CallKeepAwake, In: in}})
 	}
 	if r.Caps.Battery {
 		in := flags(lid, !battery)
 		in["For"] = nanos(left)
-		out = append(out, page.Action{ID: ActionBattery, Label: "On battery", On: page.OnRow, Rows: rows, Priority: 2, Mutates: true, Run: &page.Run{Call: CallAwake, In: in}})
+		out = append(out, page.Action{ID: ActionBattery, Label: "On battery", On: page.OnRow, Rows: rows, Priority: 2, Mutates: true, Run: &page.Run{Call: CallKeepAwake, In: in}})
 	}
 	if held {
-		out = append(out, page.Action{ID: ActionLetGo, Label: "Let it sleep", On: page.OnRow, Rows: rows, Priority: 3, Mutates: true, Run: &page.Run{Call: CallSleep}})
+		out = append(out, page.Action{ID: ActionLetGo, Label: "Let it sleep", On: page.OnRow, Rows: rows, Priority: 3, Mutates: true, Run: &page.Run{Call: CallAwakeOff}})
 	}
 	return out
 }

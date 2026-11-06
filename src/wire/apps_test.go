@@ -4,13 +4,13 @@ import (
 	"testing"
 
 	"github.com/jterrazz/studio-station/src/catalog"
-	"github.com/jterrazz/studio-station/src/system/systemtest"
+	"github.com/jterrazz/studio-station/src/platform/local/localtest"
 )
 
-func TestEveryMethodTheCataloguePlacesHasItsInstaller(t *testing.T) {
-	host := systemtest.Host(systemtest.NewRunner(t), systemtest.NewFS(), systemtest.Env{HomeDir: "/home/u", OS: "darwin"}, systemtest.NewNet(), &systemtest.Clock{})
+func TestEveryMethodTheCatalogueKindsHasItsInstaller(t *testing.T) {
+	system := localtest.Mac(localtest.NewRunner(t), localtest.NewFS(), localtest.Env{HomeDir: "/home/u", OS: "darwin"}, localtest.NewNet(), &localtest.Clock{})
 
-	registry, _ := installers(machine{sys: host, vars: map[string]string{}})
+	registry, _ := installers(machine{sys: system, vars: map[string]string{}})
 
 	for m := range catalog.MethodKinds {
 		if i, ok := registry[m]; !ok || i.Method() != m {

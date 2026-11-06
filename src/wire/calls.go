@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/jterrazz/studio-station/src/activity"
-	"github.com/jterrazz/studio-station/src/engine/process"
+	"github.com/jterrazz/studio-station/src/engine"
 	"github.com/jterrazz/studio-station/src/settings/adapter/docker"
 	"github.com/jterrazz/studio-station/src/settings/adapter/gitaliases"
 
@@ -18,7 +18,6 @@ import (
 	"github.com/jterrazz/studio-station/src/core/call"
 	coremachine "github.com/jterrazz/studio-station/src/core/machine"
 	diskcalls "github.com/jterrazz/studio-station/src/disk/calls"
-	"github.com/jterrazz/studio-station/src/domain/power"
 	enginecalls "github.com/jterrazz/studio-station/src/engine/calls"
 	imagescalls "github.com/jterrazz/studio-station/src/images/calls"
 	machinescalls "github.com/jterrazz/studio-station/src/machines/calls"
@@ -57,12 +56,12 @@ func (m machine) registry(env kit.Env) *call.Registry {
 		diskcalls.All(diskcalls.Deps{Disk: m.diskOf(env), Kind: kind}),
 		enginecalls.All(enginecalls.Deps{Control: m.control(), Kind: kind}),
 		imagescalls.All(imagescalls.Deps{Images: imageBuilder{m.images()}, Kind: kind}),
-		machinescalls.All(machinescalls.Deps{Machines: machineCalls{Service: m.machines(env.Interactive), m: m}, Kind: kind, Laptop: m.profile.Caps.Battery}),
+		machinescalls.All(machinescalls.Deps{Machines: machineCalls{Machinist: m.machines(env.Interactive), m: m}, Images: createImages{imageBuilder{m.images()}}, Kind: kind, Laptop: m.profile.Caps.Battery}),
 		portscalls.All(portscalls.Deps{Ports: m.portsOf(env), Tailnet: m.tailnetStatus(), Kind: kind,
 			Declarations: m.stores.declarations, Routes: m.routes(), Far: farPorts{m}}),
 		setupcalls.All(setupcalls.Deps{Setup: setupRun{setupOf}, Ask: named}),
 		settingscalls.All(settingscalls.Deps{
-			Settings: settings, Appliers: settings.Appliers(), Applied: m.stores.applied, OffHere: settingscontract.OffHere(m.stores.prefs),
+			Settings: settings, Appliers: settings.Appliers(), Applied: m.stores.applied, OffThisMac: settingscontract.OffHere(m.stores.prefs),
 			Now: m.sys.Clock.Now, Ask: ask, Shortcuts: docker.New(m.sys.Run), GitAliases: gitaliases.NewShortcuts(m.sys.Run), Shell: m.shell(), Kind: kind,
 			Facts: m.facts(), Caps: m.profile.Caps, Admin: m.sys.Env.Euid() == 0, Mac: m.profile.Ref.Name, All: settingsAllMachines{m}, Public: settingsPublic{thisMac},
 		}),
@@ -107,7 +106,7 @@ func (l *localCalls) Watch(ctx context.Context, _ coremachine.Ref, name string, 
 	return l.registry.Stream(ctx, l.profile, name, in, p)
 }
 
-type awakeKeeper struct{ *power.Service }
+type awakeKeeper struct{ *awakecalls.Waker }
 
 // invariant: the history a Mac's engine keeps, asked over its socket.
 func engineKept(api engineAPI) func(ctx context.Context, name string) (activity.Kept, time.Time, bool, error) {
@@ -133,8 +132,8 @@ func engineHolder(api engineAPI) func(ctx context.Context, vm string) (int, erro
 }
 
 func keptOf(ctx context.Context, api engineAPI, name string) (activity.Kept, time.Time, bool, error) {
-	var out process.ActivityOut
-	if err := api.do(ctx, process.Activity, nil, &out); err != nil {
+	var out engine.ActivityOut
+	if err := api.do(ctx, engine.CallActivity, nil, &out); err != nil {
 		return activity.Kept{}, time.Time{}, false, err
 	}
 	for _, kept := range out.Machines {

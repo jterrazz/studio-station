@@ -6,8 +6,6 @@ import (
 	"os"
 	"path/filepath"
 	"syscall"
-
-	"github.com/jterrazz/studio-station/src/system"
 )
 
 type disk struct{}
@@ -33,7 +31,7 @@ func (disk) WalkDir(root string, fn fs.WalkDirFunc) error { return filepath.Walk
 func (disk) Rename(from, to string) error {
 	err := os.Rename(from, to)
 	if errors.Is(err, syscall.EXDEV) {
-		return errors.Join(system.ErrCrossDevice, err)
+		return errors.Join(ErrCrossDevice, err)
 	}
 	return err
 }

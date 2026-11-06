@@ -61,7 +61,7 @@ func saysBanned(list []banned, texts []string) []string {
 	return found
 }
 
-// value: where a text was read, as the allowlist keys it: its folder,
+// value: where a text was read, as a finding names it: its folder,
 // repo-relative.
 type corpusText struct{ dir, at, text string }
 
@@ -350,14 +350,17 @@ func vocabularyTexts(t *testing.T, w *world) []corpusText {
 }
 
 // invariant: OrbStack may stay a catalogue app (SPEC §2.2): the catalogue
-// names it, nothing else does.
-func catalogueApp(dir, word string) bool { return dir == "src/catalog" && word == "OrbStack" }
+// names it, and so does the footprint `make generate` projects from it;
+// nothing else does.
+func catalogueApp(c corpusText, word string) bool {
+	return word == "OrbStack" && (c.dir == "src/catalog" || strings.HasPrefix(c.at, "docs/reference/footprint.md:"))
+}
 
 func vocabularySaid(texts []corpusText) (said, where map[string][]string) {
 	said, where = map[string][]string{}, map[string][]string{}
 	for _, c := range texts {
 		for _, word := range saysBanned(codeBanned(), []string{c.text}) {
-			if catalogueApp(c.dir, word) || powerContract(c.dir, word) {
+			if catalogueApp(c, word) || powerContract(c.dir, word) {
 				continue
 			}
 			if !slices.Contains(said[c.dir], word) {
@@ -374,34 +377,17 @@ func vocabularySaid(texts []corpusText) (said, where map[string][]string) {
 }
 
 func ruleVocabulary(texts []corpusText) []finding {
-	return ruleVocabularyIn(texts, func(string) bool { return true })
-}
-
-func ruleVocabularyIn(texts []corpusText, in func(dir string) bool) []finding {
 	said, where := vocabularySaid(texts)
-	tolerated := maps.Clone(vocabularyTolerated())
-	maps.DeleteFunc(tolerated, func(dir string, _ []string) bool { return !in(dir) })
 	var out []finding
 	for _, dir := range slices.Sorted(maps.Keys(said)) {
 		for _, word := range said[dir] {
-			if !slices.Contains(tolerated[dir], word) {
-				out = append(out, finding{"vocabulary", where[dir+" "+word][0], fmt.Sprintf("%s says %q, a word SPEC §2.2 retired", dir, word)})
-			}
-		}
-	}
-	for _, dir := range slices.Sorted(maps.Keys(tolerated)) {
-		for _, word := range tolerated[dir] {
-			if !slices.Contains(said[dir], word) {
-				out = append(out, finding{"vocabulary", "specs/architecture/vocabulary_tolerated_test.go", fmt.Sprintf("%s no longer says %q: remove it from vocabularyTolerated", dir, word)})
-			}
+			out = append(out, finding{"vocabulary", where[dir+" "+word][0], fmt.Sprintf("%s says %q, a word SPEC §2.2 retired", dir, word)})
 		}
 	}
 	return out
 }
 
-func ruleVocabularySource(w *world) []finding {
-	return ruleVocabularyIn(sourceTexts(w), func(dir string) bool { return strings.HasPrefix(dir, "src/") })
-}
+func ruleVocabularySource(w *world) []finding { return ruleVocabulary(sourceTexts(w)) }
 
 func TestVocabularySource(t *testing.T) { judge(t, "Vocabulary") }
 
@@ -415,7 +401,7 @@ func TestVocabularyKeepsPowerForItsContractOnly(t *testing.T) {
 		{"src/pages/menubar", "src/pages/menubar/menubar.go:1", "power-sleep"},
 		{"apps/menubar/sources/page", "apps/menubar/sources/page/Page.swift:1", "power"},
 	}
-	found := ruleVocabularyIn(planted, func(string) bool { return false })
+	found := ruleVocabulary(planted)
 	got := make([]string, 0, len(found))
 	for _, f := range found {
 		got = append(got, f.where)
@@ -461,15 +447,20 @@ func TestVocabularyKeepsItsPhrases(t *testing.T) {
 	}
 }
 
-func TestVocabularyAllowlistShrinks(t *testing.T) {
-	tolerated := vocabularyTolerated()
-	if len(tolerated) == 0 {
-		return
+func TestVocabularyLetsOnlyTheCatalogueSayOrbStack(t *testing.T) {
+	planted := []corpusText{
+		{"src/catalog", "src/catalog/apps.go:1", "OrbStack"},
+		{"docs/reference", "docs/reference/footprint.md:1", "OrbStack's own home"},
+		{"docs/reference", "docs/reference/machines.md:1", "OrbStack runs the VMs"},
+		{"src/machines", "src/machines/errors.go:1", "OrbStack"},
 	}
-	dir := slices.Sorted(maps.Keys(tolerated))[0]
-	got := ruleVocabulary(nil)
-	if !slices.ContainsFunc(got, func(f finding) bool { return strings.HasPrefix(f.what, dir+" no longer says") }) {
-		t.Errorf("the vocabulary rule kept the line of %s, a folder that says nothing", dir)
+	found := ruleVocabulary(planted)
+	got := make([]string, 0, len(found))
+	for _, f := range found {
+		got = append(got, f.where)
+	}
+	if want := []string{"docs/reference/machines.md:1", "src/machines/errors.go:1"}; !slices.Equal(got, want) {
+		t.Errorf("the rule reports OrbStack at %v, want %v: only the catalogue and its footprint name it", got, want)
 	}
 }
 
@@ -507,5 +498,37 @@ func f() {
 	})
 	if want := []string{`"Restart the daemon"`, `"the tools"`}; !slices.Equal(read, want) {
 		t.Errorf("the rule reads %v, want %v: only a command line is another program's", read, want)
+	}
+}
+
+// invariant: the legacy encodings, each a declaration marked "value: alias
+// of": station.status/v1 (the OS connector's, byte for byte one release),
+// its rows and its kind word; the v2 keys a store reads once and writes in
+// v3's words; v2's hidden commands that are no kit.Alias.
+func legacyEncodings() []string {
+	return []string{
+		"src/accounts/adapter/jsonfile sharedIn",
+		"src/accounts/contract GroupV2ShareList",
+		"src/catalog StatusV1Kind",
+		"src/engine/process hello",
+		"src/images UnmarshalJSON",
+		"src/machines UnmarshalText",
+		"src/machines/adapter/jsonfile file",
+		"src/pages/apps AppStatusJSON",
+		"src/pages/apps statusV1Category",
+		"src/pages/home SnapshotJSON",
+		"src/pages/home awakeJSON",
+		"src/pages/home stationJSON",
+		"src/pages/home workspaceJSON",
+		"src/pages/settings ItemJSON",
+		"src/ports Reservation",
+		"src/ports VMLivesOn",
+		"src/ports/adapter/guest Hello",
+		"src/ports/adapter/jsonfile ReservationsSchema",
+		"src/ports/contract RetiredGroupPorts",
+		"src/setup/contract RetiredGroupName",
+		"src/surface/cli/kit RetiredEngineCommand",
+		"src/surface/cli/settings containerShortcuts",
+		"src/world Kept",
 	}
 }

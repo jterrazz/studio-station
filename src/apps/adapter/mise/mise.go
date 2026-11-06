@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"path"
 	"strconv"
 
 	"github.com/jterrazz/studio-station/src/apps"
@@ -95,4 +96,18 @@ func (m *Mise) each(ctx context.Context, installs []catalog.Install, argv func(c
 		}
 	}
 	return nil
+}
+
+func (m *Mise) ShimsFirst(home string, vars map[string]string) []string {
+	// invariant: a bundle runs with mise's shims first once mise is installed,
+	// so a formula's post-install finds the runtimes it pins; the shims live in
+	// $MISE_DATA_DIR, else ~/.local/share/mise.
+	if _, ok := m.run.LookPath(command); !ok {
+		return nil
+	}
+	data := vars["MISE_DATA_DIR"]
+	if data == "" {
+		data = path.Join(home, ".local", "share", command)
+	}
+	return []string{"PATH=" + path.Join(data, "shims") + ":" + vars["PATH"]}
 }

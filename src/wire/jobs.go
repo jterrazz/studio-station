@@ -10,6 +10,8 @@ import (
 	"github.com/jterrazz/studio-station/src/background/contract"
 	"github.com/jterrazz/studio-station/src/catalog"
 	"github.com/jterrazz/studio-station/src/engine"
+	enginecalls "github.com/jterrazz/studio-station/src/engine/calls"
+	"github.com/jterrazz/studio-station/src/engine/process"
 )
 
 func (m machine) jobs(budget time.Duration) contract.Jobs {
@@ -31,7 +33,7 @@ type engineJob struct {
 }
 
 func (m machine) engineJob() engineJob {
-	return engineJob{jobs: m.jobs(engine.JobBudget), ref: m.engineJobRef()}
+	return engineJob{jobs: m.jobs(process.JobBudget), ref: m.engineJobRef()}
 }
 
 func (j engineJob) Loaded(ctx context.Context) bool { return j.jobs.Read(ctx, j.ref).Loaded }
@@ -51,5 +53,5 @@ func booted(err error) error {
 	if cause == nil {
 		cause = errors.New("exited " + strconv.Itoa(failed.Exit) + " " + failed.Stderr)
 	}
-	return &engine.BootError{Message: failed.Verb() + ": " + cause.Error(), See: failed.See, Cause: cause}
+	return &enginecalls.BootError{Message: failed.Verb() + ": " + cause.Error(), See: failed.See, Cause: cause}
 }

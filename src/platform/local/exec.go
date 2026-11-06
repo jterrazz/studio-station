@@ -7,8 +7,6 @@ import (
 	"slices"
 	"strconv"
 	"strings"
-
-	"github.com/jterrazz/studio-station/src/system"
 )
 
 func Command(name string, args ...string) Cmd { return Cmd{Name: name, Args: args} }
@@ -61,7 +59,7 @@ func (p played) Output(_ context.Context, c Cmd) (Output, error) {
 	return p.play(c)
 }
 
-func (p played) Attach(ctx context.Context, c Cmd, _ system.Stream) (system.Attached, error) {
+func (p played) Attach(ctx context.Context, c Cmd, _ Stream) (Attached, error) {
 	out, err := p.Output(ctx, c)
 	last := ""
 	for _, line := range strings.Split(out.Stderr, "\n") {
@@ -69,7 +67,7 @@ func (p played) Attach(ctx context.Context, c Cmd, _ system.Stream) (system.Atta
 			last = line
 		}
 	}
-	return system.Attached{ExitCode: out.ExitCode, LastStderr: last}, err
+	return Attached{ExitCode: out.ExitCode, LastStderr: last}, err
 }
 
 func (p played) Start(Cmd, string) (int, error) { return 0, errors.ErrUnsupported }
@@ -81,9 +79,9 @@ func (p played) LookPath(name string) (string, bool) {
 	return "/played/" + name, true
 }
 
-func (p played) Alive(int) bool               { return false }
-func (p played) Signal(int, system.Sig) error { return errors.ErrUnsupported }
-func (p played) Reap(string) int              { return 0 }
+func (p played) Alive(int) bool        { return false }
+func (p played) Signal(int, Sig) error { return errors.ErrUnsupported }
+func (p played) Reap(string) int       { return 0 }
 
 func Read(ctx context.Context, r Runner, c Cmd) (string, bool) {
 	// value: a read: the trimmed stdout, ok only when the command ran and

@@ -2,15 +2,16 @@ package kit
 
 import (
 	"errors"
+
+	"github.com/jterrazz/studio-station/src/apps"
 	"github.com/jterrazz/studio-station/src/core/fail"
-	"github.com/jterrazz/studio-station/src/domain/tools"
 )
 
 func appsFailure(err error) (*fail.Error, bool) {
-	var irreversible *tools.NotReversibleError
-	var manual *tools.ManualInstallError
-	var noUpgrade *tools.NoUpgradePathError
-	var appStore *tools.AppStoreError
+	var irreversible *apps.NotReversibleError
+	var manual *apps.ManualInstallError
+	var noUpgrade *apps.NoUpgradePathError
+	var appStore *apps.AppStoreError
 	switch {
 	case errors.As(err, &irreversible):
 		return usage(irreversible.Error(), "station installs it but cannot remove it: remove it by hand"), true
@@ -19,7 +20,7 @@ func appsFailure(err error) (*fail.Error, bool) {
 	case errors.As(err, &appStore):
 		return usage(appStore.Error(), "remove it from /Applications"), true
 	case errors.As(err, &noUpgrade):
-		return usage(noUpgrade.Error(), "reinstall it by hand: station apps install "+noUpgrade.Tool), true
+		return usage(noUpgrade.Error(), "reinstall it by hand: station apps install "+noUpgrade.App), true
 	}
 	return nil, false
 }

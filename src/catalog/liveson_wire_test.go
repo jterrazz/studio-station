@@ -8,7 +8,7 @@ import (
 	"github.com/jterrazz/studio-station/src/catalog"
 )
 
-func TestEveryToolOfTheCatalogueReadsBackAsItWasSent(t *testing.T) {
+func TestEveryAppOfTheCatalogueReadsBackAsItWasSent(t *testing.T) {
 	for _, tool := range catalog.Apps {
 		raw, err := json.Marshal(tool)
 		if err != nil {

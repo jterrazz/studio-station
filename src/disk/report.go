@@ -83,3 +83,8 @@ func Failures(outcomes []Outcome) (failed int, firstFailed Outcome) {
 	}
 	return failed, firstFailed
 }
+
+const (
+	StationName     = "station"
+	StationCategory = "Station"
+)

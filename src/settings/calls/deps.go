@@ -27,11 +27,11 @@ const (
 )
 
 type Deps struct {
-	Settings Settings
-	Appliers contract.Appliers
-	Applied  contract.AppliedStore
-	OffHere  contract.OffHerePrefs
-	Now      func() time.Time
+	Settings   Settings
+	Appliers   contract.Appliers
+	Applied    contract.AppliedStore
+	OffThisMac contract.OffHerePrefs
+	Now        func() time.Time
 	// value: the values a setting asks, from the owner at a terminal; nil
 	// where nobody is there to answer.
 	Ask        Ask
@@ -116,8 +116,8 @@ func admitted(d Deps, it catalog.Setting, verb string) error {
 	return fail.New(fail.Refused, NeedsAdmin, it.Name, map[string]string{"mac": d.Mac, "verb": verb})
 }
 
-func offHere(d Deps) map[string]bool {
-	names, _ := d.OffHere.Get()
+func offThisMac(d Deps) map[string]bool {
+	names, _ := d.OffThisMac.Get()
 	out := make(map[string]bool, len(names))
 	for _, n := range names {
 		out[n] = true

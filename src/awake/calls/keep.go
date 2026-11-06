@@ -21,13 +21,13 @@ var Keep = call.Call[Deps, awake.Request, awake.Awoken]{
 		if err := awake.Options(d.Caps, in.Lid, in.Battery); err != nil {
 			return awake.Awoken{}, d.refused(err, in)
 		}
-		if err := d.Keeper.Check(); err != nil {
+		if err := d.Holder.Check(); err != nil {
 			return awake.Awoken{}, err
 		}
 		if d.never() {
 			return awake.Awoken{Mac: d.Mac, NeverSleeps: true}, nil
 		}
-		a, err := d.Keeper.Awake(ctx, in)
+		a, err := d.Holder.Awake(ctx, in)
 		a.Mac = d.Mac
 		return a, err
 	},

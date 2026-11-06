@@ -188,7 +188,7 @@
             "default": "throwaway"
           },
           {
-            "key": "Request.Resources.MemoryBytes",
+            "key": "Request.Size.MemoryBytes",
             "label": "Memory",
             "kind": "select",
             "options": [

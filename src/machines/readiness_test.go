@@ -12,18 +12,18 @@ func ready() machines.ReadinessFacts {
 		return machines.ReadinessSetting{Name: name, State: catalog.StateOK, Root: root}
 	}
 	return machines.ReadinessFacts{
-		Mac: "mac-mini", HostsServer: true,
+		Mac: "mac-mini", MacsServer: true,
 		RestartsAfterPowerCut: applied("restart-after-power-cut", true), NeverSleeps: applied("never-sleeps", false), LogsIn: applied("auto-login", true),
 		FileVault: catalog.StateAbsent, AuthRestart: catalog.StateOK, EngineAtLogin: true, EngineKnown: true,
 	}
 }
 
-func TestAMacHasItsReadinessOnlyWhenItHostsAServerOrNeverSleeps(t *testing.T) {
+func TestAMacHasItsReadinessOnlyWhenItMacsAServerOrNeverSleeps(t *testing.T) {
 	f := ready()
 	if got := machines.Readiness(f); len(got) != 6 {
 		t.Fatalf("a Mac hosting a server has %d readiness items, want the six of SPEC 7.6", len(got))
 	}
-	f.HostsServer = false
+	f.MacsServer = false
 	if got := machines.Readiness(f); len(got) != 6 {
 		t.Fatalf("a Mac that never sleeps has %d readiness items, want six", len(got))
 	}
@@ -60,7 +60,7 @@ func TestASettingNotAppliedNamesItsFixAndRootOnlyWhereItNeedsIt(t *testing.T) {
 		t.Errorf("never sleeps, applied: %+v, want no fix", items[1])
 	}
 	f.NeverSleeps.State = catalog.StateDegraded
-	f.HostsServer = true
+	f.MacsServer = true
 	if items := machines.Readiness(f); items[1].Fix != "station settings apply never-sleeps" || items[1].Value != "changed since" {
 		t.Errorf("never sleeps, changed since: %+v, want its fix, not as root", items[1])
 	}

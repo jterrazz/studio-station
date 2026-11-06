@@ -4,13 +4,14 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/jterrazz/studio-station/src/catalog"
 	"github.com/jterrazz/studio-station/src/machines/contract"
 )
 
 const (
 	Mac     = "mac-mini"
 	LAN     = "192.168.1.20"
-	Refusal = "sudo: a password is required"
+	Refusal = catalog.Sudo + ": a password is required"
 )
 
 type UnlockerSubject struct {

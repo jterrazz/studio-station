@@ -20,7 +20,7 @@ var List = call.Watch[Deps, ListIn, []settings.Row]{
 		// being read; each fills as its Applier answers, so the list costs its
 		// slowest read.
 		items := d.Settings.Items()
-		off := offHere(d)
+		off := offThisMac(d)
 		type answer struct {
 			i   int
 			row settings.Row

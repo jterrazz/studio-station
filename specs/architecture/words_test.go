@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"go/ast"
 	"go/types"
-	"maps"
 	"path"
 	"slices"
 	"strings"
@@ -52,27 +51,6 @@ func technologyWords() []string {
 	return append(out, "scp")
 }
 
-// invariant: the allowlist of technology-words: today's packages and the
-// words they still say. It only shrinks; a line no longer true fails the
-// gate until it is removed.
-func wordsTolerated() map[string][]string {
-	return map[string][]string{
-		"wire":                 {"bun", "mise"},
-		"surface/cli/kit":      {"fdesetup", "ssh"},
-		"surface/cli/machines": {"ssh"},
-		"cmd/generate/pages":   {"brew", "bun", "docker", "launchctl", "mas", "mise", "npm", "ssh", "tailscale", "uv"},
-		"domain/accounts":      {"docker", "npm", "ssh", "tailscale"},
-		"domain/guest":         {"docker"},
-		"domain/machines":      {"ssh"},
-		"domain/setup":         {"bun", "mise", "npm", "tailscale", "tailscaled"},
-		"domain/shell":         {"mise"},
-		"domain/storage":       {"brew", "docker", "mise"},
-		"pages/home":           {"brew", "docker", "mise", "npm", "security", "ssh", "tailscale"},
-		"pages/machines":       {"ssh"},
-		"pages/keepawake":      {"pmset"},
-	}
-}
-
 func splitWords(s string) []string {
 	var out []string
 	var cur []rune
@@ -101,8 +79,16 @@ func splitWords(s string) []string {
 	return out
 }
 
+// invariant: the homes of values may spell any word: catalog (station's
+// values), surface/cli/words (the owner's words) and the sample estate the
+// page fixtures are compiled from (cmd/generate/pages), whose machines hold
+// the owner's tools by name as data.
+func valuesHome(pkg string) bool {
+	return pkg == "catalog" || strings.HasPrefix(pkg, "catalog/") || pkg == "surface/cli/words" || pkg == "cmd/generate/pages"
+}
+
 func wordAllowed(pkg, word string) bool {
-	if pkg == "catalog" || strings.HasPrefix(pkg, "catalog/") || pkg == "surface/cli/words" {
+	if valuesHome(pkg) {
 		return true
 	}
 	parts := strings.Split(pkg, "/")
@@ -114,13 +100,16 @@ func wordAllowed(pkg, word string) bool {
 	return false
 }
 
-// invariant: ssh is also a product word (the SSH section, machines.ssh,
-// SSHConfig): its identifiers are exempt, an ssh command line is not, and a
-// literal that runs ssh is one: an exec's name or path, an argv's first
-// word, a shell line that calls it.
-func sshCommandLine(fields []string) bool {
+// invariant: ssh, docker and security are also product words (the SSH
+// section and SSH keys, the Docker account and Docker shortcuts, the
+// security of a Mac): their identifiers and prose are exempt, a command line
+// that runs them is not: an exec's name or path, an argv's first word, a
+// shell line that calls it.
+func productWords() []string { return []string{"ssh", "docker", "security"} }
+
+func runsWord(word string, fields []string) bool {
 	for i, f := range fields {
-		if path.Base(f) != "ssh" {
+		if path.Base(f) != word {
 			continue
 		}
 		switch {
@@ -135,14 +124,16 @@ func sshCommandLine(fields []string) bool {
 
 func literalWords(value string) []string {
 	words := splitWords(value)
-	if !sshCommandLine(strings.Fields(value)) {
-		words = slices.DeleteFunc(words, func(w string) bool { return w == "ssh" })
+	for _, w := range productWords() {
+		if !runsWord(w, strings.Fields(value)) {
+			words = slices.DeleteFunc(words, func(x string) bool { return x == w })
+		}
 	}
 	return words
 }
 
 func identifierWords(name string) []string {
-	return slices.DeleteFunc(splitWords(name), func(w string) bool { return w == "ssh" })
+	return slices.DeleteFunc(splitWords(name), func(w string) bool { return slices.Contains(productWords(), w) })
 }
 
 // invariant: the value of a constant of a named type is a product name, like
@@ -185,9 +176,7 @@ func technologySaid(w *world) (map[said][]string, []finding) {
 		}
 		key := said{f.pkg, word}
 		seen[key] = append(seen[key], at)
-		if !slices.Contains(wordsTolerated()[f.pkg], word) {
-			out = append(out, finding{"technology-words", at, fmt.Sprintf("%q names the technology %q: only its adapter may", f.pkg, word)})
-		}
+		out = append(out, finding{"technology-words", at, fmt.Sprintf("%q names the technology %q: only its adapter may", f.pkg, word)})
 	}
 	for _, f := range w.files {
 		imports := map[ast.Node]bool{}
@@ -231,14 +220,7 @@ func technologySaid(w *world) (map[said][]string, []finding) {
 }
 
 func ruleTechnologyWords(w *world) []finding {
-	seen, out := technologySaid(w)
-	for _, pkg := range slices.Sorted(maps.Keys(wordsTolerated())) {
-		for _, word := range wordsTolerated()[pkg] {
-			if len(seen[said{pkg, word}]) == 0 {
-				out = append(out, finding{"technology-words", "specs/architecture/words_test.go", fmt.Sprintf("src/%s no longer says %q: remove it from wordsTolerated", pkg, word)})
-			}
-		}
-	}
+	_, out := technologySaid(w)
 	return out
 }
 
@@ -246,12 +228,3 @@ func TestTechnologyWords(t *testing.T)        { judge(t, "TechnologyWords") }
 func TestTechnologyWordsSSH(t *testing.T)     { judge(t, "TechnologyWordsSSH") }
 func TestTechnologyWordsSSHPath(t *testing.T) { judge(t, "TechnologyWordsSSHPath") }
 func TestTechnologyWordsSSHLine(t *testing.T) { judge(t, "TechnologyWordsSSHLine") }
-
-func TestTechnologyWordsAllowlistShrinks(t *testing.T) {
-	clean, _ := worlds(t)
-	pkg := slices.Sorted(maps.Keys(wordsTolerated()))[0]
-	got := ruleTechnologyWords(withoutPackage(clean, func(p string) bool { return p == pkg }))
-	if !slices.ContainsFunc(got, func(f finding) bool { return strings.HasPrefix(f.what, "src/"+pkg+" no longer says") }) {
-		t.Errorf("the technology-words rule kept the line of src/%s, a package that is gone", pkg)
-	}
-}

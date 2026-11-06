@@ -13,7 +13,7 @@ Everything `station` shows, in a terminal, a pipe or the TUI, comes from one pal
 
 ## The palette
 
-Semantic tokens, each a light and a dark value chosen by the terminal's background (Catppuccin Latte and Macchiato, the flavour the dotfiles already use). `src/ui/token/palette.go` is the only place a colour is written; the layer test refuses a hex or a colour constructor anywhere else.
+Semantic tokens, each a light and a dark value chosen by the terminal's background (Catppuccin Latte and Macchiato, the flavour the dotfiles already use). `src/ui/token/palette.go` is the only file a colour is written in; the layer test refuses a hex or a colour constructor anywhere else.
 
 | Token       | Used for                                                          |
 | ----------- | ----------------------------------------------------------------- |
@@ -27,7 +27,7 @@ Semantic tokens, each a light and a dark value chosen by the terminal's backgrou
 | `Warn`      | `◐`                                                               |
 | `Bad`       | `✗` and `Error:`                                                  |
 
-The same tokens colour Fang's help and the forms that ask a config item's values.
+The same tokens colour Fang's help and the forms that ask a setting's values.
 
 ## The marks
 
@@ -42,7 +42,7 @@ The same tokens colour Fang's help and the forms that ask a config item's values
 | `–`  | not for this machine                        |
 | `?`  | not managed by station, or not readable now |
 
-The glyph is the meaning and survives a pipe and `NO_COLOR`; colour only reinforces it. `◌` (Muted) marks a row whose probe has not answered yet, on a terminal and in the TUI only: a pipe, `NO_COLOR` and `--json` wait for every probe, so they never carry it. `⊘` and `?` are Muted, `–` Subtle, each always followed by its word (`page.OffHere`, `page.NotForThisMachine`, `page.NotKnown`); the families draw them as they take their v3 words. Every glyph station prints is a token of `src/ui/token/glyphs.go` (`token.Glyphs`), and the layer test refuses one in any other Go literal of a migrated package. Folding in the TUI uses `+` and `-` before a group title; the cursor is a background, not a glyph.
+The glyph is the meaning and survives a pipe and `NO_COLOR`; colour only reinforces it. `◌` (Muted) marks a row whose read has not answered yet, on a terminal and in the TUI only: a pipe, `NO_COLOR` and `--json` wait for every read, so they never carry it. `⊘` and `?` are Muted, `–` Subtle, each always followed by its word (`page.OffHere`, `page.NotForThisMachine`, `page.NotKnown`); the families draw them as they take their v3 words. Every glyph station prints is a token of `src/ui/token/glyphs.go` (`token.Glyphs`), and the layer test refuses one in any other Go literal of a migrated package. Folding in the TUI uses `+` and `-` before a group title; the cursor is a background, not a glyph.
 
 ## Typography
 
@@ -51,7 +51,7 @@ The glyph is the meaning and survives a pipe and `NO_COLOR`; colour only reinfor
 - What needs you comes first. A page whose rows that need a look stay in their own groups lifts them first on a terminal, in a section of the role `page.Lifted` (Settings' `Needs a look`); the pipe, the TUI and the menu bar read those rows where they are, so a record is printed once.
 - Another machine's output starts with `On <machine>:`, the machine `--on` named (tty and pipe).
 - A row is a mark, a space, then cells separated by two spaces. Column widths are computed per document, so every section lines up, and the last cell is never padded.
-- A cell is a name (strong), a value, a method (muted), then a detail (muted, cut with `…` to the width by its kind, a path in its middle, never cut in a pipe; beside the row's own cells when its last columns are blank and the aligned place would cut it; never cut below its kind's floor: a path or a URL then goes on its own line under the row, any other detail is lost on that width). A long path in a column is cut in the middle before it takes a detail's room. A row that is not `●` may end with the one command that repairs it. On a terminal a name is never cut, nor a command (a column of `page.KindCommand`, as Needs you's fixes): a row whose name is wider than the name column, or whose command does not fit beside the names, writes its name whole and its cells, detail and hint on the lines under it, at the name's column.
+- A cell is a name (strong), a value, a method (muted), then a detail (muted, cut with `…` to the width by its kind, a path in its middle, never cut in a pipe; beside the row's own cells when its last columns are blank and the aligned column would cut it; never cut below its kind's floor: a path or a URL then goes on its own line under the row, any other detail is lost on that width). A long path in a column is cut in the middle before it takes a detail's room. A row that is not `●` may end with the one command that repairs it. On a terminal a name is never cut, nor a command (a column of `page.KindCommand`, as Needs you's fixes): a row whose name is wider than the name column, or whose command does not fit beside the names, writes its name whole and its cells, detail and hint on the lines under it, at the name's column.
 - Sizes are humanised by one function; numbers are right-aligned.
 - An empty state is one muted row (`none`, `nothing to free`, `no machines registered`) plus a hint naming the command that fills it.
 
@@ -61,14 +61,14 @@ A CLI page has no header: its first line says where it is (`This Mac · …`, `O
 
 ## Instant reads
 
-`station overview`, `disk` and `apps` on a terminal draw their frame at once: every row the catalogue or a probe table declares, each `◌` with its name only (a size shows its last-known value, Muted, from `~/.cache/station/sizes.json`). Each row fills in place as its probe answers, the region redrawn at most every 50 ms and clipped to the terminal's height with a Muted `… <n> rows pending` last line; a probe past its budget answers `◐ ?` with `no answer in <budget>`. When the last probe answers the region is erased and the final document printed once, so the scrollback holds what a pipe would. The probes run on two bounded lanes (16 commands, one walk of 8 workers), and the Overview owns no reading of its own: each of its lines is its section's read through the Router, the same read `apps` and `disk` draw.
+`station overview`, `disk` and `apps` on a terminal draw their frame at once: every row the catalogue or a read table declares, each `◌` with its name only (a size shows its last-known value, Muted, from `~/.cache/station/sizes.json`). Each row fills in as its read answers, the region redrawn at most every 50 ms and clipped to the terminal's height with a Muted `… <n> rows pending` last line; a read past its budget answers `◐ ?` with `no answer in <budget>`. When the last read answers the region is erased and the final document printed once, so the scrollback holds what a pipe would. The reads run on two bounded lanes (16 commands, one walk of 8 workers), and the Overview owns no reading of its own: each of its lines is its section's read through the Router, the same read `apps` and `disk` draw.
 
 ## Pipe and JSON
 
 When stdout is not a terminal, or `NO_COLOR` is set, a document prints as records, one per line, with no rule, footer or padding and no colour sequence. The separator is a tab everywhere:
 
-- a section title is `# <title>`; the tools and config categories, and the status Tools, Config and Background sections, follow it with their counts as `<n> <glyph>` cells (every other title is bare, as its records always were); Secrets' Lend list and Kept, one section on a terminal and in the TUI, pipe as the two titled sections `# Lend list` and `# Kept`;
-- a column for the eye only (a peer's online state and tags, a host's role) is no field: the records keep the fields scripts already cut; nor is a column for a row's detail only (the folders a disk row holds, `page.DetailOnly`), which no line of a list shows either;
+- a section title is `# <title>`; the app and setting categories, and the status Apps, Settings and Background sections, follow it with their counts as `<n> <glyph>` cells (every other title is bare, as its records always were); Accounts' Share list and Kept, one section on a terminal and in the TUI, pipe as the two titled sections `# Share list` and `# Kept`;
+- a column for the eye only (a peer's online state and tags, a Mac's role) is no field: the records keep the fields scripts already cut; nor is a column for a row's detail only (the folders a disk row holds, `page.DetailOnly`), which no line of a list shows either;
 - a row is `<glyph>` then its cells; a row with no mark starts with an empty field;
 - a key and its value are `<key><TAB><value>`;
 - a blank cell stays (two tabs); trailing empty cells are trimmed.

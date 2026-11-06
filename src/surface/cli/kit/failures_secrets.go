@@ -3,15 +3,16 @@ package kit
 import (
 	"errors"
 
+	"github.com/jterrazz/studio-station/src/accounts"
+
 	"github.com/jterrazz/studio-station/src/core/fail"
-	"github.com/jterrazz/studio-station/src/domain/secrets"
 )
 
 func secretsFailure(err error) (*fail.Error, bool) {
-	var notVM *secrets.NotAVMError
-	var offMac *secrets.OffHostError
-	var noStudio *secrets.NoStudioError
-	var step *secrets.StepError
+	var notVM *accounts.NotAVMError
+	var offMac *accounts.OffMacError
+	var noStudio *accounts.NoStudioError
+	var step *accounts.StepError
 	switch {
 	case errors.As(err, &notVM):
 		return usage(notVM.Error(), "station machines"), true

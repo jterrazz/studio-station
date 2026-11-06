@@ -90,3 +90,19 @@ type SignedOutError struct {
 func (e *SignedOutError) Error() string {
 	return e.Store + " did not answer in " + strconv.Itoa(int(e.Waited.Seconds())) + " s, as when it is signed out: " + e.Hint
 }
+
+type NotReversibleError struct{ App string }
+
+func (e *NotReversibleError) Error() string { return e.App + " cannot be uninstalled by station" }
+
+type ManualInstallError struct{ App, Hint string }
+
+func (e *ManualInstallError) Error() string { return e.App + " is installed by hand" }
+
+type AppStoreError struct{ App string }
+
+func (e *AppStoreError) Error() string { return e.App + " is the App Store's install" }
+
+type NoUpgradePathError struct{ App string }
+
+func (e *NoUpgradePathError) Error() string { return e.App + " has no upgrade path" }

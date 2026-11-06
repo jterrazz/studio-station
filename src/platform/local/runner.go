@@ -14,8 +14,6 @@ import (
 	"sync/atomic"
 	"syscall"
 	"time"
-
-	"github.com/jterrazz/studio-station/src/system"
 )
 
 type runner struct {
@@ -44,10 +42,10 @@ func executable(path string) bool {
 	return err == nil && !info.IsDir() && info.Mode()&0o111 != 0
 }
 
-func (r *runner) command(ctx context.Context, c system.Cmd) (context.Context, *exec.Cmd, context.CancelFunc, error) {
+func (r *runner) command(ctx context.Context, c Cmd) (context.Context, *exec.Cmd, context.CancelFunc, error) {
 	path, ok := r.LookPath(c.Name)
 	if !ok {
-		return ctx, nil, nil, fmt.Errorf("%s: %w", c.Name, system.ErrNotFound)
+		return ctx, nil, nil, fmt.Errorf("%s: %w", c.Name, ErrNotFound)
 	}
 	cancel := context.CancelFunc(func() {})
 	if c.Timeout > 0 {
@@ -128,10 +126,10 @@ func (r *runner) startedAt(pid int, unix int64) bool {
 	return d >= -2 && d <= 2
 }
 
-func (r *runner) Output(ctx context.Context, c system.Cmd) (system.Output, error) {
+func (r *runner) Output(ctx context.Context, c Cmd) (Output, error) {
 	ctx, cmd, cancel, err := r.command(ctx, c)
 	if err != nil {
-		return system.Output{}, err
+		return Output{}, err
 	}
 	defer cancel()
 	var stdout, stderr bytes.Buffer
@@ -140,18 +138,18 @@ func (r *runner) Output(ctx context.Context, c system.Cmd) (system.Output, error
 		cmd.Stdin = strings.NewReader(c.Stdin)
 	}
 	code, err := exitOf(ctx, run(cmd, c.Track))
-	return system.Output{Stdout: stdout.String(), Stderr: stderr.String(), ExitCode: code}, err
+	return Output{Stdout: stdout.String(), Stderr: stderr.String(), ExitCode: code}, err
 }
 
-func (r *runner) Attach(ctx context.Context, c system.Cmd, out system.Stream) (system.Attached, error) {
+func (r *runner) Attach(ctx context.Context, c Cmd, out Stream) (Attached, error) {
 	ctx, cmd, cancel, err := r.command(ctx, c)
 	if err != nil {
-		return system.Attached{}, err
+		return Attached{}, err
 	}
 	defer cancel()
 	stderr := &lastLine{w: r.stderr}
 	cmd.Stdout, cmd.Stderr = stderr, stderr
-	if out == system.ToStdout {
+	if out == ToStdout {
 		cmd.Stdout = r.stdout
 	}
 	cmd.Stdin = r.stdin
@@ -165,9 +163,9 @@ func (r *runner) Attach(ctx context.Context, c system.Cmd, out system.Stream) (s
 	}
 	code, err := exitOf(ctx, run(cmd, c.Track))
 	if silent.passed() {
-		return system.Attached{ExitCode: -1, LastStderr: stderr.last()}, system.ErrSilent
+		return Attached{ExitCode: -1, LastStderr: stderr.last()}, ErrSilent
 	}
-	return system.Attached{ExitCode: code, LastStderr: stderr.last()}, err
+	return Attached{ExitCode: code, LastStderr: stderr.last()}, err
 }
 
 // invariant: a command that owes a first word within its bound leads its own
@@ -264,7 +262,7 @@ func exitOf(ctx context.Context, err error) (int, error) {
 	}
 	if ctxErr := ctx.Err(); ctxErr != nil {
 		if errors.Is(ctxErr, context.DeadlineExceeded) {
-			return -1, system.ErrTimeout
+			return -1, ErrTimeout
 		}
 		return -1, ctxErr
 	}
@@ -275,10 +273,10 @@ func exitOf(ctx context.Context, err error) (int, error) {
 	return -1, err
 }
 
-func (r *runner) Start(c system.Cmd, logPath string) (int, error) {
+func (r *runner) Start(c Cmd, logPath string) (int, error) {
 	path, ok := r.LookPath(c.Name)
 	if !ok {
-		return 0, fmt.Errorf("%s: %w", c.Name, system.ErrNotFound)
+		return 0, fmt.Errorf("%s: %w", c.Name, ErrNotFound)
 	}
 	log, err := os.OpenFile(logPath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0o600)
 	if err != nil {
@@ -303,9 +301,9 @@ func (r *runner) Alive(pid int) bool {
 	return pid > 0 && syscall.Kill(pid, 0) == nil
 }
 
-func (r *runner) Signal(pid int, sig system.Sig) error {
+func (r *runner) Signal(pid int, sig Sig) error {
 	s := syscall.SIGTERM
-	if sig == system.SigKill {
+	if sig == SigKill {
 		s = syscall.SIGKILL
 	}
 	return syscall.Kill(pid, s)

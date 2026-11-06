@@ -136,12 +136,6 @@ func bannedInList(list []banned, texts []string) []string {
 	return found
 }
 
-// invariant: the allowlist of rule words: the page fixtures that still say
-// a retired word, and the words. It is empty (OU-11) and stays so.
-func bannedTolerated() map[string][]string {
-	return map[string][]string{}
-}
-
 func bannedFindings(root string) (map[string][]string, error) {
 	dir := filepath.Join(root, "src", "ui", "testdata", "pages")
 	entries, err := os.ReadDir(dir)
@@ -178,19 +172,9 @@ func TestBannedWords(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	tolerated := bannedTolerated()
 	for family, words := range found {
 		for _, w := range words {
-			if !slices.Contains(tolerated[family], w) {
-				t.Errorf("src/ui/testdata/pages/%s.*.json says %q, a word SPEC §2.2 retired", family, w)
-			}
-		}
-	}
-	for family, words := range tolerated {
-		for _, w := range words {
-			if !slices.Contains(found[family], w) {
-				t.Errorf("the allowlist tolerates %q in %s, which no longer says it: remove the line", w, family)
-			}
+			t.Errorf("src/ui/testdata/pages/%s.*.json says %q, a word SPEC §2.2 retired", family, w)
 		}
 	}
 }

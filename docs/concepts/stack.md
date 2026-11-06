@@ -15,7 +15,7 @@ How every `@jterrazz` project composes: the shared packages, the naming scheme, 
 | `@jterrazz/manifest`     | A site's machine-facing presence declared once: metadata, JSON-LD, sitemap, its audit | `package-manifest/docs/`     |
 | `@jterrazz/attestation`  | Article attestation: an EIP-712 signature anchored to Bitcoin                         | `package-attestation/docs/`  |
 
-Shared CI/CD lives in `jterrazz/studio-actions` (check, deploy-docker, publish-npm, publish-go); infrastructure in `jterrazz/studio-infrastructure` (K3s, Helm, Traefik).
+Shared CI/CD lives in `jterrazz/studio-actions` (`check`, `deploy-docker`, `publish-npm`, `publish-go`); infrastructure in `jterrazz/studio-infrastructure` (K3s, Helm, Traefik).
 
 ## Project types and naming
 
@@ -33,7 +33,7 @@ A project declares what it is once, in `studio.config.ts`: its `kind` (`library`
 Every project carries:
 
 - `studio.config.ts`: the kind, the platform, the presets it is held to, and every exception with its reason.
-- The editor files the toolchain derives and `typescript fix` writes (`tsconfig.json`, `oxlint.config.ts`, `oxfmt.config.ts`, and `vitest.config.ts` from `@jterrazz/test`'s preset), each one line. No other tool keeps a config at the root.
+- The editor files the toolchain derives and `typescript fix` writes (`tsconfig.json`, `oxlint.config.ts`, `oxfmt.config.ts`, and `vitest.config.ts` from `@jterrazz/test`'s preset), each one line. No other program keeps its settings file at the root.
 - A `Makefile` answering the six gestures (`install`, `build`, `lint`, `fix`, `test`, `check`), with `check` the whole gate.
 - `.github/workflows/check.yaml` calling the shared workflow, which runs `make build`, `make lint`, `make test`, then `make mutation` where the Makefile has one.
 - The root files mandated by the [repo-structure doctrine](repo-structure.md): the README front door, `CLAUDE.md`, a `docs/` manual cut by mood.
@@ -48,7 +48,7 @@ The convention is `@jterrazz/test`'s, and every project follows it: the SUBJECT 
 
 ## Architecture
 
-Libraries use **ports & adapters** (`src/ports/` interfaces, `src/adapters/` implementations, `src/index.ts` the entry). Applications are **hexagonal** (`src/domain/`, `src/application/`, `src/infrastructure/`), built in one place, the composition root `src/composition/compose.ts`, with no DI container. The layer map is `@jterrazz/typescript`'s [hexagonal map](https://github.com/jterrazz/package-typescript/blob/main/docs/reference/quality-checks.md#the-hexagonal-map), the law and [The composition root](https://github.com/jterrazz/package-typescript/blob/main/docs/concepts/the-composition-root.md).
+Libraries use **ports & adapters** (`src/ports/` interfaces, `src/adapters/` implementations, `src/index.ts` the entry). Applications are **hexagonal** (`src/domain/`, `src/application/`, `src/infrastructure/`), built in one file, the composition root `src/composition/compose.ts`, with no DI container. The layer map is `@jterrazz/typescript`'s [hexagonal map](https://github.com/jterrazz/package-typescript/blob/main/docs/reference/quality-checks.md#the-hexagonal-map), the law and [The composition root](https://github.com/jterrazz/package-typescript/blob/main/docs/concepts/the-composition-root.md).
 
 ## Standing conventions
 
@@ -59,4 +59,4 @@ Libraries use **ports & adapters** (`src/ports/` interfaces, `src/adapters/` imp
 ## Related
 
 - [Repo structure](repo-structure.md): where knowledge lives in every repo.
-- [Tools and skills](../reference/tools-and-skills.md): the machine-side registries that distribute the skills.
+- [Apps and skills](../reference/apps-and-skills.md): the machine-side registries that distribute the skills.

@@ -140,7 +140,7 @@ final class HomeTests: XCTestCase {
         defer { engine.stop() }
         let status = await ActionRunner(executable: "/u/bin/station", socket: engine.path).run(create, answers: ["Request.Lifetime": "throwaway"])
         XCTAssertNil(status)
-        XCTAssertEqual(engine.received, [#"{"call":"machines.create-workspace","id":"1","in":{"Request":{"Image":"linux","Lifetime":"throwaway","Network":"nat","Resources":{"MemoryBytes":4294967296}}},"v":2}"#])
+        XCTAssertEqual(engine.received, [#"{"call":"machines.create-workspace","id":"1","in":{"Request":{"Image":"linux","Lifetime":"throwaway","Network":"nat","Size":{"MemoryBytes":4294967296}}},"v":2}"#])
     }
 
     // invariant: MB-12: every snapshot, of a page, a sheet or the icon, is

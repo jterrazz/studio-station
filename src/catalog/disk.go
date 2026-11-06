@@ -1,5 +1,10 @@
 package catalog
 
+import (
+	"path/filepath"
+	"strings"
+)
+
 type Level string
 
 const (
@@ -38,6 +43,12 @@ const (
 	FileMise   AppFile = "mise settings"
 )
 
+func (f AppFile) Tabled() bool {
+	// invariant: a TOML file keeps its keys in tables; the others keep one
+	// key per line.
+	return f == FileBunfig || f == FileMise
+}
+
 type Relocation struct {
 	File    AppFile
 	Key     string
@@ -59,8 +70,8 @@ type Misplaced struct {
 type SizeMethod string
 
 const (
-	SizeDirs     SizeMethod = ""
-	SizeDockerDF SizeMethod = "docker-system-df"
+	SizeDirs       SizeMethod = ""
+	SizeContainers SizeMethod = "docker-system-df"
 )
 
 type Disk struct {
@@ -575,7 +586,7 @@ var (
 	}
 	diskDocker = Disk{
 		Paths: []Stored{conf("~/.docker")},
-		Size:  SizeDockerDF,
+		Size:  SizeContainers,
 		Free: []Action{
 			runIf("docker", "docker", "container", "prune", "-f"),
 			runIf("docker", "docker", "image", "prune", "-f"),
@@ -669,3 +680,52 @@ var (
 		},
 	}
 )
+
+func (f AppFile) Label() string {
+	if f == FileGoEnv {
+		return "go env"
+	}
+	return string(f)
+}
+
+func (f AppFile) KeyLabel(key string) string {
+	switch f {
+	case FileNpmrc:
+		return "npm " + key
+	case FileMise:
+		return "mise " + strings.TrimPrefix(key, "settings.")
+	case FileGoEnv, FileBunfig:
+	}
+	return key
+}
+
+func AppFilePaths(home, prefsDir string, kind MachineKind, vars map[string]string) map[AppFile]string {
+	// value: where each tool keeps the file station relocates in: Go's env file
+	// where `go env GOENV` says ($GOENV when absolute, "off" writes nothing, else
+	// the user config dir: ~/Library/Application Support on darwin, the XDG
+	// config root on linux), bun's ~/.bunfig.toml ($XDG_CONFIG_HOME first),
+	// mise's config.toml ($MISE_GLOBAL_CONFIG_FILE, then $MISE_CONFIG_DIR, then
+	// the config root).
+	goenv := filepath.Join(home, "Library", "Application Support", "go", "env")
+	if kind == Linux {
+		goenv = filepath.Join(prefsDir, "go", "env")
+	}
+	switch v := vars["GOENV"]; {
+	case v == "off":
+		goenv = ""
+	case filepath.IsAbs(v):
+		goenv = v
+	}
+	bunfig := filepath.Join(home, ".bunfig.toml")
+	if filepath.IsAbs(vars["XDG_CONFIG_HOME"]) {
+		bunfig = filepath.Join(vars["XDG_CONFIG_HOME"], ".bunfig.toml")
+	}
+	mise := filepath.Join(prefsDir, "mise", "config.toml")
+	if dir := vars["MISE_CONFIG_DIR"]; filepath.IsAbs(dir) {
+		mise = filepath.Join(dir, "config.toml")
+	}
+	if file := vars["MISE_GLOBAL_CONFIG_FILE"]; filepath.IsAbs(file) {
+		mise = file
+	}
+	return map[AppFile]string{FileGoEnv: goenv, FileNpmrc: filepath.Join(home, ".npmrc"), FileBunfig: bunfig, FileMise: mise}
+}

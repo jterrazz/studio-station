@@ -25,13 +25,6 @@ func sectioned() []string {
 	return []string{"overview", "activity", "apps", "settings", "disk", "ports", "accounts", "background", "awake"}
 }
 
-// invariant: the allowlist of the tree: today's top-level packages that are
-// neither a family nor plumbing. It only shrinks; a line whose package is
-// gone fails the gate until it is removed.
-func toleratedTop() []string {
-	return []string{"domain", "system"}
-}
-
 func topOf(pkg string) string {
 	top, _, _ := strings.Cut(pkg, "/")
 	return top
@@ -78,7 +71,6 @@ func declaresApplies(file *ast.File) bool {
 // doc.go.
 func ruleTree(w *world) []finding {
 	var out []finding
-	tops := map[string]bool{}
 	applies, filled := map[string]bool{}, map[string]bool{}
 	for _, f := range w.files {
 		if f.test {
@@ -95,13 +87,12 @@ func ruleTree(w *world) []finding {
 	}
 	for _, pkg := range sortedKeys(w.packages) {
 		top := topOf(pkg)
-		tops[top] = true
 		switch {
 		case slices.Contains(families(), top):
 			if !familyInside(top, restOf(pkg)) {
 				out = append(out, finding{"tree-screams", "src/" + pkg, "a family holds only its model, contract/, calls/ and adapter/<tech>/"})
 			}
-		case slices.Contains(plumbing(), top), slices.Contains(toleratedTop(), top):
+		case slices.Contains(plumbing(), top):
 		default:
 			out = append(out, finding{"tree-screams", "src/" + pkg, "a top-level package that is neither a family nor named plumbing"})
 		}
@@ -111,23 +102,9 @@ func ruleTree(w *world) []finding {
 			out = append(out, finding{"tree-screams", "src/" + family, "a family with a section has an applies.go that declares Applies"})
 		}
 	}
-	for _, top := range toleratedTop() {
-		if !tops[top] {
-			out = append(out, finding{"tree-screams", "specs/architecture/tree_test.go", "src/" + top + " is gone: remove its line from toleratedTop"})
-		}
-	}
 	return out
 }
 
 func TestTreeScreams(t *testing.T) { judge(t, "TreeScreams") }
 func TestTreeInside(t *testing.T)  { judge(t, "TreeInside") }
 func TestTreeApplies(t *testing.T) { judge(t, "TreeApplies") }
-
-func TestTreeAllowlistShrinks(t *testing.T) {
-	clean, _ := worlds(t)
-	top := toleratedTop()[0]
-	got := ruleTree(withoutPackage(clean, func(pkg string) bool { return topOf(pkg) == top }))
-	if !slices.ContainsFunc(got, func(f finding) bool { return strings.Contains(f.what, "src/"+top+" is gone") }) {
-		t.Errorf("the tree rule kept the line of src/%s, a package that is gone", top)
-	}
-}

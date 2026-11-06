@@ -4,15 +4,15 @@ import (
 	"context"
 	"strings"
 
-	"github.com/jterrazz/studio-station/src/engine"
+	"github.com/jterrazz/studio-station/src/engine/process"
 	model "github.com/jterrazz/studio-station/src/machines"
 	"github.com/jterrazz/studio-station/src/machines/adapter/tart"
 	"github.com/jterrazz/studio-station/src/machines/contract"
-	"github.com/jterrazz/studio-station/src/platform/local"
+	"github.com/jterrazz/studio-station/src/platform/darwin"
 )
 
 func (m machine) hypervisor() contract.Hypervisor {
-	app := tart.New(m.sys.Run, m.sys.FS, m.sys.Clock, processes{local.NewKernel(m.vars)}, m.paths.State)
+	app := tart.New(m.sys.Run, m.sys.FS, m.sys.Clock, processes{darwin.NewTables(m.vars)}, m.paths.State)
 	if m.world != nil {
 		return m.world.hypervisor(app.Name())
 	}
@@ -21,16 +21,23 @@ func (m machine) hypervisor() contract.Hypervisor {
 
 type engineHypervisor struct{ contract.Hypervisor }
 
-func (h engineHypervisor) Boot(ctx context.Context, vm string, n model.Network) (engine.Run, error) {
+func (h engineHypervisor) Boot(ctx context.Context, vm string, n model.Network) (process.Run, error) {
 	return h.Hypervisor.Boot(ctx, vm, contract.BootOptions{Network: n})
 }
 
-func (h engineHypervisor) Adopt(ctx context.Context, vm string) (engine.Run, bool) {
+func (h engineHypervisor) Adopt(ctx context.Context, vm string) (process.Run, bool) {
 	return h.Hypervisor.Adopt(ctx, vm)
 }
 
+type buildHypervisor struct{ contract.Hypervisor }
+
+func (h buildHypervisor) BootBuild(ctx context.Context, vm string) error {
+	_, err := h.Boot(ctx, vm, contract.BootOptions{})
+	return err
+}
+
 // value: this Mac's kernel tables as tart's adapter asks them.
-type processes struct{ local.Kernel }
+type processes struct{ darwin.Tables }
 
 func (k processes) Named(prefix string) ([]int, error) {
 	procs, err := k.Processes()

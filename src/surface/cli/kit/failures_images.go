@@ -3,8 +3,9 @@ package kit
 import (
 	"errors"
 
+	"github.com/jterrazz/studio-station/src/images"
+
 	"github.com/jterrazz/studio-station/src/core/fail"
-	"github.com/jterrazz/studio-station/src/domain/images"
 )
 
 const linuxBinaryHint = "make build-linux, then station images build linux --binary .artifacts/go/station-linux-arm64"
@@ -16,7 +17,7 @@ func imagesFailure(err error) (*fail.Error, bool) {
 	var missing *images.BinaryNotFoundError
 	var noEngine *images.NoEngineError
 	var noRecipe *images.NoRecipeError
-	var unpublished *images.NotPublishedError
+	var unpublished *images.NotReleasedError
 	var registry *images.RegistryError
 	var fetch *images.FetchFailedError
 	var build *images.BuildFailedError

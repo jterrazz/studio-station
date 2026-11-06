@@ -18,15 +18,15 @@ import (
 	"github.com/jterrazz/studio-station/src/core/call/lanes"
 	"github.com/jterrazz/studio-station/src/core/fail"
 	coremachine "github.com/jterrazz/studio-station/src/core/machine"
-	"github.com/jterrazz/studio-station/src/domain/settings"
-	"github.com/jterrazz/studio-station/src/engine"
+	"github.com/jterrazz/studio-station/src/engine/process"
 	"github.com/jterrazz/studio-station/src/output"
 	"github.com/jterrazz/studio-station/src/page"
+	"github.com/jterrazz/studio-station/src/platform/darwin"
 	"github.com/jterrazz/studio-station/src/platform/local"
+	"github.com/jterrazz/studio-station/src/setup"
 	"github.com/jterrazz/studio-station/src/surface/cli"
 	"github.com/jterrazz/studio-station/src/surface/cli/kit"
 	shellcmd "github.com/jterrazz/studio-station/src/surface/cli/shell"
-	"github.com/jterrazz/studio-station/src/system"
 	"github.com/jterrazz/studio-station/src/ui/help"
 	"github.com/jterrazz/studio-station/src/ui/token"
 )
@@ -69,7 +69,7 @@ func Run(args, env []string, stdin, stdout, stderr *os.File) int {
 	if session != nil {
 		world = session.thisMac()
 	}
-	thisMac := resolve(local.New(env, childIn, stdout, stderr), local.NewPower(env), vars, world)
+	thisMac := resolve(local.New(env, childIn, stdout, stderr), darwin.NewDoor(env), vars, world)
 	kenv := kit.Env{
 		Out:         writer,
 		Prompt:      output.Terminal(stdin, stderr),
@@ -88,12 +88,12 @@ func Run(args, env []string, stdin, stdout, stderr *os.File) int {
 	defer router.Close()
 	kenv.Calls = router
 	if session != nil {
-		world.engineFrom(func() *engine.Engine { return thisMac.engine(kenv) })
+		world.engineFrom(func() *process.Engine { return thisMac.engine(kenv) })
 		session.farFrom(func(w *worldMac) farMac { return thisMac.farMac(kenv, w) })
 	}
 	kenv.On.Refresh = func(ctx context.Context) error {
 		allMachines := thisMac.machines(false)
-		f, err := allMachines.Fleet(ctx, false)
+		f, err := allMachines.AllMachines(ctx, false)
 		if err != nil {
 			return err
 		}
@@ -117,7 +117,7 @@ func Run(args, env []string, stdin, stdout, stderr *os.File) int {
 		useCommand(kenv, thisMac),
 		setupCommand(kenv, thisMac),
 		statusCommand(kenv, thisMac),
-		toolsAlias(kenv, thisMac),
+		appsAlias(kenv, thisMac),
 		storageAlias(kenv, thisMac),
 		secretsAlias(kenv, thisMac),
 		retiredEngineCommand(kenv, thisMac),
@@ -200,19 +200,20 @@ func widthOf(f *os.File, isTerminal bool) int {
 	return w
 }
 
-// value: the shell loader puts bun's and go's global bins on an interactive PATH;
-// station appends them to its own, so what it installed there answers a
-// non-interactive caller too, and the caller's PATH still wins. A VM's guest is
-// started over ssh with the system's PATH, which also lacks the shell block's
-// ~/.local/bin and mise's runtimes: it appends those first.
+// value: the shell loader puts the global bins of the catalogue on an
+// interactive PATH; station appends them to its own, so what it installed
+// there answers a non-interactive caller too, and the caller's PATH still
+// wins. A VM's guest is started over ssh with the system's PATH, which also
+// lacks the shell block's ~/.local/bin and the app manager's runtimes: it
+// appends those first.
 func withAppBins(env []string, guest bool) []string {
-	home, mise, path, at := "", "", "", -1
+	home, apps, path, at := "", "", "", -1
 	for i, kv := range env {
 		switch k, v, _ := strings.Cut(kv, "="); k {
 		case "HOME":
 			home = v
-		case "MISE_DATA_DIR":
-			mise = v
+		case catalog.AppDataVar:
+			apps = v
 		case "PATH":
 			path, at = v, i
 		}
@@ -220,15 +221,17 @@ func withAppBins(env []string, guest bool) []string {
 	if home == "" {
 		return env
 	}
-	if !filepath.IsAbs(mise) {
-		mise = filepath.Join(home, ".local", "share", "mise")
+	if !filepath.IsAbs(apps) {
+		apps = filepath.Join(home, catalog.AppData)
 	}
 	have := strings.Split(path, ":")
 	var dirs []string
 	if guest {
-		dirs = append(dirs, filepath.Join(home, ".local", "bin"), filepath.Join(mise, "shims"))
+		dirs = append(dirs, filepath.Join(home, ".local", "bin"), filepath.Join(apps, catalog.AppShims))
 	}
-	dirs = append(dirs, filepath.Join(home, ".local", "share", "bun", "bin"), filepath.Join(home, ".local", "share", "go", "bin"))
+	for _, bin := range catalog.GlobalBins {
+		dirs = append(dirs, filepath.Join(home, bin))
+	}
 	for _, dir := range dirs {
 		if !slices.Contains(have, dir) {
 			if path != "" {
@@ -249,23 +252,23 @@ type machine struct {
 	// value: this machine's Mac of the spec world, its fakes' slice; nil in
 	// every real run.
 	world *worldMac
-	// value: the host and power door before any world wraps them, from which
+	// value: the system and power door before any world wraps them, from which
 	// another Mac of the world is built.
-	raw       system.Host
-	door      local.Power
+	raw       local.System
+	door      darwin.Door
 	far       *late
 	pool      *lanes.Pool
-	sys       system.Host
+	sys       local.System
 	powerPort awakecontract.Power
 	profile   coremachine.Profile
 	vars      map[string]string
 	kind      catalog.MachineKind
-	paths     settings.Paths
+	paths     setup.Paths
 	stores    *stores
 	where     page.Context
 }
 
-func resolve(raw system.Host, door local.Power, vars map[string]string, world *worldMac) machine {
+func resolve(raw local.System, door darwin.Door, vars map[string]string, world *worldMac) machine {
 	h := raw
 	if world != nil {
 		h = world.system(raw)
@@ -277,19 +280,19 @@ func resolve(raw system.Host, door local.Power, vars map[string]string, world *w
 		}
 		return filepath.Join(home, fallback)
 	}
-	roots := settings.Roots{
-		Config: root("XDG_CONFIG_HOME", ".config"),
-		Data:   root("XDG_DATA_HOME", filepath.Join(".local", "share")),
-		State:  root("XDG_STATE_HOME", filepath.Join(".local", "state")),
-		Cache:  root("XDG_CACHE_HOME", ".cache"),
+	roots := setup.Roots{
+		Prefs: root("XDG_CONFIG_HOME", ".config"),
+		Data:  root("XDG_DATA_HOME", filepath.Join(".local", "share")),
+		State: root("XDG_STATE_HOME", filepath.Join(".local", "state")),
+		Cache: root("XDG_CACHE_HOME", ".cache"),
 	}
-	paths := settings.Paths{
-		Config: filepath.Join(roots.Config, "station"),
-		Data:   filepath.Join(roots.Data, "station"),
-		State:  filepath.Join(roots.State, "station"),
-		Cache:  filepath.Join(roots.Cache, "station"),
-		Bin:    filepath.Join(home, ".local", "bin"),
-		Roots:  roots,
+	paths := setup.Paths{
+		Prefs: filepath.Join(roots.Prefs, "station"),
+		Data:  filepath.Join(roots.Data, "station"),
+		State: filepath.Join(roots.State, "station"),
+		Cache: filepath.Join(roots.Cache, "station"),
+		Bin:   filepath.Join(home, ".local", "bin"),
+		Roots: roots,
 	}
 	st := newStores(h.FS, paths)
 	if world != nil {
@@ -318,7 +321,7 @@ func resolve(raw system.Host, door local.Power, vars map[string]string, world *w
 		// read, never the pin every document runs with.
 		pin, self, m.powerPort = "", world.self(), world.power()
 	}
-	name := hereName(registered, h.Env.Hostname())
+	name := thisMacName(registered, h.Env.Hostname())
 	m.profile = profileOf(context.Background(), self, pin, name, m.powerPort, func() (string, bool) { h := m.hypervisor(); return h.Name(), h.Installed() })
 	m.kind = legacyKind(m.profile)
 	m.where = page.Context{Machine: name, Kind: string(m.kind), Registered: registered != ""}
@@ -327,7 +330,7 @@ func resolve(raw system.Host, door local.Power, vars map[string]string, world *w
 
 // value: the name the fleet shows this machine by: the one setup gave it, else
 // its hostname, as machines names it (one name in every page, §13.5).
-func hereName(registered, hostname string) string {
+func thisMacName(registered, hostname string) string {
 	if registered != "" {
 		return registered
 	}

@@ -9,6 +9,8 @@ import (
 	"github.com/jterrazz/studio-station/src/ports/contract"
 )
 
+// value: alias of station.leases/v1, its schema and its key, until its store
+// migrates to reservations.json (ARCHITECTURE §12).
 const (
 	ReservationsSchema = "station.leases/v1"
 	reservationsKey    = "leases"

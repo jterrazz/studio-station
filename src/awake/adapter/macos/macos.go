@@ -8,6 +8,7 @@ import (
 
 	"github.com/jterrazz/studio-station/src/awake"
 	"github.com/jterrazz/studio-station/src/awake/contract"
+	"github.com/jterrazz/studio-station/src/platform/darwin"
 	"github.com/jterrazz/studio-station/src/platform/local"
 )
 
@@ -18,12 +19,12 @@ type Commands interface {
 }
 
 type Power struct {
-	door  local.Power
+	door  darwin.Door
 	run   Commands
 	pmset string
 }
 
-func New(door local.Power, run Commands, root string) *Power {
+func New(door darwin.Door, run Commands, root string) *Power {
 	// value: root is where /usr/bin/pmset is read under: "" on a Mac, the
 	// sandbox in a spec, so the real one never runs there; launchd's PATH is no
 	// guide, so it is absolute.
@@ -31,7 +32,7 @@ func New(door local.Power, run Commands, root string) *Power {
 }
 
 func unsupported(err error) error {
-	if errors.Is(err, local.ErrPowerUnsupported) {
+	if errors.Is(err, darwin.ErrPowerUnsupported) {
 		return contract.ErrUnsupported
 	}
 	return err

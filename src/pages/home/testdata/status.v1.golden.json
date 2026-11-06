@@ -66,7 +66,7 @@
     ],
     "updates": [
       {
-        "name": "brew",
+        "name": "softwareupdate",
         "state": "degraded",
         "value": "3 outdated",
         "detail": ""
@@ -187,6 +187,6 @@
     "dns_name": "macbook.tail1234.ts.net",
     "ip": "100.64.0.1",
     "variant": "app-store",
-    "cli": "/Applications/Tailscale.app/Contents/MacOS/Tailscale"
+    "cli": "tailscale"
   }
 }

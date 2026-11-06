@@ -22,6 +22,8 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/jterrazz/studio-station/src/accounts"
+
 	"github.com/spf13/cobra"
 
 	accountsfake "github.com/jterrazz/studio-station/src/accounts/adapter/fake"
@@ -42,14 +44,14 @@ import (
 	"github.com/jterrazz/studio-station/src/core/fail"
 	diskfake "github.com/jterrazz/studio-station/src/disk/adapter/fake"
 	diskcontract "github.com/jterrazz/studio-station/src/disk/contract"
-	"github.com/jterrazz/studio-station/src/domain/guest"
-	"github.com/jterrazz/studio-station/src/domain/secrets"
 	"github.com/jterrazz/studio-station/src/engine"
 	enginefake "github.com/jterrazz/studio-station/src/engine/adapter/fake"
+	"github.com/jterrazz/studio-station/src/engine/process"
 	imagesfake "github.com/jterrazz/studio-station/src/images/adapter/fake"
 	imagescontract "github.com/jterrazz/studio-station/src/images/contract"
 	machinesfake "github.com/jterrazz/studio-station/src/machines/adapter/fake"
 	"github.com/jterrazz/studio-station/src/machines/contract"
+	"github.com/jterrazz/studio-station/src/platform/local"
 	"github.com/jterrazz/studio-station/src/ports"
 	portsfake "github.com/jterrazz/studio-station/src/ports/adapter/fake"
 	"github.com/jterrazz/studio-station/src/ports/adapter/funnel"
@@ -62,7 +64,6 @@ import (
 	settingscontract "github.com/jterrazz/studio-station/src/settings/contract"
 	setupcontract "github.com/jterrazz/studio-station/src/setup/contract"
 	"github.com/jterrazz/studio-station/src/surface/cli/kit"
-	"github.com/jterrazz/studio-station/src/system"
 	"github.com/jterrazz/studio-station/src/world"
 )
 
@@ -94,7 +95,7 @@ type worldRun struct {
 	// value: the run handed its world to the commands it runs as children
 	// (the TUI), or only looks at it (a page the TUI reads): its copy is
 	// never written back.
-	lent bool
+	shared bool
 }
 
 // invariant: one Mac of the world as this process sees it: its fakes over
@@ -103,9 +104,9 @@ type worldMac struct {
 	run  *worldRun
 	name string
 
-	start    func() *engine.Engine
+	start    func() *process.Engine
 	starting bool
-	engine   *engine.Engine
+	engine   *process.Engine
 	// value: when the world says the running engine started: a Mac rebooted
 	// under it, inside the command, ends it with its process.
 	began  time.Time
@@ -146,7 +147,7 @@ func openWorld(vars map[string]string, look bool) (*worldRun, error) {
 	w.UseHypervisor(vars["STATION_WORLD_HYPERVISOR"])
 	if look {
 		unlockWorld(held)
-		return &worldRun{path: path, w: w, macs: map[string]*worldMac{}, lent: true}, nil
+		return &worldRun{path: path, w: w, macs: map[string]*worldMac{}, shared: true}, nil
 	}
 	return &worldRun{path: path, w: w, macs: map[string]*worldMac{}, held: held}, nil
 }
@@ -182,7 +183,7 @@ func (m *worldMac) handOver(ctx context.Context) error {
 		return nil
 	}
 	err := m.run.close(ctx)
-	m.run.lent = true
+	m.run.shared = true
 	return err
 }
 
@@ -249,11 +250,11 @@ func (m *worldMac) slice() world.Mac {
 
 func (m *worldMac) runs() bool { mac := m.slice(); return mac.EngineRuns() }
 
-func (m *worldMac) system(h system.Host) system.Host {
+func (m *worldMac) system(h local.System) local.System {
 	h.Run = rootless{Runner: h.Run, w: m.run.w}
 	m.home = h.Env.Home()
 	h.FS = worldFS{FS: h.FS, m: m, plist: catalog.EnginePlist(h.Env.Home()), files: m.files()}
-	h.Env = worldEnv{Env: h.Env, here: m.name, user: m.run.w.User, admin: m.run.w.Admin && m.name == m.run.w.ThisMac || m.slice().Root}
+	h.Env = worldEnv{Env: h.Env, thisMac: m.name, user: m.run.w.User, admin: m.run.w.Admin && m.name == m.run.w.ThisMac || m.slice().Root}
 	h.Clock = m.run.clock()
 	h.Sockets = worldSockets{Sockets: h.Sockets, m: m}
 	return h
@@ -341,11 +342,11 @@ func (m *worldMac) secretSource() accountscontract.SecretSource {
 
 func (m *worldMac) checks() contract.CheckRunner { return machinesfake.CheckRunnerOf(m.run.w) }
 
-func (m *worldMac) notifier() engine.Notifier {
+func (m *worldMac) notifier() process.Notifier {
 	return lockedNotifier{w: m.run.w, n: enginefake.NewNotifier(m.run.w)}
 }
 
-func (m *worldMac) engineFrom(start func() *engine.Engine) { m.start = start }
+func (m *worldMac) engineFrom(start func() *process.Engine) { m.start = start }
 
 func (m *worldMac) engineVersion() string {
 	if e := m.slice().Engine; e != nil {
@@ -390,7 +391,7 @@ func (w worldMarks) Write(mark engine.StopMark) error {
 // world it is there while the Mac's engine is set up, whatever the run's
 // home holds.
 type worldFS struct {
-	system.FS
+	local.FS
 	m     *worldMac
 	plist string
 	// value: the files of the Mac's disk in the world, seen beside the
@@ -498,7 +499,7 @@ func (m *worldMac) macs() remotecontract.EndpointDialer { return worldDialer{r: 
 // runs, and ends once it says otherwise or says it started since: begun at the first need of it,
 // then stepped over the world's clock until it is quiet, so a story that
 // waits on the engine is deterministic.
-func (m *worldMac) up(ctx context.Context) (*engine.Engine, bool) {
+func (m *worldMac) up(ctx context.Context) (*process.Engine, bool) {
 	if m.engine != nil && m.runs() && !m.engineStarted().Equal(m.began) {
 		m.down(true)
 	}
@@ -545,7 +546,7 @@ func (m *worldMac) up(ctx context.Context) (*engine.Engine, bool) {
 // watches the real ones hold, over the engine's own streams, for as long as
 // it runs in the command: the menu bar its page and events watches from
 // launch, and This Mac's activity only while open.
-func (m *worldMac) surfaces(ctx context.Context, d *engine.Engine) {
+func (m *worldMac) surfaces(ctx context.Context, d *process.Engine) {
 	e := m.slice().Engine
 	ctx, cancel := context.WithCancel(context.WithValue(ctx, waits{}, true))
 	var held sync.WaitGroup
@@ -717,7 +718,7 @@ func restarts(ev world.Event, mac string) bool {
 // turn on it, as the real ones run beside every command, then the world is
 // written back.
 func (r *worldRun) close(ctx context.Context) error {
-	if r.lent {
+	if r.shared {
 		return nil
 	}
 	defer func() { unlockWorld(r.held); r.held = nil }()
@@ -738,13 +739,13 @@ func (r *worldRun) close(ctx context.Context) error {
 }
 
 type worldEnv struct {
-	system.Env
-	here, user string
+	local.Env
+	thisMac, user string
 	// value: this run has admin rights, on This Mac's own terminal.
 	admin bool
 }
 
-func (e worldEnv) Hostname() string { return e.here }
+func (e worldEnv) Hostname() string { return e.thisMac }
 func (e worldEnv) User() string     { return e.user }
 
 func (e worldEnv) Euid() int {
@@ -878,17 +879,17 @@ func (g worldGuest) Exec(ctx context.Context, cmd contract.GuestCommand) (contra
 
 // value: a VM of the world as its guest's hello placed it: the Mac that
 // holds it and that Mac's name on the tailnet; false for a Mac.
-func (m *worldMac) placement() (guest.Placement, bool) {
+func (m *worldMac) placement() (ports.VMLivesOn, bool) {
 	w := m.run.w
 	w.Lock()
 	defer w.Unlock()
 	mac := w.Holder(m.name)
 	if mac == "" {
-		return guest.Placement{}, false
+		return ports.VMLivesOn{}, false
 	}
-	p := guest.Placement{Host: mac, VM: m.name}
+	p := ports.VMLivesOn{Mac: mac, VM: m.name}
 	if n := w.Macs[mac].Tailnet; n != nil {
-		p.PublicHost = n.Self.Sharing.DNSName
+		p.PublicName = n.Self.Sharing.DNSName
 	}
 	return p, true
 }
@@ -917,13 +918,13 @@ func (m *worldMac) budgets() lanes.Clock { return budgetClock{m.run.clock()} }
 // lists a listener there or the world already bound them, so no run binds a
 // real port another run holds.
 type worldSockets struct {
-	system.Sockets
+	local.Sockets
 	m *worldMac
 }
 
 var errPortBusy = errors.New("the port is busy in the world")
 
-func (s worldSockets) ListenTCP(_ string, port int) (system.Listener, error) {
+func (s worldSockets) ListenTCP(_ string, port int) (local.Listener, error) {
 	w := s.m.run.w
 	w.Lock()
 	defer w.Unlock()
@@ -952,7 +953,7 @@ type worldListener struct {
 	release func()
 }
 
-func (l *worldListener) Accept() (system.Conn, error) {
+func (l *worldListener) Accept() (local.Conn, error) {
 	<-l.done
 	return nil, net.ErrClosed
 }
@@ -991,10 +992,14 @@ var errNoSSHD = errors.New("no sshd answers at this address in the world")
 
 // invariant: inside a VM of the world, the socket its Mac's engine offers
 // there is that engine, as the guest relays it.
-func (s worldSockets) DialUnix(ctx context.Context, _ string, _ time.Duration) (system.Conn, error) {
+func (worldSockets) DialTCP(context.Context, string, time.Duration) (net.Conn, error) {
+	return nil, errors.New("the world dials no TCP")
+}
+
+func (s worldSockets) DialUnix(ctx context.Context, _ string, _ time.Duration) (local.Conn, error) {
 	m := s.m
 	if p, inside := m.placement(); inside {
-		m = m.run.mac(p.Host)
+		m = m.run.mac(p.Mac)
 	}
 	d, ok := m.up(context.WithoutCancel(ctx))
 	if !ok {
@@ -1005,13 +1010,13 @@ func (s worldSockets) DialUnix(ctx context.Context, _ string, _ time.Duration) (
 	return near, nil
 }
 
-func (worldSockets) ListenUnix(string) (system.Listener, error) {
+func (worldSockets) ListenUnix(string) (local.Listener, error) {
 	return nil, errors.New("a world's engine is stepped, never listening")
 }
 
 type lockedNotifier struct {
 	w *world.World
-	n engine.Notifier
+	n process.Notifier
 }
 
 func (l lockedNotifier) Notify(ctx context.Context, n engine.Notification) {
@@ -1023,17 +1028,17 @@ func (l lockedNotifier) Notify(ctx context.Context, n engine.Notification) {
 // invariant: a Mac of the world runs nothing as root: a command that asks
 // sudo, even inside a shell line, is refused and kept in the world.
 type rootless struct {
-	system.Runner
+	local.Runner
 	w *world.World
 }
 
 var errRoot = errors.New("this world runs nothing as root")
 
-func (r rootless) refuses(c system.Cmd) bool {
+func (r rootless) refuses(c local.Cmd) bool {
 	line := strings.Join(append([]string{c.Name}, c.Args...), " ")
 	if !slices.Contains(strings.FieldsFunc(line, func(r rune) bool {
 		return r == ' ' || r == ';' || r == '&' || r == '|' || r == '(' || r == '\'' || r == '"'
-	}), "sudo") {
+	}), catalog.Sudo) {
 		return false
 	}
 	r.w.Lock()
@@ -1042,21 +1047,21 @@ func (r rootless) refuses(c system.Cmd) bool {
 	return true
 }
 
-func (r rootless) Output(ctx context.Context, c system.Cmd) (system.Output, error) {
+func (r rootless) Output(ctx context.Context, c local.Cmd) (local.Output, error) {
 	if r.refuses(c) {
-		return system.Output{ExitCode: 1, Stderr: errRoot.Error()}, errRoot
+		return local.Output{ExitCode: 1, Stderr: errRoot.Error()}, errRoot
 	}
 	return r.Runner.Output(ctx, c)
 }
 
-func (r rootless) Attach(ctx context.Context, c system.Cmd, out system.Stream) (system.Attached, error) {
+func (r rootless) Attach(ctx context.Context, c local.Cmd, out local.Stream) (local.Attached, error) {
 	if r.refuses(c) {
-		return system.Attached{}, errRoot
+		return local.Attached{}, errRoot
 	}
 	return r.Runner.Attach(ctx, c, out)
 }
 
-func (r rootless) Start(c system.Cmd, logPath string) (int, error) {
+func (r rootless) Start(c local.Cmd, logPath string) (int, error) {
 	if r.refuses(c) {
 		return 0, errRoot
 	}
@@ -1072,7 +1077,7 @@ func (g worldGuest) credentials(cmd contract.GuestCommand) (contract.GuestResult
 	switch {
 	case cmd.Line == "command -v studio":
 		return contract.GuestResult{Stdout: "/usr/local/bin/studio\n"}, true, nil
-	case cmd.Line == secrets.VMStudio("import"):
+	case cmd.Line == accounts.VMStudio("import"):
 		g.r.w.Lock()
 		broke := g.r.w.Fails("Guest.Exec")
 		g.r.w.Unlock()
@@ -1090,14 +1095,14 @@ func (g worldGuest) credentials(cmd contract.GuestCommand) (contract.GuestResult
 			return contract.GuestResult{Code: 1, Stderr: "studio: the import is not a JSON object of names\n"}, true, nil
 		}
 		return contract.GuestResult{}, true, nil
-	case strings.HasPrefix(cmd.Line, secrets.VMStudio("delete")+" "):
+	case strings.HasPrefix(cmd.Line, accounts.VMStudio("delete")+" "):
 		g.r.w.Lock()
 		broke := g.r.w.Fails("Guest.Exec")
 		g.r.w.Unlock()
 		if broke {
 			return contract.GuestResult{Code: 1, Stderr: "studio: the credential store is not writable\n"}, true, nil
 		}
-		store.Delete(strings.Fields(strings.TrimPrefix(cmd.Line, secrets.VMStudio("delete"))))
+		store.Delete(strings.Fields(strings.TrimPrefix(cmd.Line, accounts.VMStudio("delete"))))
 		return contract.GuestResult{}, true, nil
 	}
 	return contract.GuestResult{}, false, nil

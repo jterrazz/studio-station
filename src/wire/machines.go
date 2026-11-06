@@ -3,17 +3,20 @@ package wire
 import (
 	"context"
 	"errors"
+	"io"
 	"path/filepath"
 	"strconv"
 	"time"
+
+	"github.com/jterrazz/studio-station/src/images"
+	"github.com/jterrazz/studio-station/src/platform/local"
 
 	"github.com/spf13/cobra"
 
 	"github.com/jterrazz/studio-station/src/catalog"
 	"github.com/jterrazz/studio-station/src/core/call"
 	coremachine "github.com/jterrazz/studio-station/src/core/machine"
-	"github.com/jterrazz/studio-station/src/domain/images"
-	"github.com/jterrazz/studio-station/src/domain/machines"
+	imagescalls "github.com/jterrazz/studio-station/src/images/calls"
 	model "github.com/jterrazz/studio-station/src/machines"
 	"github.com/jterrazz/studio-station/src/machines/adapter/macos"
 	"github.com/jterrazz/studio-station/src/machines/adapter/openssh"
@@ -39,20 +42,14 @@ import (
 )
 
 const (
-	lanBudget           = 2 * time.Second
-	defaultOpenClawPort = 18789
-	defaultHermesPort   = 8642
+	lanBudget = 2 * time.Second
 )
 
-func (m machine) machines(_ bool) *machines.Service {
+func (m machine) machines(_ bool) *machinescalls.Machinist {
 	knownHosts := filepath.Join(m.paths.State, "known_hosts")
-	return machines.New(m.sys, m.hypervisor(), machines.Prefs{Name: m.stores.name(), Hosts: m.stores.macs(), VMUser: m.stores.vmUser()}, m.stores.machines, macNodes{tailnet: m.tailnet()}, allMachinesImages{images: m.images()}, m.macEngine(), reservationReleaser{m: m}, machines.Options{
-		Ports: machines.Ports{
-			OpenClaw: m.port(defaultOpenClawPort, "OPENCLAW_GATEWAY_PORT"),
-			Hermes:   m.port(defaultHermesPort, "HERMES_GATEWAY_PORT", "API_SERVER_PORT"),
-		},
-		Here:       m.kind,
-		KnownHosts: knownHosts, Logs: filepath.Join(m.paths.State, "logs"),
+	return machinescalls.New(macSystem{m.sys}, m.hypervisor(), machinescalls.Prefs{Name: m.stores.name(), Macs: m.stores.macs(), VMUser: m.stores.vmUser()}, m.stores.machines, macNodes{tailnet: m.tailnet()}, allMachinesImages{images: m.images()}, machinesEngine{m.macEngine()}, reservationReleaser{m: m}, machinescalls.Options{
+		ThisMachine: m.kind,
+		KnownHosts:  knownHosts, Logs: filepath.Join(m.paths.State, "logs"),
 		User:      m.sys.Env.User(),
 		Version:   m.stationVersion(),
 		Ask:       m.askAllMachines,
@@ -137,12 +134,12 @@ func machinesCommand(env kit.Env, m machine) *cobra.Command {
 	}
 	return machinescmd.Command(machinescmd.Deps{ThisMachine: m.where, Names: vms.Names, Overview: overview}, env,
 		machinescreate.Command(machinescreate.Deps{
-			Resources: machines.ParseResources, Check: createCheck(vms),
-			NotBuilt: func(image string) error { return &machines.NoImageError{Image: image} },
+			Resources: model.ParseResources, Check: createCheck(vms),
+			NotBuilt: func(image string) error { return &model.NoImageError{Image: image} },
 			Admit: func() error {
 				return call.Gate(call.Meta{Name: machinescalls.CreateWorkspace.Name, Applies: machinescalls.CreateWorkspace.Applies}, m.profile)
 			},
-			AllMachines: func(ctx context.Context) (machines.Fleet, error) { return vms.Fleet(ctx, false) },
+			AllMachines: func(ctx context.Context) (model.AllMachines, error) { return vms.AllMachines(ctx, false) },
 			ThisMachine: m.where, Ask: createAsker(env),
 		}, env),
 		machinesstart.Command(machinesstart.Deps{Names: vms.Names, ThisMachine: m.where}, env),
@@ -152,23 +149,23 @@ func machinesCommand(env kit.Env, m machine) *cobra.Command {
 			return err == nil && r.Kind == catalog.Mac && !env.Far()
 		}, Pausing: m.pausing(env), ThisMachine: m.where}, env),
 		machinesdelete.Command(machinesdelete.Deps{Names: vms.Names, ThisMachine: m.where}, env),
-		machinesedit.Command(machinesedit.Deps{Names: vms.Names, Resources: machines.ParseResources, ThisMachine: m.where}, env),
-		machinesprobe.Command(machinesprobe.Deps{Names: vms.Names, Overview: overview}, env),
+		machinesedit.Command(machinesedit.Deps{Names: vms.Names, Resources: model.ParseResources, ThisMachine: m.where}, env),
+		machinesprobe.Alias(machinesprobe.Deps{Names: vms.Names, Overview: overview}, env),
 		machinescmd.SSHCommand(machinescmd.SSHDeps{Names: vms.Names, ThisMachine: m.where}, env),
 		machinesadd.Command(machinesadd.Deps{ThisMachine: m.where}, env),
 		machinesforget.Command(machinesforget.Deps{Names: vms.Names, ThisMachine: m.where}, env),
 		machinesunlock.Command(machinesunlock.Deps{Names: vms.Names, ThisMachine: m.where}, env),
 		machinessupervise.Command(env),
-		machinespipe.Command(machinespipe.Deps{Machines: vmPipe{vms}}, env),
+		machinespipe.Command(machinespipe.Deps{Machines: vmPipe{vms, m.sys.Sockets}}, env),
 	)
 }
 
 func (m machine) pausing(env kit.Env) func(mac string) []string {
 	return func(mac string) []string {
-		vms, _ := machineCalls{Service: m.machines(env.Interactive), m: m}.VMsOf(context.Background(), mac)
+		vms, _ := machineCalls{Machinist: m.machines(env.Interactive), m: m}.VMsOf(context.Background(), mac)
 		var names []string
 		for _, vm := range model.Ordered(vms) {
-			if vm.State == machines.Running {
+			if vm.State == model.Running {
 				names = append(names, vm.Name)
 			}
 		}
@@ -176,10 +173,10 @@ func (m machine) pausing(env kit.Env) func(mac string) []string {
 	}
 }
 
-func createCheck(s *machines.Service) func(ctx context.Context, r machines.CreateRequest) (bool, error) {
-	return func(ctx context.Context, r machines.CreateRequest) (bool, error) {
+func createCheck(s *machinescalls.Machinist) func(ctx context.Context, r model.CreateRequest) (bool, error) {
+	return func(ctx context.Context, r model.CreateRequest) (bool, error) {
 		_, err := s.CheckCreate(ctx, r)
-		var unbuilt *machines.NoImageError
+		var unbuilt *model.NoImageError
 		if errors.As(err, &unbuilt) {
 			return true, err
 		}
@@ -187,7 +184,16 @@ func createCheck(s *machines.Service) func(ctx context.Context, r machines.Creat
 	}
 }
 
-type vmPipe struct{ *machines.Service }
+type vmPipe struct {
+	*machinescalls.Machinist
+	sockets local.Sockets
+}
+
+func (p vmPipe) Pipe(ctx context.Context, vm string, in io.Reader, out io.Writer) error {
+	return p.Machinist.Pipe(ctx, vm, func(ctx context.Context, ip string, port int) error {
+		return p.sockets.Pipe(ctx, ip, port, in, out)
+	})
+}
 
 func (p vmPipe) Check(ctx context.Context, vm string) error {
 	_, err := p.CheckPipe(ctx, vm)
@@ -197,7 +203,7 @@ func (p vmPipe) Check(ctx context.Context, vm string) error {
 // invariant: the machines calls' Deps over today's service: each check the
 // leaves ran before, worded by the service's own errors.
 type machineCalls struct {
-	*machines.Service
+	*machinescalls.Machinist
 	m machine
 }
 
@@ -230,37 +236,37 @@ func (c machineCalls) CheckRestart(name string) (bool, error) {
 }
 
 func (c machineCalls) Running(ctx context.Context, name string) (bool, error) {
-	allMachines, err := c.Fleet(ctx, true)
+	allMachines, err := c.AllMachines(ctx, true)
 	if err != nil {
 		return false, err
 	}
 	for _, h := range allMachines.Macs {
 		for _, vm := range h.VMs {
 			if vm.Name == name {
-				return vm.State == machines.Running, nil
+				return vm.State == model.Running, nil
 			}
 		}
 	}
-	return false, &machines.UnknownMachineError{Name: name}
+	return false, &model.UnknownMachineError{Name: name}
 }
 
-func (c machineCalls) Restart(ctx context.Context, name string) (machines.RestartReport, error) {
-	return c.Service.Restart(ctx, name, nil)
+func (c machineCalls) Restart(ctx context.Context, name string) (model.RestartReport, error) {
+	return c.Machinist.Restart(ctx, name, nil)
 }
 
 func (c machineCalls) CheckRemoteMac(name, verb string) (string, error) {
-	m, err := c.RemoteHost(name, verb)
+	m, err := c.RemoteMac(name, verb)
 	return m.Name, err
 }
 
 func (c machineCalls) Unlock(ctx context.Context, name string, interactive bool) error {
 	if !interactive {
-		return &machines.NeedsTerminalError{Verb: "machines unlock"}
+		return &model.NeedsTerminalError{Verb: "machines unlock"}
 	}
-	return c.Service.Unlock(ctx, name)
+	return c.Machinist.Unlock(ctx, name)
 }
 
-func (c machineCalls) VMsOf(ctx context.Context, name string) ([]machines.VM, error) {
+func (c machineCalls) VMsOf(ctx context.Context, name string) ([]model.VM, error) {
 	out, err := call.Read(ctx, c.m.far.router, coremachine.Ref{Name: name}, machinescalls.List, machinescalls.ListIn{ThisMac: true}, nil)
 	if err != nil || len(out.All.Macs) == 0 {
 		return nil, err
@@ -278,7 +284,7 @@ func (c machineCalls) CheckRemote(name string) error {
 	return err
 }
 
-type allMachinesImages struct{ images *images.Service }
+type allMachinesImages struct{ images *imagescalls.Builder }
 
 func (i allMachinesImages) KeyPath() string { return i.images.KeyPath() }
 
@@ -286,12 +292,12 @@ func (i allMachinesImages) Latest(ctx context.Context, image string) (disk, vers
 	r, err := i.images.Latest(ctx, image)
 	var unbuilt *images.NotBuiltError
 	if errors.As(err, &unbuilt) {
-		return "", "", &machines.NoImageError{Image: image}
+		return "", "", &model.NoImageError{Image: image}
 	}
 	if err != nil {
 		return "", "", err
 	}
-	return images.DiskName(r.Name, r.Version), r.Version, nil
+	return imagescalls.DiskName(r.Name, r.Version), r.Version, nil
 }
 
 func createAsker(env kit.Env) kit.Asker {
@@ -299,18 +305,4 @@ func createAsker(env kit.Env) kit.Asker {
 		return nil
 	}
 	return env.Prompt
-}
-
-func (c machineCalls) AllMachinesAsItFills(ctx context.Context, thisMacOnly bool, sofar func(model.AllMachines)) (model.AllMachines, error) {
-	return c.FleetAsItFills(ctx, thisMacOnly, sofar)
-}
-
-func (c machineCalls) CheckMac() error { return c.CheckHost() }
-
-func (c machineCalls) AddMac(ctx context.Context, name string, h model.MacRecord) error {
-	return c.AddHost(ctx, name, h)
-}
-
-func (c machineCalls) ForgetMac(ctx context.Context, name string) error {
-	return c.ForgetHost(ctx, name)
 }

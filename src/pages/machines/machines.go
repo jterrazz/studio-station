@@ -5,7 +5,8 @@ import (
 	"strings"
 
 	"github.com/jterrazz/studio-station/src/catalog"
-	"github.com/jterrazz/studio-station/src/domain/machines"
+
+	model "github.com/jterrazz/studio-station/src/machines"
 	"github.com/jterrazz/studio-station/src/page"
 	"github.com/jterrazz/studio-station/src/pages"
 )
@@ -43,19 +44,19 @@ func Columns() []page.Column {
 	}
 }
 
-func Section(f machines.Fleet, links func(mac, vm string) []page.Link) page.Section {
+func Section(f model.AllMachines, links func(mac, vm string) []page.Link) page.Section {
 	// invariant: one column schema for host and VM rows, and no piped row ends on
 	// an empty cell nor grows a hint field, so every record has the same eight
 	// fields: a fix rides in the resources cell.
-	hereVersion := ""
+	thisVersion := ""
 	for _, h := range f.Macs {
 		if h.ThisMac {
-			hereVersion = h.StationVersion
+			thisVersion = h.StationVersion
 		}
 	}
 	items := make([]page.Item, 0, len(f.Macs))
 	for _, h := range f.Macs {
-		g := page.Group{Head: macHeadRow(h, hereVersion), Fold: page.Open}
+		g := page.Group{Head: macHeadRow(h, thisVersion), Fold: page.Open}
 		for _, vm := range h.VMs {
 			row := vmRow(vm)
 			var under []page.Item
@@ -96,7 +97,7 @@ func Actions() []page.Action {
 	}
 }
 
-func macHeadRow(h machines.HostView, thisVersion string) page.Row {
+func macHeadRow(h model.MacView, thisVersion string) page.Row {
 	row := page.Row{ID: h.Name, Label: h.Name, Mark: page.OK}
 	state, resources, detail := page.Text("online"), vmCount(len(h.VMs)), page.None()
 	switch {
@@ -110,7 +111,7 @@ func macHeadRow(h machines.HostView, thisVersion string) page.Row {
 		word, fix := "engine stopped", "station engine start"
 		switch {
 		case !h.ThisMac:
-			fix = "ssh " + h.Name + " station engine start"
+			fix = catalog.SSHCommand("", h.Name) + " station engine start"
 		case !h.Engine.Installed:
 			row.Reason, word, fix = page.Missing, "engine not installed", "station setup"
 		}
@@ -124,31 +125,31 @@ func macHeadRow(h machines.HostView, thisVersion string) page.Row {
 	return row
 }
 
-func vmRow(vm machines.VM) page.Row {
+func vmRow(vm model.VM) page.Row {
 	row := page.Row{ID: vm.Name, Label: vm.Name, Mark: page.OK}
 	resources, detail := Resources(vm), page.None()
 	switch vm.State {
-	case machines.Running:
-	case machines.Stopped:
+	case model.Running:
+	case model.Stopped:
 		row.Mark = page.Absent
 		if vm.Detail != "" {
 			detail = page.Text(vm.Detail)
 		}
-	case machines.Suspended:
+	case model.Suspended:
 		row.Mark, row.Reason = page.Attention, page.Stopped
-	case machines.Stale:
+	case model.Stale:
 		row.Mark, row.Reason = page.Attention, page.Outlived
 		detail = page.List(page.Text("ended unexpectedly"), page.Text("start or delete it"))
-	case machines.Broken:
+	case model.Broken:
 		row.Mark, row.Reason, detail = page.Broken, page.Failing, page.Text(vm.Detail)
-	case machines.Unknown:
+	case model.UnknownState:
 		row.Mark, row.Reason = page.NotKnown, page.Unreachable
 	}
 	row.Cells = []page.Value{page.Text(string(vm.Lifetime.Kind())), page.Text(vm.Mac), page.Text(string(vm.Lifetime)), page.Text(string(vm.Lifetime)), page.Text(""), page.Text(string(vm.State)), orDash(vm.IP), record(resources, detail), resources, detail}
 	return row
 }
 
-func Resources(vm machines.VM) page.Value {
+func Resources(vm model.VM) page.Value {
 	r := vm.Resources
 	return page.List(plural(r.CPUs, "cpu"), Memory(r.MemoryBytes), page.Size(r.DiskBytes))
 }
@@ -214,10 +215,10 @@ func StopServerForm(name string) page.Form {
 	}
 }
 
-func Added(a machines.Added, thisMac page.Context) page.Page {
+func Added(a model.Added, thisMac page.Context) page.Page {
 	// value: the Mac added, as ssh and its station answered; a station of
 	// another version is one more row, with what brings them to one.
-	rows := []page.Row{done(a.Label, catalog.StateOK, "added", "ssh answers", "station "+a.Version)}
+	rows := []page.Row{done(a.Label, catalog.StateOK, "added", strings.ToLower(model.StepSSH), "station "+a.Version)}
 	if a.Update != "" {
 		rows = append(rows, done(a.Label, catalog.StateDegraded, "runs "+a.Version, a.Update))
 	}
@@ -234,7 +235,7 @@ func done(id string, state catalog.State, said ...string) page.Row {
 	return r
 }
 
-func Unlocked(u machines.Unlocked, thisMac page.Context) page.Page {
+func Unlocked(u model.Unlocked, thisMac page.Context) page.Page {
 	row := done(u.Name, catalog.StateOK, "unlocked", "on "+catalog.TailnetProduct+" again")
 	switch {
 	case u.Already:
@@ -245,7 +246,7 @@ func Unlocked(u machines.Unlocked, thisMac page.Context) page.Page {
 	return pages.Outcome("machines unlock", thisMac, nil, []page.Row{row}, "machines")
 }
 
-func Back(b machines.Back, thisMac page.Context) page.Page {
+func Back(b model.Back, thisMac page.Context) page.Page {
 	// value: the Mac back, and each VM it paused as it is now.
 	said := make([]string, 0, 1+len(b.VMs))
 	said = append(said, "back")
@@ -297,7 +298,7 @@ type CreatedPort struct {
 	URL       string `json:"url"`
 }
 
-func CreatedContract(schema string, c machines.Created) CreatedJSON {
+func CreatedContract(schema string, c model.Created) CreatedJSON {
 	// invariant: a VM is created once it runs, has its address and answers
 	// ssh: the three steps its page passes.
 	vm, r := c.VM, c.VM.Resources
@@ -315,10 +316,10 @@ func CreatedContract(schema string, c machines.Created) CreatedJSON {
 	return body
 }
 
-func Created(c machines.Created, thisMac page.Context) page.Page {
+func Created(c model.Created, thisMac page.Context) page.Page {
 	vm, r := c.VM, c.VM.Resources
-	rows := []page.Row{passed(machines.StepRunning, ""), passed(machines.StepAddress, vm.IP), passed(machines.StepSSH, "")}
-	if vm.Lifetime == machines.AlwaysOn {
+	rows := []page.Row{passed(model.StepRunning, ""), passed(model.StepAddress, vm.IP), passed(model.StepSSH, "")}
+	if vm.Lifetime == model.AlwaysOn {
 		return serverCreated(c, rows, thisMac)
 	}
 	off := ""
@@ -343,7 +344,7 @@ func Created(c machines.Created, thisMac page.Context) page.Page {
 		{Key: "detail", Kind: page.KindList, Keep: 20},
 	}
 	p := pages.Outcome("machines create", thisMac, columns, rows, "VMs")
-	p.Hints = []page.Hint{*page.Cmd("ssh " + vm.Name)}
+	p.Hints = []page.Hint{*page.Cmd(catalog.SSHCommand("", vm.Name))}
 	return p
 }
 
@@ -359,7 +360,7 @@ func passed(label, detail string) page.Row {
 // invariant: a server's create says what station will not do inside it; a
 // check that does not answer yet waits, never fails, as what answers it
 // comes with the owner's tooling (SPEC §7.1).
-func serverCreated(c machines.Created, rows []page.Row, thisMac page.Context) page.Page {
+func serverCreated(c model.Created, rows []page.Row, thisMac page.Context) page.Page {
 	vm, r := c.VM, c.VM.Resources
 	if vm.Check != "" {
 		rows = append(rows, page.Row{ID: "check", Label: "Check waiting", Mark: page.Attention, Reason: page.Waiting, Cells: []page.Value{page.Text("normal: what answers comes with your tooling")}})
@@ -381,11 +382,11 @@ func serverCreated(c machines.Created, rows []page.Row, thisMac page.Context) pa
 		{Key: "detail", Kind: page.KindList, Keep: 20},
 	}
 	p := pages.Outcome("machines create", thisMac, columns, rows, "VMs")
-	p.Hints = []page.Hint{*page.Cmd("ssh " + vm.Name), *page.Cmd("station machines " + vm.Name)}
+	p.Hints = []page.Hint{*page.Cmd(catalog.SSHCommand("", vm.Name)), *page.Cmd("station machines " + vm.Name)}
 	return p
 }
 
-func Deleted(r machines.DeleteReport, thisMac page.Context) page.Page {
+func Deleted(r model.DeleteReport, thisMac page.Context) page.Page {
 	rows := make([]page.Row, 0, 1+len(r.Warnings))
 	rows = append(rows, pages.Done(r.Name, catalog.StateOK, "deleted"))
 	for i, w := range r.Warnings {
@@ -396,10 +397,10 @@ func Deleted(r machines.DeleteReport, thisMac page.Context) page.Page {
 	return pages.Outcome("machines delete "+r.Name, thisMac, nil, rows, "VMs")
 }
 
-func Restarted(r machines.RestartReport, thisMac page.Context) page.Page {
+func Restarted(r model.RestartReport, thisMac page.Context) page.Page {
 	rows := make([]page.Row, 0, 4)
 	if r.VM {
-		rows = append(rows, passed(machines.StepRunning, ""), passed(machines.StepAddress, r.IP), passed(machines.StepSSH, ""))
+		rows = append(rows, passed(model.StepRunning, ""), passed(model.StepAddress, r.IP), passed(model.StepSSH, ""))
 	}
 	rows = append(rows, pages.Done(r.Name, catalog.StateOK, "restarted"))
 	return pages.Outcome("machines restart "+r.Name, thisMac, nil, rows, "VMs")
@@ -432,7 +433,7 @@ func CreateForm(lifetime string, macs []MacChoice) page.Form {
 }
 
 func BuildConfirm(image string) page.Confirm {
-	return page.Confirm{Question: "Image " + image + " is not built here. Build " + image + " now? (~3 min)"}
+	return page.Confirm{Question: "Image " + image + " is not built on This Mac. Build " + image + " now? (~3 min)"}
 }
 
 type SSHJSON struct {
@@ -443,11 +444,11 @@ type SSHJSON struct {
 	Command string `json:"command"`
 }
 
-func SSHContract(name string, t machines.SSHTarget) SSHJSON {
+func SSHContract(name string, t model.SSHTarget) SSHJSON {
 	return SSHJSON{Schema: "station.machines.ssh/v1", Name: name, User: t.User, Address: t.Address, Command: t.Command}
 }
 
-func SSH(name string, t machines.SSHTarget, thisMac page.Context) page.Page {
+func SSH(name string, t model.SSHTarget, thisMac page.Context) page.Page {
 	row := pages.Done(name, catalog.StateOK, "")
 	row.Cells = []page.Value{page.Command(t.Command)}
 	p := pages.Outcome("machines ssh "+name, thisMac, []page.Column{{Key: "name", Kind: page.KindText, Keep: 100}, {Key: "command", Kind: page.KindText, Keep: 90}}, []page.Row{row}, "machines")
@@ -458,7 +459,7 @@ func SSH(name string, t machines.SSHTarget, thisMac page.Context) page.Page {
 	return p
 }
 
-func Edited(e machines.Edited, thisMac page.Context) page.Page {
+func Edited(e model.Edited, thisMac page.Context) page.Page {
 	// value: the sizes an edit changed, and when they apply; a running VM is
 	// told the restart that applies them now.
 	var parts []string

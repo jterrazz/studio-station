@@ -1,4 +1,4 @@
-description: 'settings still holding the retired tailnet key write a host block with no ProxyCommand'
+description: 'settings still holding the retired tailnet key write a Mac''s block with no ProxyCommand'
 fixture:
     - ../../__fixtures__/hosts-x-y/
     - ./__fixtures__/retired-tailnet-key/

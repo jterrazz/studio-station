@@ -1,8 +1,8 @@
 package pages
 
 import (
+	appmodel "github.com/jterrazz/studio-station/src/apps"
 	"github.com/jterrazz/studio-station/src/catalog"
-	"github.com/jterrazz/studio-station/src/domain/tools"
 	"github.com/jterrazz/studio-station/src/page"
 	pageapps "github.com/jterrazz/studio-station/src/pages/apps"
 )
@@ -18,14 +18,14 @@ type app struct {
 	version  string
 	newest   string
 	detail   string
-	why      tools.Why
+	why      appmodel.Why
 	needs    string
 }
 
-func reports(list []app, pending bool) []tools.Report {
-	out := make([]tools.Report, 0, len(list))
+func reports(list []app, pending bool) []appmodel.Report {
+	out := make([]appmodel.Report, 0, len(list))
 	for _, t := range list {
-		r := tools.Report{
+		r := appmodel.Report{
 			App:     catalog.App{Name: t.name, Category: t.category, System: t.system},
 			Method:  t.method,
 			State:   t.state,
@@ -53,7 +53,7 @@ func thisMac() []app {
 		sk   = catalog.CategoryAgentSkills
 	)
 	mise := func(name, version string) app {
-		return app{name: name, category: rt, method: catalog.MethodMise, state: catalog.StateDegraded, version: version, detail: "installed, mise not installed", why: tools.WhyMissing, needs: "mise"}
+		return app{name: name, category: rt, method: catalog.MethodMise, state: catalog.StateDegraded, version: version, detail: "installed, mise not installed", why: appmodel.WhyMissing, needs: "mise"}
 	}
 	return []app{
 		{name: "homebrew", category: pm, method: catalog.MethodScript, system: true, state: catalog.StateOK, version: "7.0.12-8-g57cac9d"},
@@ -61,18 +61,18 @@ func thisMac() []app {
 		{name: "mas", category: pm, method: catalog.MethodBrew, state: catalog.StateAbsent},
 		{name: "uv", category: pm, method: catalog.MethodBrew, state: catalog.StateOK, version: "0.12.3"},
 		{name: "cocoapods", category: pm, method: catalog.MethodBrew, state: catalog.StateOK, version: "1.17.0"},
-		{name: "pnpm", category: pm, method: catalog.MethodBrew, state: catalog.StateDegraded, version: "11.21.0", newest: "11.22.1", detail: "outdated", why: tools.WhyOutdated},
+		{name: "pnpm", category: pm, method: catalog.MethodBrew, state: catalog.StateDegraded, version: "11.21.0", newest: "11.22.1", detail: "outdated", why: appmodel.WhyOutdated},
 		{name: "skills", category: pm, method: catalog.MethodBun, state: catalog.StateOK, version: "1.5.22"},
 		mise("bun", ""),
 		mise("go", ""),
 		mise("java", "17.0.20"),
 		mise("python", "3.14.6"),
-		{name: "chatgpt", category: apps, method: catalog.MethodCask, state: catalog.StateDegraded, detail: "on PATH, not managed by cask", why: tools.WhyUnmanaged},
+		{name: "chatgpt", category: apps, method: catalog.MethodCask, state: catalog.StateDegraded, detail: "on PATH, not managed by cask", why: appmodel.WhyUnmanaged},
 		{name: "claude-desktop", category: apps, method: catalog.MethodCask, state: catalog.StateOK, version: "1.22209.3,babe11577dfefe3e209c06bd674628d862f0dbae"},
 		{name: "typewhisper", category: apps, method: catalog.MethodCask, state: catalog.StateAbsent},
-		{name: "frontend-design", category: sk, method: catalog.MethodSkill, state: catalog.StateAbsent, detail: "skills not installed", why: tools.WhyMissing, needs: "skills"},
+		{name: "frontend-design", category: sk, method: catalog.MethodSkill, state: catalog.StateAbsent, detail: "skills not installed", why: appmodel.WhyMissing, needs: "skills"},
 		{name: "modern-web-guidance", category: sk, method: catalog.MethodSkill, state: catalog.StateOK, detail: "currency unknown"},
-		{name: "better-ui", category: sk, method: catalog.MethodSkill, state: catalog.StateDegraded, detail: "outdated", why: tools.WhyOutdated},
+		{name: "better-ui", category: sk, method: catalog.MethodSkill, state: catalog.StateDegraded, detail: "outdated", why: appmodel.WhyOutdated},
 	}
 }
 
@@ -80,7 +80,7 @@ func lateMac() []app {
 	out := thisMac()
 	for i := range out {
 		if out[i].method == catalog.MethodBrew {
-			out[i].state, out[i].version, out[i].detail, out[i].why, out[i].needs = catalog.StateUnknown, "", "no answer in 5s", tools.WhyLate, ""
+			out[i].state, out[i].version, out[i].detail, out[i].why, out[i].needs = catalog.StateUnknown, "", "no answer in 5s", appmodel.WhyLate, ""
 		}
 	}
 	return out

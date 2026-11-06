@@ -6,14 +6,13 @@ import (
 	"strings"
 	"time"
 
+	"github.com/jterrazz/studio-station/src/accounts"
+	model "github.com/jterrazz/studio-station/src/machines"
+
 	"github.com/jterrazz/studio-station/src/activity"
 	"github.com/jterrazz/studio-station/src/awake"
 	"github.com/jterrazz/studio-station/src/catalog"
 	coremachine "github.com/jterrazz/studio-station/src/core/machine"
-	"github.com/jterrazz/studio-station/src/domain/accounts"
-	"github.com/jterrazz/studio-station/src/domain/machines"
-	"github.com/jterrazz/studio-station/src/domain/power"
-	"github.com/jterrazz/studio-station/src/domain/services"
 	"github.com/jterrazz/studio-station/src/engine"
 	"github.com/jterrazz/studio-station/src/overview"
 	"github.com/jterrazz/studio-station/src/page"
@@ -60,28 +59,28 @@ const (
 // value: the two-macs world of USE-CASES §0.2 as the menu bar reads it:
 // This Mac with linux-1 (running, two ports shared) and api (stopped), the
 // mini with infra, a healthy server.
-func twoMacs() machines.Fleet {
-	linux1 := sized(machines.VM{Name: "linux-1", Image: "linux", Version: "3", Mac: thisMacName, Kind: catalog.Linux, Lifetime: machines.Throwaway, State: machines.Running, SizeGB: 20, IP: "192.168.64.5", Guest: "connected", CreatedAt: built}, 4, 4)
-	api := sized(machines.VM{Name: "api", Image: "linux", Version: "3", Mac: thisMacName, Kind: catalog.Linux, Lifetime: machines.Permanent, State: machines.Stopped, SizeGB: 40, CreatedAt: built}, 4, 8)
-	infra := sized(machines.VM{Name: "infra", Image: "linux", Version: "3", Mac: miniName, Kind: catalog.Linux, Lifetime: machines.AlwaysOn, State: machines.Running, SizeGB: 80, IP: "192.168.64.7", Guest: "connected", Want: "running",
-		Check: "https://infra:6443/readyz", Device: "infra", CreatedAt: built, CheckStatus: machines.CheckStatus{State: machines.CheckPassing, At: keepAwakeNow.Add(-40 * time.Second)}}, 8, 24)
+func twoMacs() model.AllMachines {
+	linux1 := sized(model.VM{Name: "linux-1", Image: "linux", Version: "3", Mac: thisMacName, Kind: catalog.Linux, Lifetime: model.Throwaway, State: model.Running, SizeGB: 20, IP: "192.168.64.5", Guest: "connected", CreatedAt: built}, 4, 4)
+	api := sized(model.VM{Name: "api", Image: "linux", Version: "3", Mac: thisMacName, Kind: catalog.Linux, Lifetime: model.Permanent, State: model.Stopped, SizeGB: 40, CreatedAt: built}, 4, 8)
+	infra := sized(model.VM{Name: "infra", Image: "linux", Version: "3", Mac: miniName, Kind: catalog.Linux, Lifetime: model.AlwaysOn, State: model.Running, SizeGB: 80, IP: "192.168.64.7", Guest: "connected", Want: "running",
+		Check: "https://infra:6443/readyz", Device: "infra", CreatedAt: built, CheckStatus: model.CheckStatus{State: model.CheckPassing, At: keepAwakeNow.Add(-40 * time.Second)}}, 8, 24)
 	infra.Resources.DiskBytes = 80 * gb
-	running := machines.DaemonInfo{Known: true, Running: true, Version: "v3.0.0"}
-	return machines.Fleet{Macs: []machines.HostView{
-		{Name: thisMacName, User: "jterrazz", StationVersion: "v3.0.0", ThisMac: true, Reachable: true, Engine: running, Node: machines.Node{Online: true, IP: "100.98.133.14"}, VMs: []machines.VM{linux1, api}},
-		{Name: miniName, User: "jterrazz", StationVersion: "v3.0.0", Reachable: true, Engine: running, Node: machines.Node{Online: true, IP: "100.98.133.20"}, LAN: "192.168.1.20", VMs: []machines.VM{infra}},
+	running := model.EngineView{Known: true, Running: true, Version: "v3.0.0"}
+	return model.AllMachines{Macs: []model.MacView{
+		{Name: thisMacName, User: "jterrazz", StationVersion: "v3.0.0", ThisMac: true, Reachable: true, Engine: running, Node: model.Node{Online: true, IP: "100.98.133.14"}, VMs: []model.VM{linux1, api}},
+		{Name: miniName, User: "jterrazz", StationVersion: "v3.0.0", Reachable: true, Engine: running, Node: model.Node{Online: true, IP: "100.98.133.20"}, LAN: "192.168.1.20", VMs: []model.VM{infra}},
 	}}
 }
 
-func twoMacsPorts() services.Fleet {
+func twoMacsPorts() ports.AllMachines {
 	public := "jterrazz-macbook-pro.tail77a797.ts.net"
-	return services.Fleet{Schema: ports.AllMachinesSchema, Macs: []services.HostView{
-		{Name: thisMacName, ThisMac: true, Reachable: true, Engine: services.DaemonInfo{Running: true}, PublicName: public, Serve: "on", HTTPS: "port",
-			Shared: []services.View{
-				{VM: "linux-1", GuestPort: 5173, Reserved: 40001, State: services.Published, Process: "node", HTTP: true, Profile: "vite", URLs: services.URLSet{Public: "https://" + public + ":40001"}},
-				{VM: "linux-1", GuestPort: 7000, Reserved: 40002, State: services.Published, Process: "nc"},
+	return ports.AllMachines{Schema: ports.AllMachinesSchema, Macs: []ports.MacPorts{
+		{Name: thisMacName, ThisMac: true, Reachable: true, Engine: ports.EngineInfo{Running: true}, PublicName: public, Serve: "on", HTTPS: "port",
+			Shared: []ports.SharedPort{
+				{VM: "linux-1", GuestPort: 5173, Reserved: 40001, State: ports.PhaseShared, Process: "node", HTTP: true, Profile: "vite", URLs: ports.URLSet{Public: "https://" + public + ":40001"}},
+				{VM: "linux-1", GuestPort: 7000, Reserved: 40002, State: ports.PhaseShared, Process: "nc"},
 			}},
-		{Name: miniName, Reachable: true, Engine: services.DaemonInfo{Running: true}},
+		{Name: miniName, Reachable: true, Engine: ports.EngineInfo{Running: true}},
 	}}
 }
 
@@ -116,13 +115,13 @@ func twoMacsReading(updates bool) pagemenubar.Reading {
 }
 
 func menubarReadings() (frame, quiet, full pagemenubar.Reading) {
-	off := keepAwakeReport(power.DaemonRunning, nil, thisMacReading())
+	off := keepAwakeReport(awake.EngineRunning, nil, thisMacReading())
 	off.Engine, off.ThisMac, off.Mac = awake.EngineRunning, true, thisMacName
 	calm := overviewOf(false)
 	calm.Lines = calm.Lines[:1]
 	calm.VMs = nil
 	f := twoMacs()
-	alone := machines.Fleet{Macs: []machines.HostView{f.Macs[0]}}
+	alone := model.AllMachines{Macs: []model.MacView{f.Macs[0]}}
 	alone.Macs[0].VMs = nil
 	frame = pagemenubar.Reading{Awake: &off}
 	quiet = pagemenubar.Reading{Home: &calm, Samples: samples(), All: &alone, Awake: &off}
@@ -147,9 +146,9 @@ func menubarWorlds() []Fixture {
 	down := *two.All
 	down.Macs = slices.Clone(down.Macs)
 	infra := down.Macs[1].VMs[0]
-	infra.State, infra.Detail = machines.Stopped, "restarting"
-	infra.Restarts = machines.Restarts{Count: 5, Streak: 5, Looping: true, Wait: time.Minute}
-	down.Macs[1].VMs = []machines.VM{infra}
+	infra.State, infra.Detail = model.Stopped, "restarting"
+	infra.Restarts = model.Restarts{Count: 5, Streak: 5, Looping: true, Wait: time.Minute}
+	down.Macs[1].VMs = []model.VM{infra}
 	infraDown := two
 	infraDown.All = &down
 	return []Fixture{
@@ -174,9 +173,9 @@ func linux1Page() pagemenubar.Machine {
 		{Section: "settings", Parts: []overview.Part{overview.Count(catalog.StateDegraded, 2, "need a look", "attention")}},
 		{Section: "disk", Parts: []overview.Part{{Word: "2.4 of 20 GB"}}},
 	}}
-	shares := accounts.Report{Now: keepAwakeNow, Engine: accounts.DaemonRunning, Machines: []accounts.Machine{{Name: "linux-1", Kind: accounts.KindVM, Lifetime: "throwaway", Running: true, Accounts: []accounts.Account{
-		{Provider: catalog.ProviderGitHub, State: catalog.StateOK, Origin: accounts.OriginLent, Scopes: []string{"read only"}, Shared: &accounts.Lend{Name: "github", At: keepAwakeNow.Add(-8 * time.Hour), Until: keepAwakeNow.Add(4 * time.Hour)}},
-		{Provider: catalog.ProviderClaude, State: catalog.StateOK, Origin: accounts.OriginLent, Shared: &accounts.Lend{Name: catalog.ClaudeTokenName, At: keepAwakeNow, Until: keepAwakeNow.Add(12 * time.Hour)}},
+	shares := accounts.Report{Now: keepAwakeNow, Engine: accounts.EngineRunning, Machines: []accounts.Machine{{Name: "linux-1", Kind: accounts.KindVM, Lifetime: "throwaway", Running: true, Accounts: []accounts.Account{
+		{Provider: catalog.ProviderGitHub, State: catalog.StateOK, Origin: accounts.OriginShared, Scopes: []string{"read only"}, Shared: &accounts.Loan{Name: "github", At: keepAwakeNow.Add(-8 * time.Hour), Until: keepAwakeNow.Add(4 * time.Hour)}},
+		{Provider: catalog.ProviderClaude, State: catalog.StateOK, Origin: accounts.OriginShared, Shared: &accounts.Loan{Name: catalog.ClaudeTokenName, At: keepAwakeNow, Until: keepAwakeNow.Add(12 * time.Hour)}},
 	}}}}
 	return pagemenubar.Machine{Asks: Levels, Name: "linux-1", All: &f, Summary: &inside, Samples: readings(4*gb, 20*gb, 17_600_000_000), Ports: &svc, Accounts: &shares, Now: keepAwakeNow}
 }
@@ -203,13 +202,13 @@ func miniPage(offline bool) pagemenubar.Machine {
 	s := overview.Summary{Head: overview.Head{Name: miniName, Kind: coremachine.Mac}, Engine: overview.EngineRunning,
 		Needs: []overview.Need{{Machine: miniName, Section: "ports", Broken: true, Subject: "5000", Text: "port 5000 is reachable outside Tailscale", Command: "station ports --on mac-mini"}},
 		Readiness: []overview.Check{
-			ready(machines.ItemRestartsAfterPowerCut, "applied"), ready(machines.ItemNeverSleeps, "applied"), ready(machines.ItemLogsIn, "applied"),
-			ready(machines.ItemDiskUnlock, "no password at boot"), ready(machines.ItemPlannedRestarts, "supported"), ready(machines.ItemEngineAtLogin, "installed"),
+			ready(model.ItemRestartsAfterPowerCut, "applied"), ready(model.ItemNeverSleeps, "applied"), ready(model.ItemLogsIn, "applied"),
+			ready(model.ItemDiskUnlock, "no password at boot"), ready(model.ItemPlannedRestarts, "supported"), ready(model.ItemEngineAtLogin, "installed"),
 		}}
 	if offline {
-		f.Macs[1].Reachable, f.Macs[1].Node.Online, f.Macs[1].Engine = false, false, machines.DaemonInfo{}
+		f.Macs[1].Reachable, f.Macs[1].Node.Online, f.Macs[1].Engine = false, false, model.EngineView{}
 		s.Engine, s.Needs = overview.EngineNone, nil
-		s.Readiness[3] = overview.Check{Name: machines.ItemDiskUnlock, State: catalog.StateDegraded, Value: "waits at pre-boot", Detail: "station machines unlock mac-mini (from the same network)"}
+		s.Readiness[3] = overview.Check{Name: model.ItemDiskUnlock, State: catalog.StateDegraded, Value: "waits at pre-boot", Detail: "station machines unlock mac-mini (from the same network)"}
 	}
 	return pagemenubar.Machine{Asks: Levels, Name: miniName, All: &f, Summary: &s, Ports: &svc, Now: keepAwakeNow}
 }
@@ -254,7 +253,7 @@ func EventsStream() []byte {
 	// invariant: the recorded events watch is written by the engine's own
 	// event words, one frame per event of SPEC 10.4 the engine tells, so the
 	// menu bar's notifications read what an engine sends.
-	var loop machines.Restarts
+	var loop model.Restarts
 	at := time.Date(2026, 11, 3, 14, 0, 0, 0, time.UTC)
 	for i := range 5 {
 		loop = loop.After(time.Second, at.Add(time.Duration(i)*time.Minute))

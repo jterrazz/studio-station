@@ -17,15 +17,16 @@ import (
 	"github.com/jterrazz/studio-station/src/core/call/lanes"
 	corecontract "github.com/jterrazz/studio-station/src/core/contract"
 	diskcontract "github.com/jterrazz/studio-station/src/disk/contract"
-	"github.com/jterrazz/studio-station/src/domain/guest"
 	"github.com/jterrazz/studio-station/src/engine"
+	"github.com/jterrazz/studio-station/src/engine/process"
 	imagescontract "github.com/jterrazz/studio-station/src/images/contract"
 	"github.com/jterrazz/studio-station/src/machines/contract"
+	"github.com/jterrazz/studio-station/src/platform/local"
+	"github.com/jterrazz/studio-station/src/ports"
 	"github.com/jterrazz/studio-station/src/ports/adapter/funnel"
 	portscontract "github.com/jterrazz/studio-station/src/ports/contract"
 	remotecontract "github.com/jterrazz/studio-station/src/remote/contract"
 	settingscontract "github.com/jterrazz/studio-station/src/settings/contract"
-	"github.com/jterrazz/studio-station/src/system"
 )
 
 // invariant: the release build knows no world: openWorld answers none, so
@@ -42,7 +43,7 @@ func (*worldRun) farFrom(func(*worldMac) farMac) {}
 func (*worldRun) command() *cobra.Command        { return nil }
 func (*worldRun) close(context.Context) error    { return nil }
 
-func (*worldMac) system(h system.Host) system.Host                      { return h }
+func (*worldMac) system(h local.System) local.System                    { return h }
 func (*worldMac) handOver(context.Context) error                        { return nil }
 func (*worldMac) watch([]string) func()                                 { return func() {} }
 func (*worldMac) stores(*stores)                                        {}
@@ -59,7 +60,7 @@ func (*worldMac) procedureAppliers() []settingscontract.Applier         { return
 func (*worldMac) meter() activitycontract.Meter                         { return nil }
 func (*worldMac) disk() diskcontract.DiskUsage                          { return nil }
 func (*worldMac) listeners() portscontract.Listeners                    { return nil }
-func (*worldMac) placement() (guest.Placement, bool)                    { return guest.Placement{}, false }
+func (*worldMac) placement() (ports.VMLivesOn, bool)                    { return ports.VMLivesOn{}, false }
 func (*worldMac) tailnet() portscontract.Tailnet                        { return nil }
 func (*worldMac) funnel() funnel.Funnel                                 { return nil }
 func (*worldMac) installer(catalog.Method, bool) appscontract.Installer { return nil }
@@ -68,9 +69,9 @@ func (*worldMac) budgets() lanes.Clock                                  { return
 func (*worldMac) vault() accountscontract.Vault                         { return nil }
 func (*worldMac) identities() accountscontract.Identities               { return nil }
 func (*worldMac) secretSource() accountscontract.SecretSource           { return nil }
-func (*worldMac) notifier() engine.Notifier                             { return nil }
+func (*worldMac) notifier() process.Notifier                            { return nil }
 func (*worldMac) checks() contract.CheckRunner                          { return nil }
-func (*worldMac) engineFrom(func() *engine.Engine)                      {}
+func (*worldMac) engineFrom(func() *process.Engine)                     {}
 func (*worldMac) macs() remotecontract.EndpointDialer                   { return nil }
 func (*worldMac) stopMarks() engine.StopMarks                           { return nil }
 func (*worldMac) engineVersion() string                                 { return "" }

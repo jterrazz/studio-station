@@ -68,7 +68,7 @@ func TestAURLAnswersWith2xxOr3xxAndFailsOtherwise(t *testing.T) {
 	}
 }
 
-func TestAHostPortPassesWhileItAcceptsAndFailsOnceItRefuses(t *testing.T) {
+func TestAMacPortPassesWhileItAcceptsAndFailsOnceItRefuses(t *testing.T) {
 	l, err := net.Listen("tcp", "127.0.0.1:0")
 	if err != nil {
 		t.Fatal(err)

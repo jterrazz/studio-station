@@ -104,7 +104,7 @@ func listPage(out machinescalls.ListOut, thisMac page.Context, far bool) page.Pa
 	}
 	var warnings []string
 	if out.Unrefreshed != nil {
-		warnings = append(warnings, "ssh config not refreshed: "+out.Unrefreshed.Error())
+		warnings = append(warnings, kit.SSHConfigNotRefreshed(out.Unrefreshed.Error()))
 	}
 	return pagemachines.List(out.All, warnings, thisMac)
 }

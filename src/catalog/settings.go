@@ -212,3 +212,5 @@ var DockerShortcuts = ZshFunctions{From: "zsh/docker-shortcuts.zsh", Functions: 
 func commitAs(prefix string) string {
 	return `!f() { git add . && git commit -m "` + prefix + `: $*"; }; f`
 }
+
+const ContainerSource = "docker"

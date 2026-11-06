@@ -7,7 +7,6 @@ import (
 	"github.com/jterrazz/studio-station/src/awake"
 	"github.com/jterrazz/studio-station/src/catalog"
 	coremachine "github.com/jterrazz/studio-station/src/core/machine"
-	"github.com/jterrazz/studio-station/src/domain/services"
 	"github.com/jterrazz/studio-station/src/page"
 	pageactivity "github.com/jterrazz/studio-station/src/pages/activity"
 	pageawake "github.com/jterrazz/studio-station/src/pages/awake"
@@ -20,7 +19,7 @@ import (
 // mini's Screen Sharing and infra's API private.
 func miniPorts() ports.Listing {
 	mini, infra := coremachine.Ref{Name: "mac-mini"}, coremachine.Ref{Name: "infra", On: "mac-mini"}
-	mac := services.HostView{Name: "mac-mini", Reachable: true, Engine: services.DaemonInfo{Running: true}, Shared: []services.View{},
+	mac := ports.MacPorts{Name: "mac-mini", Reachable: true, Engine: ports.EngineInfo{Running: true}, Shared: []ports.SharedPort{},
 		Ports: []ports.Port{
 			{Machine: mini, Port: 5000, Process: "ControlCenter", Binds: []string{"*"}, Reach: ports.Outside},
 			{Machine: infra, Port: 10250, Process: "kubelet", Binds: []string{"0.0.0.0"}, Reach: ports.Outside},
@@ -29,7 +28,7 @@ func miniPorts() ports.Listing {
 			{Machine: mini, Port: 5900, Process: "screensharingd", Binds: []string{"100.98.133.20"}, Reach: ports.Tailnet},
 			{Machine: infra, Port: 6443, Process: "kube-apiserver", Binds: []string{"0.0.0.0"}, Reach: ports.Tailnet, Device: true},
 		}}
-	return ports.Listing{AllMachines: services.Fleet{Schema: ports.AllMachinesSchema, Macs: []services.HostView{mac}}}
+	return ports.Listing{AllMachines: ports.AllMachines{Schema: ports.AllMachinesSchema, Macs: []ports.MacPorts{mac}}}
 }
 
 // value: the ports of This Mac's VMs, as linux-1's Ports reads them: Vite
@@ -37,7 +36,7 @@ func miniPorts() ports.Listing {
 func linuxPorts() ports.Listing {
 	mac := portsAllMachines().Macs[0]
 	mac.Ports = nil
-	return ports.Listing{AllMachines: services.Fleet{Schema: ports.AllMachinesSchema, Macs: []services.HostView{mac}}}
+	return ports.Listing{AllMachines: ports.AllMachines{Schema: ports.AllMachinesSchema, Macs: []ports.MacPorts{mac}}}
 }
 
 func twoMacsAwake() pageawake.AllMachines {

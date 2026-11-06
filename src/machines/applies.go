@@ -2,7 +2,7 @@ package machines
 
 import "github.com/jterrazz/studio-station/src/core/machine"
 
-var CanCreate = machine.All(runsAnEngine, hostsVMs)
+var CanCreate = machine.All(runsAnEngine, macsVMs)
 
 var AddsMacs = machine.All(reachesMacs)
 
@@ -20,7 +20,7 @@ func runsAnEngine(p machine.Profile) machine.Verdict {
 	return machine.Yes
 }
 
-func hostsVMs(p machine.Profile) machine.Verdict {
+func macsVMs(p machine.Profile) machine.Verdict {
 	if !p.Caps.VMs {
 		return machine.Verdict{Why: p.Caps.Hypervisor + " is not installed on This Mac", Fix: "station apps install " + p.Caps.Hypervisor}
 	}

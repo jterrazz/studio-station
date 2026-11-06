@@ -9,8 +9,9 @@ import (
 	"github.com/jterrazz/studio-station/src/activity"
 	"github.com/jterrazz/studio-station/src/awake"
 	"github.com/jterrazz/studio-station/src/core/machine"
-	"github.com/jterrazz/studio-station/src/domain/machines"
+
 	"github.com/jterrazz/studio-station/src/engine"
+	model "github.com/jterrazz/studio-station/src/machines"
 	"github.com/jterrazz/studio-station/src/overview"
 	"github.com/jterrazz/studio-station/src/page"
 	pageengine "github.com/jterrazz/studio-station/src/pages/engine"
@@ -42,7 +43,7 @@ type Reading struct {
 	// value: a nil part is still being read and draws pending.
 	Home    *overview.Summary
 	Samples []activity.Reading
-	All     *machines.Fleet
+	All     *model.AllMachines
 	Ports   *ports.AllMachines
 	Awake   *awake.Report
 	// value: every other Mac's Awake, as its engine reports it.
@@ -76,7 +77,7 @@ func badge(r Reading, needs page.Section) *page.Badge {
 	}
 	if r.All != nil {
 		for _, h := range r.All.Macs {
-			b.Down = b.Down || slices.ContainsFunc(h.VMs, machines.Down)
+			b.Down = b.Down || slices.ContainsFunc(h.VMs, model.Down)
 		}
 	}
 	return &b
@@ -201,8 +202,8 @@ func updateAll(needs page.Section, home *overview.Summary) *page.Action {
 }
 
 // value: the line under a Mac in Home: its Awake.
-func homeLine(r Reading) func(h machines.HostView) page.Value {
-	return func(h machines.HostView) page.Value {
+func homeLine(r Reading) func(h model.MacView) page.Value {
+	return func(h model.MacView) page.Value {
 		if h.ThisMac {
 			if r.Awake != nil {
 				if w := awakeWords(*r.Awake); w != "" {
@@ -282,8 +283,8 @@ func accountsTile(home *overview.Summary) page.Section {
 const (
 	CallCreate    = "machines.create-workspace"
 	CallStop      = "engine.stop"
-	CallAwake     = "awake.keep"
-	CallSleep     = "awake.off"
+	CallKeepAwake = "awake.keep"
+	CallAwakeOff  = "awake.off"
 	CallUpdate    = "apps.update"
 	CallAddMac    = "machines.add"
 	CallStopVM    = "machines.stop"
@@ -305,7 +306,7 @@ func newVM() page.Action {
 				{Value: "throwaway", Label: "Throwaway", Note: "deleted when it powers off from inside"},
 				{Value: "permanent", Label: "Permanent", Note: "kept until you delete it"},
 			}},
-			{Key: "Request.Resources.MemoryBytes", Label: "Memory", Kind: page.FieldSelect, Default: gigabytes(4), Options: []page.Option{{Value: gigabytes(4), Label: "4 GB"}, {Value: gigabytes(8), Label: "8 GB"}}},
+			{Key: "Request.Size.MemoryBytes", Label: "Memory", Kind: page.FieldSelect, Default: gigabytes(4), Options: []page.Option{{Value: gigabytes(4), Label: "4 GB"}, {Value: gigabytes(8), Label: "8 GB"}}},
 		}}}
 }
 
@@ -330,8 +331,8 @@ func stopAll(r Reading) page.Action {
 			}
 			for _, vm := range h.VMs {
 				switch {
-				case vm.State != machines.Running:
-				case vm.Lifetime == machines.AlwaysOn:
+				case vm.State != model.Running:
+				case vm.Lifetime == model.AlwaysOn:
 					w.Servers = append(w.Servers, vm.Name)
 				default:
 					w.VMs = append(w.VMs, engine.Stopped{Name: vm.Name, Lifetime: string(vm.Lifetime), Result: engine.ResultStopped})
@@ -349,14 +350,14 @@ func stopAll(r Reading) page.Action {
 func awakeAction(r *awake.Report) page.Action {
 	rows := []string{pagekeepawake.RowAwake}
 	if r != nil && r.Session != nil && r.Engine == awake.EngineRunning {
-		return page.Action{ID: ActionAwakeOff, Label: "sleep", On: page.OnRow, Rows: rows, Priority: 4, Mutates: true, Run: &page.Run{Call: CallSleep}}
+		return page.Action{ID: ActionAwakeOff, Label: "sleep", On: page.OnRow, Rows: rows, Priority: 4, Mutates: true, Run: &page.Run{Call: CallAwakeOff}}
 	}
 	terms := []int{1, 4, 8}
 	opts := make([]page.Option, 0, len(terms))
 	for _, h := range terms {
 		opts = append(opts, page.Option{Value: strconv.FormatInt(int64(time.Duration(h)*time.Hour), 10), Label: strconv.Itoa(h) + " h"})
 	}
-	return page.Action{ID: ActionKeepAwake, Label: "awake", On: page.OnRow, Rows: rows, Priority: 4, Mutates: true, Run: &page.Run{Call: CallAwake},
+	return page.Action{ID: ActionKeepAwake, Label: "awake", On: page.OnRow, Rows: rows, Priority: 4, Mutates: true, Run: &page.Run{Call: CallKeepAwake},
 		Form: &page.Form{Title: "Awake", Fields: []page.Field{
 			{Key: "For", Label: "Keep awake for", Kind: page.FieldSelect, Default: strconv.FormatInt(int64(4*time.Hour), 10), Options: opts},
 			{Key: "Lid", Label: "Lid", Kind: page.FieldSelect, Default: "Lid=false", Options: []page.Option{

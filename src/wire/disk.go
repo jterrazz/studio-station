@@ -2,17 +2,23 @@ package wire
 
 import (
 	"context"
+	"errors"
 	"path/filepath"
+	"time"
+
+	"github.com/jterrazz/studio-station/src/disk"
+	diskdocker "github.com/jterrazz/studio-station/src/disk/adapter/docker"
+	"github.com/jterrazz/studio-station/src/platform/local"
 
 	"github.com/spf13/cobra"
 
+	appscalls "github.com/jterrazz/studio-station/src/apps/calls"
 	"github.com/jterrazz/studio-station/src/catalog"
 	coremachine "github.com/jterrazz/studio-station/src/core/machine"
 	"github.com/jterrazz/studio-station/src/disk/adapter/apfs"
 	"github.com/jterrazz/studio-station/src/disk/adapter/posix"
+	diskcalls "github.com/jterrazz/studio-station/src/disk/calls"
 	diskcontract "github.com/jterrazz/studio-station/src/disk/contract"
-	"github.com/jterrazz/studio-station/src/domain/storage"
-	"github.com/jterrazz/studio-station/src/domain/tools"
 	diskcmd "github.com/jterrazz/studio-station/src/surface/cli/disk"
 	diskerase "github.com/jterrazz/studio-station/src/surface/cli/disk/erase"
 	diskfree "github.com/jterrazz/studio-station/src/surface/cli/disk/free"
@@ -29,7 +35,7 @@ func diskCommand(env kit.Env, m machine) *cobra.Command {
 	)
 }
 
-// invariant: station storage and its verbs are the hidden v2 words of
+// invariant: station diskOf and its verbs are the hidden v2 words of
 // station disk for one release (SPEC §4.3): clean is free, reset is erase.
 func storageAlias(env kit.Env, m machine) *cobra.Command {
 	names := m.diskOf(env).Names
@@ -39,15 +45,16 @@ func storageAlias(env kit.Env, m machine) *cobra.Command {
 	), "disk")
 }
 
-func (m machine) diskOf(env kit.Env) *storage.Service {
-	return storage.New(m.sys, catalog.Apps, storage.Options{
-		Disk:       m.disk(),
-		Pool:       m.pool,
-		Here:       m.kind,
-		Expand:     m.expander(),
-		Files:      m.appFiles(),
-		Inventory:  inventory{apps: appsOf(env, m)},
-		Configurer: setupSettingsWriter{settings: settingsOf(m)},
+func (m machine) diskOf(env kit.Env) *diskcalls.Surveyor {
+	return diskcalls.NewSurveyor(diskMachine{m.sys}, catalog.Apps, diskcalls.SurveyorOptions{
+		Disk:        m.disk(),
+		Containers:  diskdocker.New(m.sys.Run),
+		Pool:        m.pool,
+		ThisMachine: m.kind,
+		Expand:      m.expander(),
+		Files:       m.appFiles(),
+		Inventory:   inventory{apps: appsOf(env, m)},
+		Configurer:  setupSettingsWriter{settings: settingsOf(m)},
 	})
 }
 
@@ -61,45 +68,15 @@ func (m machine) disk() diskcontract.DiskUsage {
 	return apfs.New(m.sys.Run)
 }
 
-func (m machine) expander() storage.Expander {
-	return storage.Expander{Home: m.sys.Env.Home(), Roots: m.paths.Roots, Root: m.systemRoot()}
+func (m machine) expander() disk.Expander {
+	return disk.Expander{Home: m.sys.Env.Home(), Roots: m.paths.Roots, Root: m.systemRoot()}
 }
 
-// invariant: Go's env file is where `go env GOENV` says: $GOENV when set and
-// absolute ("off" writes nothing), else os.UserConfigDir()/go/env, which is
-// ~/Library/Application Support on darwin and the XDG config root on linux.
 func (m machine) appFiles() map[catalog.AppFile]string {
-	home := m.sys.Env.Home()
-	goenv := filepath.Join(home, "Library", "Application Support", "go", "env")
-	if m.kind == catalog.Linux {
-		goenv = filepath.Join(m.paths.Roots.Config, "go", "env")
-	}
-	switch v := m.vars["GOENV"]; {
-	case v == "off":
-		goenv = ""
-	case filepath.IsAbs(v):
-		goenv = v
-	}
-	bunfig := filepath.Join(home, ".bunfig.toml")
-	if filepath.IsAbs(m.vars["XDG_CONFIG_HOME"]) {
-		bunfig = filepath.Join(m.vars["XDG_CONFIG_HOME"], ".bunfig.toml")
-	}
-	mise := filepath.Join(m.paths.Roots.Config, "mise", "config.toml")
-	if dir := m.vars["MISE_CONFIG_DIR"]; filepath.IsAbs(dir) {
-		mise = filepath.Join(dir, "config.toml")
-	}
-	if file := m.vars["MISE_GLOBAL_CONFIG_FILE"]; filepath.IsAbs(file) {
-		mise = file
-	}
-	return map[catalog.AppFile]string{
-		catalog.FileGoEnv:  goenv,
-		catalog.FileNpmrc:  filepath.Join(home, ".npmrc"),
-		catalog.FileBunfig: bunfig,
-		catalog.FileMise:   mise,
-	}
+	return catalog.AppFilePaths(m.sys.Env.Home(), m.paths.Roots.Prefs, m.kind, m.vars)
 }
 
-type inventory struct{ apps *tools.Service }
+type inventory struct{ apps *appscalls.Shelf }
 
 func (i inventory) Installed(ctx context.Context, each func(map[string]bool)) {
 	for reports := range i.apps.Watch(ctx) {
@@ -111,4 +88,55 @@ func (i inventory) Installed(ctx context.Context, each func(map[string]bool)) {
 		}
 		each(out)
 	}
+}
+
+type diskMachine struct{ h local.System }
+
+func (d diskMachine) Now() time.Time { return d.h.Clock.Now() }
+func (d diskMachine) Sleep(ctx context.Context, t time.Duration) error {
+	return d.h.Clock.Sleep(ctx, t)
+}
+func (d diskMachine) Glob(pattern string) []string {
+	matches, _ := d.h.FS.Glob(pattern)
+	return matches
+}
+func (d diskMachine) Exists(path string) bool {
+	_, err := d.h.FS.Stat(path)
+	return err == nil
+}
+func (d diskMachine) Names(dir string) ([]string, error) {
+	entries, err := d.h.FS.ReadDir(dir)
+	if err != nil {
+		return nil, err
+	}
+	names := make([]string, 0, len(entries))
+	for _, e := range entries {
+		names = append(names, e.Name())
+	}
+	return names, nil
+}
+func (d diskMachine) ReadFile(path string) ([]byte, error) { return d.h.FS.ReadFile(path) }
+func (d diskMachine) Prune(dir string)                     { _ = d.h.FS.Remove(dir) }
+func (d diskMachine) Has(name string) bool {
+	_, ok := d.h.Run.LookPath(name)
+	return ok
+}
+
+func (d diskMachine) Run(ctx context.Context, name string, args, env []string) (diskcalls.Ran, error) {
+	ran, err := d.h.Run.Attach(ctx, local.Cmd{Name: name, Args: args, Env: env}, local.ToStderr)
+	if errors.Is(err, local.ErrNotFound) {
+		return diskcalls.Ran{}, nil
+	}
+	return diskcalls.Ran{Found: true, Code: ran.ExitCode, LastStderr: ran.LastStderr}, err
+}
+
+func (d diskMachine) Keep(file string, data []byte) error {
+	if err := d.h.FS.MkdirAll(filepath.Dir(file), 0o755); err != nil {
+		return err
+	}
+	tmp := file + ".tmp"
+	if err := d.h.FS.WriteFile(tmp, data, 0o644); err != nil {
+		return err
+	}
+	return d.h.FS.Rename(tmp, file)
 }

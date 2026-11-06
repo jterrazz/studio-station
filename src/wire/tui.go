@@ -8,11 +8,10 @@ import (
 	"sync"
 
 	"github.com/jterrazz/studio-station/src/engine"
-	"github.com/jterrazz/studio-station/src/engine/process"
 	"github.com/jterrazz/studio-station/src/page"
+	"github.com/jterrazz/studio-station/src/platform/local"
 	"github.com/jterrazz/studio-station/src/surface/cli/kit"
 	"github.com/jterrazz/studio-station/src/surface/tui"
-	"github.com/jterrazz/studio-station/src/system"
 	"github.com/jterrazz/studio-station/src/ui/token"
 )
 
@@ -36,7 +35,7 @@ func tuiOpener(env kit.Env, m machine, noColor bool) func(context.Context) error
 // invariant: a screen is the page its command prints and an action the
 // command it runs: the TUI runs this very binary for the CLI's words, so a
 // page and a gesture each have one function. An action runs alone, on
-// every host: a read that started before it would show the state it is
+// every system: a read that started before it would show the state it is
 // changing, and in a spec world, which each run reads at its start and
 // writes back at its end, it would write the action's effect away.
 type binary struct {
@@ -112,26 +111,26 @@ func skipped(stdout string) []string {
 	return out
 }
 
-func (b *binary) run(ctx context.Context, args []string) (system.Output, error) {
+func (b *binary) run(ctx context.Context, args []string) (local.Output, error) {
 	return b.runIn(ctx, args, "")
 }
 
-func (b *binary) runIn(ctx context.Context, args []string, stdin string) (system.Output, error) {
-	return b.m.sys.Run.Output(ctx, system.Cmd{Name: b.m.sys.Env.Executable(), Args: args, Env: []string{"STATION_TERMINAL="}, Stdin: stdin})
+func (b *binary) runIn(ctx context.Context, args []string, stdin string) (local.Output, error) {
+	return b.m.sys.Run.Output(ctx, local.Cmd{Name: b.m.sys.Env.Executable(), Args: args, Env: []string{"STATION_TERMINAL="}, Stdin: stdin})
 }
 
 func (b *binary) open(ctx context.Context, target string) error {
-	return b.exec(ctx, system.Cmd{Name: "open", Args: []string{target}})
+	return b.exec(ctx, local.Cmd{Name: "open", Args: []string{target}})
 }
 
 // invariant: a new terminal is Terminal.app told to run the line, as the
 // menu bar's Open in Terminal does.
 func (b *binary) terminal(ctx context.Context, line string) error {
 	quoted := strings.ReplaceAll(strings.ReplaceAll(line, `\`, `\\`), `"`, `\"`)
-	return b.exec(ctx, system.Cmd{Name: "osascript", Args: []string{"-e", `tell application "Terminal" to do script "` + quoted + `"`, "-e", `tell application "Terminal" to activate`}})
+	return b.exec(ctx, local.Cmd{Name: "osascript", Args: []string{"-e", `tell application "Terminal" to do script "` + quoted + `"`, "-e", `tell application "Terminal" to activate`}})
 }
 
-func (b *binary) exec(ctx context.Context, c system.Cmd) error {
+func (b *binary) exec(ctx context.Context, c local.Cmd) error {
 	out, err := b.m.sys.Run.Output(ctx, c)
 	if err != nil {
 		return err
@@ -193,7 +192,7 @@ func tuiWatch(ctx context.Context, m machine) func([]string) func() {
 		done := make(chan struct{})
 		go func() {
 			defer close(done)
-			updates, err := m.engineAPI().c.Watch(watch, process.Watch, process.WatchIn{Machines: held})
+			updates, err := m.engineAPI().c.Watch(watch, engine.CallWatch, engine.WatchIn{Machines: held})
 			if err != nil {
 				return
 			}

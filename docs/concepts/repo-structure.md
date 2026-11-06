@@ -1,6 +1,6 @@
 # Repo structure
 
-A repository is a written corpus, some thin injection layers, and a compiler that projects source into machine-readable forms. Keep those three roles distinct and knowledge stays in exactly one place.
+A repository is a written corpus, some thin injection layers, and a compiler that projects source into machine-readable forms. Keep those three roles distinct and knowledge stays in exactly one home.
 
 This is the doctrine every `@jterrazz` repo follows, whatever the language. It is the canonical home for it.
 
@@ -8,7 +8,7 @@ This is the doctrine every `@jterrazz` repo follows, whatever the language. It i
 
 A repository's own knowledge lives in its `docs/`. Anything a change in this repository would make false (its architecture, its layers, its conventions, its runbook, its quirks, the decisions it alone took) is authored here and nowhere else.
 
-An outside corpus holds two things about a repository and no more: a pointer to it, and the contracts it has with other repositories. The OS wiki (`studio-os`, `home/<brand>/wiki/`) is the outside corpus in practice: it carries one row per repository and the agreements that span several of them. When a sentence there could be falsified by one repository alone, it is in the wrong place.
+An outside corpus holds two things about a repository and no more: a pointer to it, and the contracts it has with other repositories. The OS wiki (`studio-os`, `home/<brand>/wiki/`) is the outside corpus in practice: it carries one row per repository and the agreements that span several of them. When a sentence there could be falsified by one repository alone, it is in the wrong home.
 
 ## The three roles
 
@@ -55,9 +55,9 @@ A reader landing on an unfamiliar repository knows where its shape is, how it is
 | `concepts/architecture.md` | The shape of the thing: its parts, their boundaries, and why the lines are drawn there.                 | always                                        |
 | `guides/develop.md`        | How a change is made: the toolchain, the loop, which file a change opens, what it owes.                 | always                                        |
 | `guides/test.md`           | What proves a change: the suites, the ground they stand on, how a golden is regenerated.                | always                                        |
-| `guides/release.md`        | How it ships and how it runs: the publish or the deploy, what leaves the tree, the footprint it leaves. | when the repository ships something that runs |
+| `guides/release.md`        | How it ships and how it runs: the release or the deploy, what leaves the tree, the footprint it leaves. | when the repository ships something that runs |
 
-`architecture`, `develop` and `test` are required of every repository: everything has a shape, a way of being changed, and something that proves the change. A repository that cannot fill one of them has found a real hole, not an exemption. `release` is required when the repository ships something that runs: an image it deploys, a package it publishes, a binary it releases, a platform it provisions. The rule only ever requires it; it never forbids it. A repository that ships in a way its tree does not show (a tagged release in `.github/`) writes its `release.md` unasked, and a library that writes a hollow one gets a review comment, not a red gate.
+`architecture`, `develop` and `test` are required of every repository: everything has a shape, a way of being changed, and something that proves the change. A repository that cannot fill one of them has found a real hole, not an exemption. `release` is required when the repository ships something that runs: an image it deploys, a package it releases to a registry, a binary it releases, a platform it provisions. The rule only ever requires it; it never forbids it. A repository that ships in a way its tree does not show (a tagged release in `.github/`) writes its `release.md` unasked, and a library that writes a hollow one gets a review comment, not a red gate.
 
 `start/` is what a repository with outside users opens on: a package, a CLI, a framework. An application nobody installs may leave it empty: its newcomer is a maintainer, and `guides/develop.md` is their first page.
 
@@ -95,13 +95,13 @@ A decision that spans two or more repositories is not recorded here. It belongs 
 
 ## Packages vs applications
 
-A package's reference documents what its types cannot say: the commands, the options a config takes, the rules and findings it prints, the words it uses. The API itself is the types the package publishes: the declarations an editor resolves are the one copy, so no reference page restates a signature and no API dump is generated into `docs/`. An **application** (an API server, a product CLI, a web app) adopts the doctrine in full (the corpus, the routing layers, the single-home rule), and its `reference/` holds what its operators look up. An application may still have its own compiler when it holds a source layer worth projecting, as this repo does with its install registry.
+A package's reference documents what its types cannot say: the commands, the options its settings take, the rules and findings it prints, the words it uses. The API itself is the types the package exports: the declarations an editor resolves are the one copy, so no reference page restates a signature and no API dump is generated into `docs/`. An **application** (an API server, a product CLI, a web app) adopts the doctrine in full (the corpus, the routing layers, the single-home rule), and its `reference/` holds what its operators look up. An application may still have its own compiler when it holds a source layer worth projecting, as this repo does with its install registry.
 
 ## Language specifics
 
-The doctrine applies in full to every repo: a written corpus in the shape above, thin routing layers, and knowledge that lives in exactly one place. Only the _compiler_ half is language-specific. The projection-vs-presentation criterion is unchanged: a cross-layer compile is committed, a same-layer re-packaging is a presentation built only when a delivery target exists.
+The doctrine applies in full to every repo: a written corpus in the shape above, thin routing layers, and knowledge that lives in exactly one home. Only the _compiler_ half is language-specific. The projection-vs-presentation criterion is unchanged: a cross-layer compile is committed, a same-layer re-packaging is a presentation built only when a delivery target exists.
 
 ## Related
 
 - [The stack](stack.md): how `@jterrazz` projects compose.
-- [Tools and skills](../reference/tools-and-skills.md): this repo's own compiler, `make generate`.
+- [Apps and skills](../reference/apps-and-skills.md): this repo's own compiler, `make generate`.

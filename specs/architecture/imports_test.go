@@ -2,7 +2,6 @@ package architecture_test
 
 import (
 	"fmt"
-	"maps"
 	"slices"
 	"strings"
 	"testing"
@@ -113,7 +112,8 @@ func isKernel(rel string) bool {
 // standard one by ioStd, a third-party one by the row's own libraries.
 // remote's adapters speak remote/api, its frames, as a family's adapter
 // speaks its model; their tests run remote/serve as the far side, and any
-// test may use its own family's fake.
+// test may use its own family's fake; a platform package's fake (local/localtest)
+// imports the package whose types it fakes.
 func allowedModule(p place, pkg, rel string, test bool) bool {
 	own := topOf(rel) == p.family && p.family != ""
 	if test && (rel == pkg || (own && rel == p.family+"/contract/contracttest") || (own && rel == p.family+"/adapter/fake") || rel == "world") {
@@ -145,7 +145,7 @@ func allowedModule(p place, pkg, rel string, test bool) bool {
 	case rowRemote:
 		return isKernel(rel) || isModel(rel) || (topOf(rel) == "remote" && !isAdapter(rel))
 	case rowPlatform:
-		return topOf(rel) == "platform" && test
+		return (topOf(rel) == "platform" && test) || pkg == rel+"/"+rel[strings.LastIndex(rel, "/")+1:]+"test"
 	case rowSurface:
 		return isCalls(rel) || isKernel(rel) || (isModel(rel) && rel != "engine") || rel == "page" || rel == "pages" || strings.HasPrefix(rel, "pages/") ||
 			rel == "output" || strings.HasPrefix(rel, "ui/render") || rel == "catalog" || topOf(rel) == "surface"
@@ -185,87 +185,32 @@ func allowedOutside(p place, ip string, test bool) bool {
 	return false
 }
 
-// invariant: the allowlist of imports: the packages ARCHITECTURE 16 step 1
-// moved into the new tree as they were (a path or `x/*`), and the imports
-// (module-relative or standard, a path or `x/*`) they still make against
-// their row. It only shrinks; a line no
-// longer true fails the gate until it is removed.
-func importsTolerated() map[string][]string {
-	return map[string][]string{
-		"engine":                {"domain/machines", "domain/power", "domain/services", "domain/settings", "io", "io/fs", "system", "system/systemtest"},
-		"machines/adapter/ssh":  {"net", "os"},
-		"machines/adapter/tart": {"system", "system/systemtest"},
-		"platform/local":        {"platform/darwin", "system"},
-		"surface/cli/kit":       {"domain/*", "engine", "testing"},
-	}
-}
-
-func toleratedImport(pkg, rel string) (key, imp string, ok bool) {
-	for _, key := range slices.Sorted(maps.Keys(importsTolerated())) {
-		imps := importsTolerated()[key]
-		if !matches(key, pkg) {
-			continue
-		}
-		for _, imp := range imps {
-			if matches(imp, rel) {
-				return key, imp, true
-			}
-		}
-	}
-	return "", "", false
-}
-
 // invariant: rule imports: each family's model pure, adapters isolated,
 // surfaces through calls. The tolerated top-level packages stay under the
 // import table of layers_test.go; a package this table rules imports one
 // only where its row allows it, so no family reaches today's I/O.
 func ruleFamilyImports(w *world) []finding {
 	var out []finding
-	seen := map[said]bool{}
 	for _, f := range w.files {
 		p, ok := placeOf(f.pkg)
 		if !ok {
 			continue
 		}
 		for i, ip := range f.imports {
-			var allowed bool
-			rel, mod := strings.CutPrefix(ip, module+"/src/")
-			if mod {
+			allowed := allowedOutside(p, ip, f.test)
+			if rel, mod := strings.CutPrefix(ip, module+"/src/"); mod {
 				allowed = allowedModule(p, f.pkg, rel, f.test)
-			} else {
-				rel, allowed = ip, allowedOutside(p, ip, f.test)
-			}
-			if !allowed {
-				if key, imp, ok := toleratedImport(f.pkg, rel); ok {
-					seen[said{key, imp}], allowed = true, true
-				}
 			}
 			if !allowed {
 				out = append(out, finding{"imports", f.at(f.syntax.Imports[i].Pos()), fmt.Sprintf("a %s package (%q) may not import %q", p.row, f.pkg, ip)})
 			}
 		}
 	}
-	for _, pkg := range slices.Sorted(maps.Keys(importsTolerated())) {
-		for _, rel := range importsTolerated()[pkg] {
-			if !seen[said{pkg, rel}] {
-				out = append(out, finding{"imports", "specs/architecture/imports_test.go", fmt.Sprintf("src/%s no longer imports %q against its row: remove it from importsTolerated", pkg, rel)})
-			}
-		}
-	}
 	return out
 }
 
-func TestFamilyImports(t *testing.T)        { judge(t, "FamilyImports") }
-func TestFamilyImportsOldTree(t *testing.T) { judge(t, "FamilyImportsOldTree") }
+func TestFamilyImports(t *testing.T)                 { judge(t, "FamilyImports") }
+func TestAFamilyModelReachesNoPlatform(t *testing.T) { judge(t, "FamilyImportsPlatform") }
 func TestASurfaceReachesTheEngineOnlyThroughItsCalls(t *testing.T) {
 	judge(t, "FamilyImportsSurfaceEngine")
-}
-
-func TestImportsAllowlistShrinks(t *testing.T) {
-	clean, _ := worlds(t)
-	pkg := slices.Sorted(maps.Keys(importsTolerated()))[0]
-	got := ruleFamilyImports(withoutPackage(clean, func(p string) bool { return matches(pkg, p) }))
-	if !slices.ContainsFunc(got, func(f finding) bool { return strings.Contains(f.what, "src/"+pkg+" no longer imports") }) {
-		t.Errorf("the imports rule kept the lines of src/%s, a package that is gone", pkg)
-	}
 }

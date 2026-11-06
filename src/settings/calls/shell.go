@@ -13,7 +13,7 @@ type ZshIn struct {
 }
 
 var Zsh = call.Call[Deps, ZshIn, string]{
-	Name: "shell.zsh", Where: call.AtTarget, Applies: machine.Anywhere,
+	Name: "settings.zsh-block", Where: call.InProcess, Applies: machine.Anywhere,
 	Run: func(ctx context.Context, d Deps, in ZshIn, _ call.Progress) (string, error) {
 		return d.Shell.Zsh(ctx, in.Completion)
 	},

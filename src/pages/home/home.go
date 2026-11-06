@@ -5,10 +5,10 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/jterrazz/studio-station/src/apps"
+
 	"github.com/jterrazz/studio-station/src/background"
 	"github.com/jterrazz/studio-station/src/catalog"
-	"github.com/jterrazz/studio-station/src/domain/config"
-	"github.com/jterrazz/studio-station/src/domain/tools"
 	"github.com/jterrazz/studio-station/src/overview"
 	"github.com/jterrazz/studio-station/src/page"
 	"github.com/jterrazz/studio-station/src/pages"
@@ -16,6 +16,7 @@ import (
 	pageports "github.com/jterrazz/studio-station/src/pages/ports"
 	pagesettings "github.com/jterrazz/studio-station/src/pages/settings"
 	"github.com/jterrazz/studio-station/src/ports"
+	"github.com/jterrazz/studio-station/src/settings"
 )
 
 const KeyFix = "enter"
@@ -141,7 +142,7 @@ func tallies(marks []page.Mark) []page.Tally {
 	return out
 }
 
-func appCounts(reports []tools.Report) []page.Tally {
+func appCounts(reports []apps.Report) []page.Tally {
 	marks := make([]page.Mark, 0, len(reports))
 	for _, r := range reports {
 		marks = append(marks, pages.MarkOf(r.State))
@@ -149,7 +150,7 @@ func appCounts(reports []tools.Report) []page.Tally {
 	return tallies(marks)
 }
 
-func settingsCounts(reports []config.Report) []page.Tally {
+func settingsCounts(reports []settings.Report) []page.Tally {
 	marks := make([]page.Mark, 0, len(reports))
 	for _, r := range reports {
 		marks = append(marks, pages.MarkOf(r.State))

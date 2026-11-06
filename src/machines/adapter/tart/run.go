@@ -10,7 +10,7 @@ import (
 
 	"github.com/jterrazz/studio-station/src/machines"
 	"github.com/jterrazz/studio-station/src/machines/contract"
-	"github.com/jterrazz/studio-station/src/system"
+	"github.com/jterrazz/studio-station/src/platform/local"
 )
 
 const (
@@ -30,13 +30,13 @@ func (f files) exit(vm string) string    { return path.Join(f.runs(), vm+".exit"
 func (f files) console(vm string) string { return path.Join(f.state, "consoles", vm) }
 func (f files) log(vm string) string     { return path.Join(f.state, "logs", vm+".log") }
 func (f files) all(vm string) []string   { return []string{f.console(vm), f.pid(vm), f.exit(vm)} }
-func (f files) drop(fs system.FS, vm string) {
+func (f files) drop(fs local.FS, vm string) {
 	for _, file := range f.all(vm) {
 		_ = fs.Remove(file)
 	}
 }
 
-func (f files) number(fs system.FS, file string) (int, bool) {
+func (f files) number(fs local.FS, file string) (int, bool) {
 	data, err := fs.ReadFile(file)
 	if err != nil {
 		return 0, false
@@ -47,8 +47,8 @@ func (f files) number(fs system.FS, file string) (int, bool) {
 
 // invariant: a run is detached from the engine, and its exit code is written by
 // its own wrapper, so an engine restart reads the end of a run it never waited on.
-func wrapped(argv []string, exitFile string) system.Cmd {
-	return system.Cmd{Name: "sh", Args: append([]string{"-c", `"$@"; echo "$?" >"` + exitFile + `"`, "sh"}, argv...)}
+func wrapped(argv []string, exitFile string) local.Cmd {
+	return local.Cmd{Name: "sh", Args: append([]string{"-c", `"$@"; echo "$?" >"` + exitFile + `"`, "sh"}, argv...)}
 }
 
 func (h *hypervisor) Boot(ctx context.Context, vm string, o contract.BootOptions) (contract.Run, error) {
@@ -88,7 +88,7 @@ func (h *hypervisor) Adopt(ctx context.Context, vm string) (contract.Run, bool) 
 }
 
 func (h *hypervisor) defaultInterface(ctx context.Context) string {
-	out, err := h.run.Output(ctx, system.Cmd{Name: "route", Args: []string{"-n", "get", "default"}, Timeout: 5 * time.Second})
+	out, err := h.run.Output(ctx, local.Cmd{Name: "route", Args: []string{"-n", "get", "default"}, Timeout: 5 * time.Second})
 	if err != nil {
 		return ""
 	}

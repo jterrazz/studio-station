@@ -3,8 +3,14 @@ package wire
 import (
 	"context"
 	"errors"
+	"io/fs"
+	"path"
 	"path/filepath"
 	"strconv"
+	"time"
+
+	"github.com/jterrazz/studio-station/src/apps"
+	"github.com/jterrazz/studio-station/src/platform/local"
 
 	"github.com/spf13/cobra"
 
@@ -18,16 +24,18 @@ import (
 	"github.com/jterrazz/studio-station/src/apps/adapter/shell"
 	"github.com/jterrazz/studio-station/src/apps/adapter/skills"
 	"github.com/jterrazz/studio-station/src/apps/adapter/uv"
+	appscalls "github.com/jterrazz/studio-station/src/apps/calls"
 	"github.com/jterrazz/studio-station/src/apps/contract"
 	"github.com/jterrazz/studio-station/src/catalog"
-	"github.com/jterrazz/studio-station/src/domain/config"
-	"github.com/jterrazz/studio-station/src/domain/tools"
 	pagesettings "github.com/jterrazz/studio-station/src/pages/settings"
+	"github.com/jterrazz/studio-station/src/settings"
+	settingscalls "github.com/jterrazz/studio-station/src/settings/calls"
 	appscmd "github.com/jterrazz/studio-station/src/surface/cli/apps"
 	appsinstall "github.com/jterrazz/studio-station/src/surface/cli/apps/install"
 	appsremove "github.com/jterrazz/studio-station/src/surface/cli/apps/remove"
 	appsupdate "github.com/jterrazz/studio-station/src/surface/cli/apps/update"
 	"github.com/jterrazz/studio-station/src/surface/cli/kit"
+	"github.com/jterrazz/studio-station/src/surface/cli/words"
 )
 
 func appsCommand(env kit.Env, m machine) *cobra.Command {
@@ -41,7 +49,7 @@ func appsCommand(env kit.Env, m machine) *cobra.Command {
 
 // invariant: station tools and its verbs are the hidden v2 words of station
 // apps for one release (SPEC §4.3); upgrade's --via is update's --method.
-func toolsAlias(env kit.Env, m machine) *cobra.Command {
+func appsAlias(env kit.Env, m machine) *cobra.Command {
 	names := placedNames(appsOf(env, m))
 	update := appsupdate.Via(appsupdate.Command(appsupdate.Deps{ThisMachine: m.where, Now: m.sys.Clock.Now}, env))
 	return kit.Alias("tools", appscmd.Command(appscmd.Deps{Names: names, ThisMachine: m.where}, env,
@@ -51,7 +59,7 @@ func toolsAlias(env kit.Env, m machine) *cobra.Command {
 	), "apps")
 }
 
-func placedNames(s *tools.Service) func() []string {
+func placedNames(s *appscalls.Shelf) func() []string {
 	return func() []string {
 		placed := s.Placed()
 		out := make([]string, 0, len(placed))
@@ -62,39 +70,32 @@ func placedNames(s *tools.Service) func() []string {
 	}
 }
 
-func appsOf(env kit.Env, m machine) *tools.Service {
+func appsOf(env kit.Env, m machine) *appscalls.Shelf {
 	var ask kit.Asker
 	if env.Interactive {
 		ask = env.Prompt
 	}
 	registry, bundler := installers(m)
-	return tools.New(m.sys, catalog.Apps, configurer{settings: settingsOf(m), ask: ask}, tools.Options{
-		Pool:       m.pool,
-		Here:       m.kind,
-		Root:       m.systemRoot(),
-		Installers: registry,
-		Bundler:    bundler,
-		VMs:        m.machines(env.Interactive),
-		Log:        filepath.Join(m.paths.State, "logs", "apps.log"),
+	return appscalls.NewShelf(appsMachine{m.sys}, catalog.Apps, configurer{settings: settingsOf(m), ask: ask}, appscalls.ShelfOptions{
+		Pool:        m.pool,
+		ThisMachine: m.kind,
+		Root:        m.systemRoot(),
+		Installers:  registry,
+		Bundler:     bundler,
+		VMs:         m.machines(env.Interactive),
+		Log:         filepath.Join(m.paths.State, "logs", "apps.log"),
 	})
 }
 
 func installers(m machine) (contract.Installers, contract.Bundler) {
 	run := m.sys.Run
-	shims := filepath.Join(m.or("MISE_DATA_DIR", filepath.Join(m.sys.Env.Home(), ".local", "share", "mise")), "shims")
-	// invariant: a bundle runs with mise's shims first once mise is installed,
-	// so a formula's post-install finds the runtimes it pins.
-	bundle := brew.New(run, func() []string {
-		if _, ok := run.LookPath("mise"); ok {
-			return []string{"PATH=" + shims + ":" + m.vars["PATH"]}
-		}
-		return nil
-	})
+	runtimes := mise.New(run)
+	bundle := brew.New(run, func() []string { return runtimes.ShimsFirst(m.sys.Env.Home(), m.vars) })
 	registry := contract.Installers{}
 	for _, i := range []contract.Installer{
 		bundle.Formulae(), bundle.Casks(),
 		mas.New(run), npm.New(run, bundle), uv.New(run, bundle),
-		bun.New(run), mise.New(run),
+		bun.New(run), runtimes,
 		skills.New(skills.Options{
 			Run: run, FS: m.sys.FS, Net: m.sys.Net, Home: m.sys.Env.Home(),
 			APIURL: m.or("STATION_GITHUB_API_URL", "https://api.github.com"),
@@ -119,32 +120,32 @@ func installers(m machine) (contract.Installers, contract.Bundler) {
 // invariant: a Then item that asks values or a terminal is skipped off one, as a
 // row naming the command that applies it later, never as a failure.
 type configurer struct {
-	settings *config.Service
+	settings *settingscalls.Catalogue
 	ask      kit.Asker
 }
 
-func (c configurer) Configure(ctx context.Context, item string, interactive bool) (tools.Step, error) {
+func (c configurer) Configure(ctx context.Context, item string, interactive bool) (apps.Step, error) {
 	found, err := c.settings.Find([]string{item})
 	if err != nil {
-		return tools.Step{}, err
+		return apps.Step{}, err
 	}
 	it := found[0]
 	if c.settings.NeedsInput(it) && !interactive {
-		return tools.Step{Item: item, Result: catalog.StateAbsent, Detail: "needs a terminal: station settings apply " + item}, nil
+		return apps.Step{Item: item, Result: catalog.StateAbsent, Detail: "needs a terminal: station settings apply " + item}, nil
 	}
 	var values map[string]string
 	if len(it.Inputs) > 0 && c.ask != nil {
 		if values, err = c.ask.Form(pagesettings.InputsForm(item, it.Inputs, c.settings.Defaults(item))); err != nil {
-			return tools.Step{}, err
+			return apps.Step{}, err
 		}
 	}
 	change, err := c.settings.Install(ctx, item, values, interactive)
-	var root *config.NeedsRootError
+	var root *settings.NeedsRootError
 	if errors.As(err, &root) {
-		return tools.Step{Item: item, Result: catalog.StateAbsent, Detail: "needs root: sudo station settings apply " + item}, nil
+		return apps.Step{Item: item, Result: catalog.StateAbsent, Detail: "needs root: " + words.SettingsAsRoot("apply", item)}, nil
 	}
 	if err != nil {
-		return tools.Step{}, err
+		return apps.Step{}, err
 	}
 	detail := ""
 	switch n := len(change.Steps); {
@@ -153,5 +154,41 @@ func (c configurer) Configure(ctx context.Context, item string, interactive bool
 	case n > 1:
 		detail = change.Steps[0].Label + " and " + strconv.Itoa(n-1) + " more"
 	}
-	return tools.Step{Item: item, Result: catalog.StateOK, Detail: detail}, nil
+	return apps.Step{Item: item, Result: catalog.StateOK, Detail: detail}, nil
+}
+
+type appsMachine struct{ h local.System }
+
+func (a appsMachine) Now() time.Time { return a.h.Clock.Now() }
+func (a appsMachine) Sleep(ctx context.Context, d time.Duration) error {
+	return a.h.Clock.Sleep(ctx, d)
+}
+func (a appsMachine) Home() string { return a.h.Env.Home() }
+func (a appsMachine) Glob(pattern string) []string {
+	matches, _ := a.h.FS.Glob(pattern)
+	return matches
+}
+func (a appsMachine) LookPath(name string) (string, bool) { return a.h.Run.LookPath(name) }
+func (a appsMachine) Exists(p string) bool {
+	_, err := a.h.FS.Stat(p)
+	return err == nil
+}
+
+func (a appsMachine) RunBriefly(ctx context.Context, name string, args []string, budget time.Duration) (output string, code int, ran bool) {
+	out, err := a.h.Run.Output(ctx, local.Cmd{Name: name, Args: args, Timeout: budget})
+	if err != nil {
+		return "", 0, false
+	}
+	return out.Stdout + out.Stderr, out.ExitCode, true
+}
+
+func (a appsMachine) Keep(file, line string) error {
+	before, err := a.h.FS.ReadFile(file)
+	if err != nil && !errors.Is(err, fs.ErrNotExist) {
+		return err
+	}
+	if err := a.h.FS.MkdirAll(path.Dir(file), 0o700); err != nil {
+		return err
+	}
+	return a.h.FS.WriteFile(file, append(before, line...), 0o600)
 }

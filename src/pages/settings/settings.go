@@ -62,7 +62,7 @@ func Row(r settings.Row, now time.Time) page.Row {
 			row.Cells = []page.Value{page.Texts("not applied", "needs "+r.Needs)}
 			row.Hint = page.Cmd("station apps install " + r.Needs)
 		}
-	case settings.StateOffHere:
+	case settings.StateOffThisMac:
 		row.Mark, row.Cells = page.OffHere, []page.Value{page.Text("off here")}
 	case settings.StateNotForThisMachine:
 		row.Mark, row.Cells = page.NotForThisMachine, []page.Value{page.Texts("not for this machine", r.Why)}
@@ -82,7 +82,7 @@ func checkedRow(r settings.Row, row page.Row) page.Row {
 		row.Hint = page.Cmd(r.Fix.Path)
 	case settings.CheckedUnknown:
 		row.Mark, row.Reason, row.Cells = page.NotKnown, page.Late, []page.Value{page.Texts("unknown", r.Value)}
-	case settings.CheckedOffHere:
+	case settings.CheckedOffThisMac:
 		row.Mark, row.Cells = page.OffHere, []page.Value{page.Texts("off here", "not checked on this machine")}
 	case settings.CheckedNotForThisMachine:
 		row.Mark, row.Cells = page.NotForThisMachine, []page.Value{page.Texts("not for this machine", r.Why)}
@@ -98,7 +98,7 @@ func checkedOrder(s settings.CheckedState) int {
 		return 1
 	case settings.AsExpected:
 		return 2
-	case settings.CheckedOffHere:
+	case settings.CheckedOffThisMac:
 		return 3
 	case settings.CheckedNotForThisMachine:
 		return 5
@@ -114,7 +114,7 @@ func order(s settings.State) int {
 		return 1
 	case settings.StateApplied:
 		return 2
-	case settings.StateOffHere:
+	case settings.StateOffThisMac:
 		return 3
 	case settings.StateReading:
 		return 4
@@ -178,7 +178,7 @@ func alwaysOnFolded(rows []settings.Row) page.Row {
 
 func touched(rows []settings.Row) bool {
 	for _, r := range rows {
-		if r.State == settings.StateApplied || r.State == settings.StateChangedSince || r.State == settings.StateOffHere {
+		if r.State == settings.StateApplied || r.State == settings.StateChangedSince || r.State == settings.StateOffThisMac {
 			return true
 		}
 	}

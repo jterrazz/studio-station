@@ -169,7 +169,7 @@ func MatrixOf(cols []Column, servers []string) Matrix {
 
 func touched(rows []Row) bool {
 	return slices.ContainsFunc(rows, func(r Row) bool {
-		return r.Group == AlwaysOnMac && (r.State == StateApplied || r.State == StateChangedSince || r.State == StateOffHere)
+		return r.Group == AlwaysOnMac && (r.State == StateApplied || r.State == StateChangedSince || r.State == StateOffThisMac)
 	})
 }
 

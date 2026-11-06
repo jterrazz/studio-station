@@ -42,6 +42,11 @@ func Translate(err error, path string) *fail.Error {
 		preferencesFailure,
 	} {
 		if f, ok := failure(err); ok {
+			// invariant: every worded error carries its one repair; a family's
+			// own that names none gets this command's help.
+			if f.Hint == "" {
+				f.Hint = hint
+			}
 			return f
 		}
 	}
@@ -67,3 +72,7 @@ func AdminApply(setting, mac string, thisMac bool) string {
 	// terminal, in the words' table.
 	return words.AdminApply(setting, mac, thisMac)
 }
+
+const MachinesSSHUse = words.MachinesSSHUse
+
+func SSHConfigNotRefreshed(cause string) string { return words.SSHConfigNotRefreshed(cause) }

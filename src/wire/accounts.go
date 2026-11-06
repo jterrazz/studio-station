@@ -3,36 +3,30 @@ package wire
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"path"
 	"strings"
 
+	"github.com/jterrazz/studio-station/src/accounts"
 	"github.com/jterrazz/studio-station/src/accounts/adapter/cli"
+	"github.com/jterrazz/studio-station/src/accounts/adapter/tailscale"
+	accountscalls "github.com/jterrazz/studio-station/src/accounts/calls"
 	accountscontract "github.com/jterrazz/studio-station/src/accounts/contract"
 	"github.com/jterrazz/studio-station/src/catalog"
-	"github.com/jterrazz/studio-station/src/domain/accounts"
-	"github.com/jterrazz/studio-station/src/domain/guest"
 	"github.com/jterrazz/studio-station/src/engine"
-	"github.com/jterrazz/studio-station/src/engine/process"
-	"github.com/jterrazz/studio-station/src/ports"
-	"github.com/jterrazz/studio-station/src/ports/contract"
+	"github.com/jterrazz/studio-station/src/ports/adapter/guest"
 )
 
-func (m machine) accounts() *accounts.Service {
-	o := accounts.Options{Here: m.kind, HereName: m.where.Machine}
+func (m machine) accounts() *accountscalls.Reader {
+	o := accountscalls.ReaderOptions{ThisMachine: m.kind, ThisMacName: m.where.Machine, Now: m.sys.Clock.Now}
 	ids := m.identities(engine.ChildrenDir(m.paths.State))
 	if m.kind != catalog.Mac {
 		o.Keys = m.stationHostKeys
-		return accounts.New(m.sys, m.pool, ids, accounts.Ports{}, o)
+		return accountscalls.NewReader(m.pool, ids, accountscalls.ReaderPorts{}, o)
 	}
 	sec := m.secrets()
-	tn := m.tailnet()
 	d := m.engineAPI()
-	sources := accounts.Ports{
-		LendList: sec.ShareList,
-		Tailnet: func(ctx context.Context) accounts.TailnetAccount {
-			return tailnetAccount(ctx, tn)
-		},
+	sources := accountscalls.ReaderPorts{
+		ShareList: sec.ShareList,
 		VMs: func(ctx context.Context) ([]accounts.VM, error) {
 			recs, err := m.machines(false).Records()
 			if err != nil {
@@ -49,19 +43,19 @@ func (m machine) accounts() *accounts.Service {
 					}
 				}
 				for _, l := range shares[r.Name] {
-					vm.Lends = append(vm.Lends, accounts.Lend(l))
+					vm.Shares = append(vm.Shares, accounts.Loan(l))
 				}
 				out = append(out, vm)
 			}
 			return out, nil
 		},
-		Daemon: func(ctx context.Context) ([]accounts.VMRead, string) {
+		Engine: func(ctx context.Context) ([]accounts.VMRead, string) {
 			var view engine.AccountsView
-			if err := d.do(ctx, process.Accounts, nil, &view); err != nil {
+			if err := d.do(ctx, engine.CallAccounts, nil, &view); err != nil {
 				if _, missing := m.sys.FS.Stat(catalog.EnginePlist(m.sys.Env.Home())); missing != nil {
-					return nil, accounts.DaemonAbsent
+					return nil, accounts.EngineAbsent
 				}
-				return nil, accounts.DaemonStopped
+				return nil, accounts.EngineStopped
 			}
 			out := make([]accounts.VMRead, 0, len(view.VMs))
 			for _, v := range view.VMs {
@@ -69,15 +63,15 @@ func (m machine) accounts() *accounts.Service {
 				var rows []accounts.Account
 				if json.Unmarshal(v.Accounts, &rows) == nil {
 					for _, a := range rows {
-						read.Accounts = append(read.Accounts, accounts.Redact(a))
+						read.Accounts = append(read.Accounts, accounts.RedactAccount(a))
 					}
 				}
 				out = append(out, read)
 			}
-			return out, accounts.DaemonRunning
+			return out, accounts.EngineRunning
 		},
 	}
-	return accounts.New(m.sys, m.pool, ids, sources, o)
+	return accountscalls.NewReader(m.pool, tailscale.New(m.tailnet(), ids), sources, o)
 }
 
 // value: inside a VM, who may ssh in is the station hosts block the guest
@@ -104,19 +98,7 @@ func (m machine) stationHostKeys() []string {
 	return keys
 }
 
-func tailnetAccount(ctx context.Context, tn contract.Tailnet) accounts.TailnetAccount {
-	self, err := tn.Self(ctx)
-	var absent *ports.Absent
-	switch {
-	case errors.As(err, &absent):
-		return accounts.TailnetAccount{State: catalog.StateAbsent, Variant: self.Client.Variant}
-	case err != nil:
-		return accounts.TailnetAccount{State: catalog.StateBroken, Variant: self.Client.Variant}
-	}
-	return accounts.TailnetAccount{State: catalog.StateOK, Login: self.Login, Tailnet: self.Network, Variant: self.Client.Variant, Problem: self.Sharing.Backend}
-}
-
-// value: who each provider says is signed in here, read by its own tool, each
+// value: who each provider says is signed in here, read by its own app, each
 // read's process recorded under track.
 func (m machine) identities(track string) accountscontract.Identities {
 	if m.world != nil {

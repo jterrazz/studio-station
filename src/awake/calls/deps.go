@@ -11,7 +11,7 @@ import (
 )
 
 type Deps struct {
-	Keeper Keeper
+	Holder Holder
 	// value: this Mac: its name, the short label its words use, what it
 	// reports it can do.
 	Mac   string
@@ -23,7 +23,7 @@ type Deps struct {
 	NeverSleeps func() bool
 }
 
-type Keeper interface {
+type Holder interface {
 	// value: refuses a machine that cannot keep awake, in its own words.
 	Check() error
 	Read(ctx context.Context) <-chan awake.Report

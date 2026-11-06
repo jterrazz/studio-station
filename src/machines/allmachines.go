@@ -94,24 +94,12 @@ type AllMachines struct {
 	Read time.Time
 }
 
-type Check struct {
-	Name          string
-	State         catalog.State
-	Value, Detail string
-}
-
-type ProbeReport struct {
-	Name, User, IP string
-	Checks         []Check
-	Console        string
-}
-
 type CreateRequest struct {
 	Image, Name string
 	// value: a workspace's, throwaway or permanent; a server's is always on.
-	Lifetime  Lifetime
-	Network   string
-	Resources Resources
+	Lifetime Lifetime
+	Network  string
+	Size     Resources
 	// value: the create makes a server, which is always on.
 	Server bool
 	// value: a server's health check, a URL or host:port; empty for none.

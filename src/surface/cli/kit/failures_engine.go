@@ -2,19 +2,19 @@ package kit
 
 import (
 	"errors"
+
 	"github.com/jterrazz/studio-station/src/ports"
 
 	"github.com/jterrazz/studio-station/src/core/fail"
-	"github.com/jterrazz/studio-station/src/domain/guest"
-	"github.com/jterrazz/studio-station/src/domain/services"
-	"github.com/jterrazz/studio-station/src/engine"
+	enginecalls "github.com/jterrazz/studio-station/src/engine/calls"
+	model "github.com/jterrazz/studio-station/src/machines"
 )
 
 func engineFailure(err error) (*fail.Error, bool) {
-	var running *engine.RunningError
-	var macOnly *engine.MacOnlyError
-	var down *engine.DownError
-	var guestMacOnly *guest.HostOnlyRefusedError
+	var running *enginecalls.RunningError
+	var macOnly *enginecalls.MacOnlyError
+	var down *enginecalls.DownError
+	var guestMacOnly *model.GuestOnMacError
 	if f, ok := controlFailure(err); ok {
 		return f, true
 	}
@@ -34,10 +34,10 @@ func engineFailure(err error) (*fail.Error, bool) {
 func portsFailure(err error) (*fail.Error, bool) {
 	var full *ports.RangeFull
 	var perVM *ports.VMFull
-	var badPort *services.BadPortError
-	var ignored *services.IgnoredPortError
-	var away *services.HostAwayError
-	var unknown *services.UnknownVMError
+	var badPort *ports.BadPortError
+	var ignored *ports.IgnoredPortError
+	var away *ports.MacAwayError
+	var unknown *ports.UnknownVMError
 	switch {
 	case errors.As(err, &full):
 		return failed(full.Error(), "station ports stop-sharing <vm> <port>", err), true
@@ -56,9 +56,9 @@ func portsFailure(err error) (*fail.Error, bool) {
 }
 
 func controlFailure(err error) (*fail.Error, bool) {
-	var notInstalled *engine.NotInstalledError
-	var stuck *engine.StuckError
-	var boot *engine.BootError
+	var notInstalled *enginecalls.NotInstalledError
+	var stuck *enginecalls.StuckError
+	var boot *enginecalls.BootError
 	switch {
 	case errors.As(err, &notInstalled):
 		return failed(notInstalled.Error(), "station setup", err), true
@@ -74,6 +74,6 @@ func controlFailure(err error) (*fail.Error, bool) {
 // with the verb that starts it; an action there is refused.
 func vmStopped(err error) bool {
 	var e *fail.Error
-	var op *engine.OpError
-	return errors.As(err, &e) && e.Code == engine.VMStopped || errors.As(err, &op) && op.Code == engine.VMStopped
+	var op *enginecalls.OpError
+	return errors.As(err, &e) && e.Code == enginecalls.VMStopped || errors.As(err, &op) && op.Code == enginecalls.VMStopped
 }

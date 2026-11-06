@@ -8,6 +8,8 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/jterrazz/studio-station/src/ports"
+
 	"github.com/spf13/cobra"
 
 	"github.com/jterrazz/studio-station/src/catalog"
@@ -15,8 +17,8 @@ import (
 	"github.com/jterrazz/studio-station/src/core/confirm"
 	"github.com/jterrazz/studio-station/src/core/fail"
 	coremachine "github.com/jterrazz/studio-station/src/core/machine"
-	"github.com/jterrazz/studio-station/src/domain/machines"
-	"github.com/jterrazz/studio-station/src/domain/services"
+
+	model "github.com/jterrazz/studio-station/src/machines"
 	machinescalls "github.com/jterrazz/studio-station/src/machines/calls"
 	"github.com/jterrazz/studio-station/src/platform/local"
 	portscalls "github.com/jterrazz/studio-station/src/ports/calls"
@@ -80,14 +82,14 @@ func (m machine) locate(name string) (coremachine.Ref, bool) {
 // silent Mac that held it at its last answer first.
 func (m machine) holder(ctx context.Context, vm string) (string, error) {
 	r := m.far.router
-	others := m.machines(false).OtherHosts()
+	others := m.machines(false).OtherMacs()
 	got := each.All(ctx, others, func(ctx context.Context, mac string) (bool, error) {
 		out, err := call.Read(ctx, r, coremachine.Ref{Name: mac}, machinescalls.List, machinescalls.ListIn{ThisMac: true}, nil)
 		if err != nil {
 			return false, err
 		}
 		for _, mac := range out.All.Macs {
-			if slices.ContainsFunc(mac.VMs, func(v machines.VM) bool { return v.Name == vm }) {
+			if slices.ContainsFunc(mac.VMs, func(v model.VM) bool { return v.Name == vm }) {
 				return true, nil
 			}
 		}
@@ -108,26 +110,26 @@ func (m machine) holder(ctx context.Context, vm string) (string, error) {
 			return "", err
 		}
 	}
-	return "", &machines.UnknownMachineError{Name: vm}
+	return "", &model.UnknownMachineError{Name: vm}
 }
 
 type guestRelay struct{ d macEngine }
 
 func (g guestRelay) GuestExec(ctx context.Context, vm, line, stdin string) (stdout string, code int, err error) {
 	out, err := g.d.GuestExec(ctx, vm, line, stdin)
-	return out.Stdout, out.ExitCode, err
+	return out.Stdout, out.Code, err
 }
 
-func (m machine) askAllMachines(ctx context.Context, macs []string, answered func(string, machines.HostView)) {
+func (m machine) askAllMachines(ctx context.Context, macs []string, answered func(string, model.MacView)) {
 	r := m.far.router
-	for got := range each.Do(ctx, macs, func(ctx context.Context, mac string) (machines.HostView, error) {
+	for got := range each.Do(ctx, macs, func(ctx context.Context, mac string) (model.MacView, error) {
 		hello, err := r.Hello(ctx, mac)
 		if err != nil {
-			return machines.HostView{}, err
+			return model.MacView{}, err
 		}
 		out, err := call.Read(ctx, r, coremachine.Ref{Name: mac}, machinescalls.List, machinescalls.ListIn{ThisMac: true}, nil)
 		if err != nil || len(out.All.Macs) == 0 {
-			return machines.HostView{}, orNone(err)
+			return model.MacView{}, orNone(err)
 		}
 		view := out.All.Macs[0]
 		view.StationVersion = hello.Version
@@ -139,13 +141,13 @@ func (m machine) askAllMachines(ctx context.Context, macs []string, answered fun
 	}
 }
 
-func (m machine) askPorts(ctx context.Context, macs []string) map[string]services.HostView {
+func (m machine) askPorts(ctx context.Context, macs []string) map[string]ports.MacPorts {
 	r := m.far.router
-	answers := map[string]services.HostView{}
-	for mac, got := range each.All(ctx, macs, func(ctx context.Context, mac string) (services.HostView, error) {
+	answers := map[string]ports.MacPorts{}
+	for mac, got := range each.All(ctx, macs, func(ctx context.Context, mac string) (ports.MacPorts, error) {
 		out, err := call.Invoke(ctx, r, coremachine.Ref{Name: mac}, portscalls.List, portscalls.ListIn{}, nil)
 		if err != nil || len(out.AllMachines.Macs) == 0 {
-			return services.HostView{}, orNone(err)
+			return ports.MacPorts{}, orNone(err)
 		}
 		return out.AllMachines.Macs[0], nil
 	}) {
@@ -156,7 +158,7 @@ func (m machine) askPorts(ctx context.Context, macs []string) map[string]service
 	return answers
 }
 
-func (m machine) releaseOn(ctx context.Context, mac string, t services.Target, yes bool) (services.Lease, error) {
+func (m machine) releaseOn(ctx context.Context, mac string, t ports.Target, yes bool) (ports.Reservation, error) {
 	in := portscalls.StopSharingIn{VM: t.VM, Port: strconv.Itoa(t.Port)}
 	if yes {
 		in.Confirm = confirm.Yes

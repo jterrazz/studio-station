@@ -13,7 +13,7 @@ import (
 	imagescontract "github.com/jterrazz/studio-station/src/images/contract"
 	"github.com/jterrazz/studio-station/src/machines"
 	"github.com/jterrazz/studio-station/src/machines/contract"
-	"github.com/jterrazz/studio-station/src/system"
+	"github.com/jterrazz/studio-station/src/platform/local"
 )
 
 const (
@@ -29,15 +29,15 @@ type Kernel interface {
 }
 
 type hypervisor struct {
-	run    system.Runner
-	fs     system.FS
-	clock  system.Clock
+	run    local.Runner
+	fs     local.FS
+	clock  local.Clock
 	kernel Kernel
 	path   string
 	files  files
 }
 
-func New(run system.Runner, fs system.FS, clock system.Clock, kernel Kernel, stateDir string) contract.Hypervisor {
+func New(run local.Runner, fs local.FS, clock local.Clock, kernel Kernel, stateDir string) contract.Hypervisor {
 	// invariant: the tart path is resolved here, absolute, because a launchd agent has no PATH of the owner's.
 	path, ok := run.LookPath(name)
 	if !ok {
@@ -87,7 +87,7 @@ func stateOf(s string) contract.DiskState {
 }
 
 func (h *hypervisor) exec(ctx context.Context, timeout time.Duration, args ...string) (string, error) {
-	out, err := h.run.Output(ctx, system.Cmd{Name: h.path, Args: args, Timeout: timeout})
+	out, err := h.run.Output(ctx, local.Cmd{Name: h.path, Args: args, Timeout: timeout})
 	if err != nil {
 		return "", fmt.Errorf("tart %s: %w", args[0], err)
 	}

@@ -127,7 +127,7 @@ func Findings(f AllMachines) []finding.Finding {
 			on = " --on " + label
 		}
 		switch {
-		case !h.Reachable && h.LAN != "" && hostsServer(h):
+		case !h.Reachable && h.LAN != "" && macsServer(h):
 			add(mac, finding.Broken, label, label+" does not answer", "station machines unlock "+label)
 		case !h.Reachable:
 			add(mac, finding.Broken, label, label+" does not answer", "")
@@ -164,7 +164,7 @@ func Findings(f AllMachines) []finding.Finding {
 // invariant: a Mac that hosts a server and stops answering may wait at its
 // disk unlock after a power cut: its readiness fix is the unlock, from your
 // LAN (SPEC §7.6).
-func hostsServer(h MacView) bool {
+func macsServer(h MacView) bool {
 	return slices.ContainsFunc(h.VMs, func(vm VM) bool { return vm.Lifetime == AlwaysOn })
 }
 

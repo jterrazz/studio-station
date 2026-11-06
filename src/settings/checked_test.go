@@ -77,14 +77,14 @@ func TestJudgeCheckedHoldsEachMacToWhatItShouldHave(t *testing.T) {
 	}
 }
 
-func TestJudgeCheckedLeavesAPlaceOrAnOffHereUnread(t *testing.T) {
+func TestJudgeCheckedLeavesALivesOnOrAnOffThisMacUnread(t *testing.T) {
 	it := checked(t, "firewall")
 	off := map[catalog.Fact]settings.Fact{catalog.FactFirewall: on("off")}
 	expect := settings.Expect(machine.Capabilities{Battery: true}, false, time.Time{})
 	if row := settings.JudgeChecked(it, false, off, expect, true); row.Checked != settings.CheckedNotForThisMachine || row.Why != "Mac only" {
 		t.Errorf("on a VM: %s %q, want not for this machine, Mac only", row.Checked, row.Why)
 	}
-	if row := settings.JudgeChecked(it, true, off, expect, true); row.Checked != settings.CheckedOffHere {
+	if row := settings.JudgeChecked(it, true, off, expect, true); row.Checked != settings.CheckedOffThisMac {
 		t.Errorf("off here: %s, want off-here, the firewall off left unjudged", row.Checked)
 	}
 }
@@ -96,7 +96,7 @@ func TestFindingsHoldACheckedSettingNotAsExpected(t *testing.T) {
 	if len(got) != 1 || got[0].Subject != "firewall" || got[0].Text != "Firewall: off" || got[0].Fix.Path != "System Settings > Network > Firewall" {
 		t.Fatalf("findings = %+v, want Firewall off fixed in System Settings", got)
 	}
-	row.Checked = settings.CheckedOffHere
+	row.Checked = settings.CheckedOffThisMac
 	if got := settings.Findings([]settings.Row{row}, machine.Ref{}); len(got) != 0 {
 		t.Errorf("an off-here check still needs you: %+v", got)
 	}

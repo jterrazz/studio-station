@@ -2,25 +2,26 @@ package wire
 
 import (
 	"context"
-	awakecontract "github.com/jterrazz/studio-station/src/awake/contract"
 	"path/filepath"
+
+	awakecontract "github.com/jterrazz/studio-station/src/awake/contract"
 
 	accountsjsonfile "github.com/jterrazz/studio-station/src/accounts/adapter/jsonfile"
 	accountscontract "github.com/jterrazz/studio-station/src/accounts/contract"
 	corejsonfile "github.com/jterrazz/studio-station/src/core/adapter/jsonfile"
 	corecontract "github.com/jterrazz/studio-station/src/core/contract"
 	"github.com/jterrazz/studio-station/src/core/store"
-	"github.com/jterrazz/studio-station/src/domain/settings"
 	imagesjsonfile "github.com/jterrazz/studio-station/src/images/adapter/jsonfile"
 	imagescontract "github.com/jterrazz/studio-station/src/images/contract"
 	machinesjsonfile "github.com/jterrazz/studio-station/src/machines/adapter/jsonfile"
 	machinescontract "github.com/jterrazz/studio-station/src/machines/contract"
+	"github.com/jterrazz/studio-station/src/platform/local"
 	portsjsonfile "github.com/jterrazz/studio-station/src/ports/adapter/jsonfile"
 	portscontract "github.com/jterrazz/studio-station/src/ports/contract"
 	settingsjsonfile "github.com/jterrazz/studio-station/src/settings/adapter/jsonfile"
 	settingscontract "github.com/jterrazz/studio-station/src/settings/contract"
+	"github.com/jterrazz/studio-station/src/setup"
 	setupcontract "github.com/jterrazz/studio-station/src/setup/contract"
-	"github.com/jterrazz/studio-station/src/system"
 )
 
 // invariant: the preference groups in the order settings.json writes them,
@@ -84,15 +85,15 @@ type stores struct {
 	applied      appliedStore
 }
 
-func newStores(files system.FS, p settings.Paths) *stores {
+func newStores(files local.FS, p setup.Paths) *stores {
 	return &stores{
-		prefs: corejsonfile.NewPreferences(files, p.Config, preferenceGroups()).Renaming(machinescontract.RetiredGroupMacs, machinescontract.GroupMacs).
+		prefs: corejsonfile.NewPreferences(files, p.Prefs, preferenceGroups()).Renaming(machinescontract.RetiredGroupMacs, machinescontract.GroupMacs).
 			Renaming(setupcontract.RetiredGroupName, setupcontract.GroupName).Renaming(portscontract.RetiredGroupPorts, portscontract.GroupPorts),
 		machines:     machinesjsonfile.New(files, filepath.Join(p.State, "vms")),
 		images:       imagesjsonfile.New(files, filepath.Join(p.State, "images")),
 		shares:       accountsjsonfile.NewShares(files, filepath.Join(p.State, "shares.json"), filepath.Join(p.State, "vms")),
 		reservations: portsjsonfile.NewReservations(files, filepath.Join(p.State, "leases.json")),
-		declarations: portsjsonfile.NewDeclarations(files, filepath.Join(p.Config, "public.json")),
+		declarations: portsjsonfile.NewDeclarations(files, filepath.Join(p.Prefs, "public.json")),
 		applied:      settingsjsonfile.NewApplied(files, filepath.Join(p.State, "applied")),
 	}
 }

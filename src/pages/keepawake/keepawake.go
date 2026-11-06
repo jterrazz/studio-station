@@ -4,8 +4,9 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/jterrazz/studio-station/src/awake"
+
 	"github.com/jterrazz/studio-station/src/catalog"
-	"github.com/jterrazz/studio-station/src/domain/power"
 	"github.com/jterrazz/studio-station/src/page"
 	"github.com/jterrazz/studio-station/src/pages"
 )
@@ -32,9 +33,9 @@ func clock(t time.Time, zone *time.Location) string {
 	return t.In(zone).Format("15:04")
 }
 
-func left(r power.Report) string { return pages.Term(r.Session.Until.Sub(r.Now)) + " left" }
+func left(r awake.Report) string { return pages.Term(r.Session.Until.Sub(r.Now)) + " left" }
 
-func flags(s power.Session) []string {
+func flags(s awake.Session) []string {
 	var out []string
 	if s.Lid {
 		out = append(out, "lid")
@@ -45,31 +46,31 @@ func flags(s power.Session) []string {
 	return out
 }
 
-func until(s power.Session, zone *time.Location) string {
+func until(s awake.Session, zone *time.Location) string {
 	return "until " + clock(s.Until, zone) + " (" + pages.Term(s.Until.Sub(s.StartedAt)) + ")"
 }
 
-func ended(e *power.End, zone *time.Location) page.Value {
+func ended(e *awake.End, zone *time.Location) page.Value {
 	if e == nil {
 		return page.Text("the Mac sleeps as macOS decides")
 	}
 	return page.Texts("ended "+clock(e.At, zone), e.Detail)
 }
 
-func stopped(r power.Report) bool {
-	return r.Engine == power.DaemonStopped || r.Engine == power.DaemonAbsent
+func stopped(r awake.Report) bool {
+	return r.Engine == awake.EngineStopped || r.Engine == awake.EngineAbsent
 }
 
-func engineHint(r power.Report) *page.Hint {
-	if r.Engine == power.DaemonAbsent {
+func engineHint(r awake.Report) *page.Hint {
+	if r.Engine == awake.EngineAbsent {
 		return page.Cmd("station setup")
 	}
 	return page.Cmd("station engine start")
 }
 
-func sessionRows(r power.Report) []page.Row {
+func sessionRows(r awake.Report) []page.Row {
 	switch {
-	case r.Engine == power.DaemonPending:
+	case r.Engine == awake.EnginePending:
 		return []page.Row{{ID: RowAwake, Label: RowAwake, Mark: page.Awaiting, Cells: []page.Value{page.Pending()}}}
 	case stopped(r):
 		return []page.Row{{ID: RowAwake, Label: RowAwake, Mark: page.Attention, Reason: page.Stopped, Cells: []page.Value{page.Unknown(), page.Text("engine " + r.Engine)}, Hint: engineHint(r)}}
@@ -82,7 +83,7 @@ func sessionRows(r power.Report) []page.Row {
 	}}}
 	if s.Lid {
 		rows = append(rows,
-			page.Row{ID: "display", Label: "display", Mark: page.OK, Cells: []page.Value{page.Text("sleeps"), page.Text("on lid close: pmset displaysleepnow (no display assertion)")}},
+			page.Row{ID: "display", Label: "display", Mark: page.OK, Cells: []page.Value{page.Text("sleeps"), page.Text(catalog.LidDisplay)}},
 			page.Row{ID: "clamshell", Label: "clamshell", Mark: page.OK, Cells: []page.Value{page.Text("held"), page.Text("back to normal at the end, at every engine start and quit")}},
 		)
 	} else {
@@ -91,16 +92,16 @@ func sessionRows(r power.Report) []page.Row {
 	return rows
 }
 
-func near(r power.Report, name string) bool {
+func near(r awake.Report, name string) bool {
 	for _, g := range r.Guards {
 		if g.Name == name {
-			return g.State == power.GuardNear
+			return g.State == awake.GuardNear
 		}
 	}
 	return false
 }
 
-func source(rd power.Reading) string {
+func source(rd awake.Reading) string {
 	if rd.Source == "battery" {
 		return "on battery"
 	}
@@ -108,7 +109,7 @@ func source(rd power.Reading) string {
 }
 
 func label(name string) string {
-	if name == power.ReasonLowPower {
+	if name == awake.ReasonLowPower {
 		return "low power mode"
 	}
 	return name
@@ -120,7 +121,7 @@ type guard struct {
 	far, closeTo string
 }
 
-func guards(r power.Report) []guard {
+func guards(r awake.Report) []guard {
 	rd := r.Reading
 	battery := page.Text("no battery")
 	if rd.HasBattery {
@@ -138,14 +139,14 @@ func guards(r power.Report) []guard {
 		low = page.On()
 	}
 	return []guard{
-		{power.ReasonBattery, battery, "ends a session at 20% on battery", "the session ends at 20%"},
-		{power.ReasonLowPower, low, "ends a session when it turns on", ""},
-		{power.ReasonThermal, page.Text(power.Level(rd.Thermal)), "ends a session at serious, or heavy for 5m lid closed on battery", "the session ends at serious"},
-		{power.ReasonLid, lid, "closing it on battery ends a --lid session without --battery", "allowed for this session"},
+		{awake.ReasonBattery, battery, "ends a session at 20% on battery", "the session ends at 20%"},
+		{awake.ReasonLowPower, low, "ends a session when it turns on", ""},
+		{awake.ReasonThermal, page.Text(awake.Level(rd.Thermal)), "ends a session at serious, or heavy for 5m lid closed on battery", "the session ends at serious"},
+		{awake.ReasonLid, lid, "closing it on battery ends a --lid session without --battery", "allowed for this session"},
 	}
 }
 
-func guardRow(r power.Report, g guard, records bool) page.Row {
+func guardRow(r awake.Report, g guard, records bool) page.Row {
 	row := page.Row{ID: g.name, Label: label(g.name), Mark: page.OK, Cells: []page.Value{g.value}}
 	if near(r, g.name) {
 		row.Mark, row.Reason = page.Attention, page.Guard
@@ -158,7 +159,7 @@ func guardRow(r power.Report, g guard, records bool) page.Row {
 	return row
 }
 
-func reading(rd power.Reading) []page.Item {
+func reading(rd awake.Reading) []page.Item {
 	lid := rd.Lid
 	if lid == "" {
 		lid = "none"
@@ -182,7 +183,7 @@ func reading(rd power.Reading) []page.Item {
 		{Key: "lid", Value: page.Text(lid)},
 		{Key: "source", Value: src},
 		{Key: "low power mode", Value: low},
-		{Key: "thermal", Value: page.Text(power.Level(rd.Thermal) + " (" + strconv.Itoa(rd.Thermal) + ")")},
+		{Key: "thermal", Value: page.Text(awake.Level(rd.Thermal) + " (" + strconv.Itoa(rd.Thermal) + ")")},
 	}
 	items := make([]page.Item, 0, len(facts))
 	for i := range facts {
@@ -199,16 +200,16 @@ func items(rows []page.Row) []page.Item {
 	return out
 }
 
-func Session(r power.Report) page.Section {
+func Session(r awake.Report) page.Section {
 	s := page.Section{ID: "keep-awake", Title: "Awake", Columns: columns(), Items: items(sessionRows(r))}
-	if r.Session != nil && r.Engine == power.DaemonRunning {
+	if r.Session != nil && r.Engine == awake.EngineRunning {
 		s.Role = page.Banner
 		s.Caption = []page.Value{page.Texts(append(append([]string{"awake"}, flags(*r.Session)...), left(r))...)}
 	}
 	return s
 }
 
-func Page(r power.Report, thisMac page.Context) page.Page {
+func Page(r awake.Report, thisMac page.Context) page.Page {
 	gs := guards(r)
 	rows := make([]page.Row, 0, len(gs))
 	for _, g := range gs {
@@ -219,7 +220,7 @@ func Page(r power.Report, thisMac page.Context) page.Page {
 		{ID: "guards", Title: "Guards", Columns: columns(), Items: items(rows)},
 		{ID: "reading", Title: "Reading", Uncounted: true, Columns: columns(), Items: reading(r.Reading)},
 	}}
-	if r.Engine == power.DaemonPending {
+	if r.Engine == awake.EnginePending {
 		p.State = page.Loading
 	}
 	p.Actions = Actions()
@@ -233,7 +234,7 @@ func Actions() []page.Action {
 	}
 }
 
-func Awake(a power.Awoken, zone *time.Location, thisMac page.Context) page.Page {
+func Awake(a awake.Awoken, zone *time.Location, thisMac page.Context) page.Page {
 	r := pages.Done(RowAwake, catalog.StateOK, "")
 	words := []string{"on"}
 	if a.Refreshed {
@@ -245,7 +246,7 @@ func Awake(a power.Awoken, zone *time.Location, thisMac page.Context) page.Page 
 	return pages.Outcome("awake", thisMac, nil, []page.Row{r}, "Awake session")
 }
 
-func Slept(s power.Slept, thisMac page.Context) page.Page {
+func Slept(s awake.Slept, thisMac page.Context) page.Page {
 	if !s.Ended {
 		return pages.Outcome("awake off", thisMac, nil, nil, "Awake session to end")
 	}

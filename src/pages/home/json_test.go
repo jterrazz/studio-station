@@ -5,14 +5,16 @@ import (
 	"flag"
 	"os"
 	"path/filepath"
+	"slices"
 	"testing"
 	"time"
+
+	"github.com/jterrazz/studio-station/src/apps"
+	"github.com/jterrazz/studio-station/src/settings"
 
 	"github.com/jterrazz/studio-station/src/activity"
 	"github.com/jterrazz/studio-station/src/background"
 	"github.com/jterrazz/studio-station/src/catalog"
-	"github.com/jterrazz/studio-station/src/domain/config"
-	"github.com/jterrazz/studio-station/src/domain/tools"
 	"github.com/jterrazz/studio-station/src/overview"
 	pagehome "github.com/jterrazz/studio-station/src/pages/home"
 	"github.com/jterrazz/studio-station/src/ports"
@@ -21,7 +23,7 @@ import (
 var update = flag.Bool("update", false, "rewrite the golden from the presenter")
 
 func fixed() pagehome.Overview {
-	node := catalog.App{Name: "node", Category: catalog.CategoryRuntimes, Installs: catalog.Anywhere(catalog.Mise("node", "lts")), Provides: []string{"node", "npm", "npx"}}
+	node := catalog.Apps[slices.IndexFunc(catalog.Apps, func(t catalog.App) bool { return t.Name == "node" })]
 	return pagehome.Overview{
 		GeneratedAt: time.Date(2026, 10, 31, 14, 0, 0, 0, time.UTC),
 		Station:     overview.Station{Version: "v3.0.0", Commit: "abc1234", Engine: overview.Check{Name: "daemon", State: catalog.StateOK, Value: "running v3.0.0"}},
@@ -40,13 +42,13 @@ func fixed() pagehome.Overview {
 			Network:     []overview.Check{{Name: "local ip", State: catalog.StateOK, Value: "192.168.1.2"}},
 			Ports:       []overview.Port{{PID: 1, Name: "node", Port: "3000"}},
 			Protections: []overview.Check{{Name: "filevault", State: catalog.StateOK, Value: "on"}},
-			Updates:     []overview.Check{{Name: "brew", State: catalog.StateDegraded, Value: "3 outdated"}},
+			Updates:     []overview.Check{{Name: "softwareupdate", State: catalog.StateDegraded, Value: "3 outdated"}},
 		},
 		Workspace: pagehome.Workspace{
 			Disk: []overview.Disk{{Name: "homebrew", Bytes: 123}},
 		},
-		Apps: []tools.Report{{App: node, Method: catalog.MethodMise, State: catalog.StateOK, Version: "24.11.0", Managed: true}},
-		Settings: []config.Report{{
+		Apps: []apps.Report{{App: node, Method: node.Installs[0].Install.Method(), State: catalog.StateOK, Version: "24.11.0", Managed: true}},
+		Settings: []settings.Report{{
 			Item:  catalog.Setting{Name: "hushlogin", Category: catalog.CategoryTerminal, Kinds: []catalog.MachineKind{catalog.Mac, catalog.Linux, catalog.MacOS}},
 			State: catalog.StateOK,
 		}},
@@ -57,11 +59,11 @@ func fixed() pagehome.Overview {
 		}},
 		Identity:   []overview.Check{{Name: "git-email", State: catalog.StateOK, Value: "admin@jterrazz.com"}},
 		Background: []background.Task{{Label: "ai.jterrazz.x", Group: background.GroupUnknown, State: catalog.StateOK, Run: background.Running, PID: 12, Scope: "user", Plist: "~/Library/LaunchAgents/ai.jterrazz.x.plist"}},
-		Gateways:   []overview.Check{{Name: "Tailscale Serve", State: catalog.StateOK, Value: "on"}},
+		Gateways:   []overview.Check{{Name: catalog.ServeRow, State: catalog.StateOK, Value: "on"}},
 		Tailnet: ports.Status{
 			State: catalog.StateOK, Connected: true, BackendState: "Running",
 			Name: "macbook", DNSName: "macbook.tail1234.ts.net", IP: "100.64.0.1",
-			Variant: "app-store", CLI: "/Applications/Tailscale.app/Contents/MacOS/Tailscale",
+			Variant: "app-store", CLI: catalog.TailnetCLI,
 		},
 	}
 }

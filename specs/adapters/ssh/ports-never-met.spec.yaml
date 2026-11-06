@@ -4,8 +4,8 @@ runs:
     - command: '--version >/dev/null; STATION_MACHINE_KIND=linux "$STATION" ports --all-machines'
       exit: 1
       stderr: |
-          Error: no host has connected to this VM yet
-          Hint: on the VM's host: station setup
+          Error: no Mac has connected to this VM yet
+          Hint: on the VM's Mac: station setup
     - command: '--version >/dev/null; STATION_MACHINE_KIND=linux "$STATION" ports --all-machines --json'
       exit: 1
       stdout: |
@@ -14,20 +14,20 @@ runs:
             "type": "failed",
             "code": null,
             "subject": null,
-            "message": "no host has connected to this VM yet",
-            "hint": "on the VM's host: station setup",
+            "message": "no Mac has connected to this VM yet",
+            "hint": "on the VM's Mac: station setup",
             "fix": null
           }
       stderr: |
-          Error: no host has connected to this VM yet
-          Hint: on the VM's host: station setup
+          Error: no Mac has connected to this VM yet
+          Hint: on the VM's Mac: station setup
     - command: '--version >/dev/null; STATION_MACHINE_KIND=linux "$STATION" ports share 3000'
       exit: 1
       stderr: |
-          Error: no host has connected to this VM yet
-          Hint: on the VM's host: station setup
+          Error: no Mac has connected to this VM yet
+          Hint: on the VM's Mac: station setup
     - command: '--version >/dev/null; STATION_MACHINE_KIND=linux "$STATION" ports stop-sharing 3000 --yes'
       exit: 1
       stderr: |
-          Error: no host has connected to this VM yet
-          Hint: on the VM's host: station setup
+          Error: no Mac has connected to this VM yet
+          Hint: on the VM's Mac: station setup

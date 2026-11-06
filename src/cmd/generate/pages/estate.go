@@ -1,20 +1,18 @@
 package pages
 
 import (
-	coremachine "github.com/jterrazz/studio-station/src/core/machine"
 	"strings"
 	"time"
+
+	"github.com/jterrazz/studio-station/src/apps"
+	coremachine "github.com/jterrazz/studio-station/src/core/machine"
+	"github.com/jterrazz/studio-station/src/images"
+	model "github.com/jterrazz/studio-station/src/machines"
+	"github.com/jterrazz/studio-station/src/setup"
 
 	"github.com/jterrazz/studio-station/src/background"
 	"github.com/jterrazz/studio-station/src/catalog"
 	"github.com/jterrazz/studio-station/src/disk"
-	"github.com/jterrazz/studio-station/src/domain/config"
-	"github.com/jterrazz/studio-station/src/domain/images"
-	"github.com/jterrazz/studio-station/src/domain/machines"
-	"github.com/jterrazz/studio-station/src/domain/services"
-	"github.com/jterrazz/studio-station/src/domain/setup"
-	"github.com/jterrazz/studio-station/src/domain/storage"
-	"github.com/jterrazz/studio-station/src/domain/tools"
 	"github.com/jterrazz/studio-station/src/overview"
 	"github.com/jterrazz/studio-station/src/page"
 	allpages "github.com/jterrazz/studio-station/src/pages"
@@ -87,13 +85,13 @@ func snapshot() pagehome.Overview {
 		},
 		Workspace: pagehome.Workspace{
 			Disk: []overview.Disk{{Name: "homebrew", Level: catalog.LevelCache, Bytes: 26 * gb}},
-			Misplaced: []storage.StrayReport{
+			Misplaced: []disk.MisplacedReport{
 				{Name: catalog.HypervisorApp, Path: "~/." + catalog.HypervisorApp, Bytes: 73 * gb, Repair: "station disk move ~/." + catalog.HypervisorApp},
 				{Name: "bun", Path: "~/.bun", Bytes: 2 * gb, Repair: "station disk move ~/.bun"},
 			},
 		},
 		Apps: appReports,
-		Settings: []config.Report{
+		Settings: []settings.Report{
 			{Item: catalog.Setting{Name: "hushlogin", Description: "Silence the login banner"}, State: catalog.StateOK, Applies: true},
 			{Item: catalog.Setting{Name: "restart-after-power-cut", Description: "Restarts after a power cut, and wakes for the network"}, State: catalog.StateDegraded, Detail: "partly applied", Applies: true},
 		},
@@ -168,7 +166,7 @@ func unnamedSnapshot() pagehome.Overview {
 // and one of each other group.
 func settingRows(reading bool) []settings.Row {
 	since := time.Date(2026, 11, 2, 10, 0, 0, 0, time.UTC)
-	states := []settings.State{settings.StateApplied, settings.StateChangedSince, settings.StateNotApplied, settings.StateOffHere, settings.StateNotForThisMachine}
+	states := []settings.State{settings.StateApplied, settings.StateChangedSince, settings.StateNotApplied, settings.StateOffThisMac, settings.StateNotForThisMachine}
 	out := make([]settings.Row, 0, len(catalog.Settings))
 	for i, it := range catalog.Settings {
 		r := settings.Row{Name: it.Name, Group: settings.GroupOf(it), State: states[i%len(states)]}
@@ -258,25 +256,25 @@ func settingsMatrix() []Fixture {
 		full)
 }
 
-func diskReport(pending bool) storage.Report {
-	entry := func(name, category string) storage.Entry {
-		return storage.Entry{Name: name, Category: category, Kinds: []catalog.MachineKind{catalog.Mac}}
+func diskReport(pending bool) disk.Survey {
+	entry := func(name, category string) disk.Entry {
+		return disk.Entry{Name: name, Category: category, Kinds: []catalog.MachineKind{catalog.Mac}}
 	}
-	at := func(path string, level catalog.Level, bytes int64) storage.PathReport {
-		return storage.PathReport{Path: path, Level: level, Bytes: bytes}
+	at := func(path string, level catalog.Level, bytes int64) disk.PathReport {
+		return disk.PathReport{Path: path, Level: level, Bytes: bytes}
 	}
-	rows := make([]storage.Row, 0, 4)
+	rows := make([]disk.Tally, 0, 4)
 	rows = append(rows,
-		storage.Row{Entry: entry(storage.StationName, storage.StationCategory), Installed: true, State: catalog.StateOK, Bytes: map[catalog.Level]int64{catalog.LevelData: 4 * gb, catalog.LevelSettings: 12000},
-			Paths: []storage.PathReport{at("~/.local/share/station/vms/vms/*", catalog.LevelData, 4*gb), at("~/.config/station/preferences.json", catalog.LevelSettings, 12000)}},
-		storage.Row{Entry: entry("homebrew", string(catalog.CategoryPackageManagers)), Installed: true, State: catalog.StateOK, Bytes: map[catalog.Level]int64{catalog.LevelCache: 26 * gb}, Install: 3 * gb,
-			Paths: []storage.PathReport{at("~/Library/Caches/Homebrew", catalog.LevelCache, 26*gb)}},
-		storage.Row{Entry: entry("bun", string(catalog.CategoryRuntimes)), Installed: true, State: catalog.StateOK, Bytes: map[catalog.Level]int64{catalog.LevelCache: 1700 * (1 << 20)},
-			Paths: []storage.PathReport{at("~/Library/Caches/bun", catalog.LevelCache, 1700*(1<<20))}},
+		disk.Tally{Entry: entry(disk.StationName, disk.StationCategory), Installed: true, State: catalog.StateOK, Bytes: map[catalog.Level]int64{catalog.LevelData: 4 * gb, catalog.LevelSettings: 12000},
+			Paths: []disk.PathReport{at("~/.local/share/station/vms/vms/*", catalog.LevelData, 4*gb), at("~/.config/station/preferences.json", catalog.LevelSettings, 12000)}},
+		disk.Tally{Entry: entry("homebrew", string(catalog.CategoryPackageManagers)), Installed: true, State: catalog.StateOK, Bytes: map[catalog.Level]int64{catalog.LevelCache: 26 * gb}, Install: 3 * gb,
+			Paths: []disk.PathReport{at("~/Library/Caches/Homebrew", catalog.LevelCache, 26*gb)}},
+		disk.Tally{Entry: entry("bun", string(catalog.CategoryRuntimes)), Installed: true, State: catalog.StateOK, Bytes: map[catalog.Level]int64{catalog.LevelCache: 1700 * (1 << 20)},
+			Paths: []disk.PathReport{at("~/Library/Caches/bun", catalog.LevelCache, 1700*(1<<20))}},
 	)
-	misplaced := []storage.StrayReport{{Name: catalog.HypervisorApp, Path: "~/." + catalog.HypervisorApp, Bytes: 73 * gb, To: "~/.local/share/station/vms", Repair: "station disk move ~/." + catalog.HypervisorApp}}
-	rows = append(rows, storage.Row{Entry: entry(catalog.HypervisorApp, string(catalog.CategoryContainersVMs)), Installed: true, State: catalog.StateDegraded, Bytes: map[catalog.Level]int64{}, Misplaced: misplaced})
-	r := storage.Report{Rows: rows, Misplaced: misplaced, Other: 9 * gb}
+	misplaced := []disk.MisplacedReport{{Name: catalog.HypervisorApp, Path: "~/." + catalog.HypervisorApp, Bytes: 73 * gb, To: "~/.local/share/station/vms", Repair: "station disk move ~/." + catalog.HypervisorApp}}
+	rows = append(rows, disk.Tally{Entry: entry(catalog.HypervisorApp, string(catalog.CategoryContainersVMs)), Installed: true, State: catalog.StateDegraded, Bytes: map[catalog.Level]int64{}, Misplaced: misplaced})
+	r := disk.Survey{Rows: rows, Misplaced: misplaced, Other: 9 * gb}
 	if pending {
 		for i := range r.Rows {
 			r.Rows[i].Pending, r.Rows[i].State = true, catalog.StatePending
@@ -296,27 +294,27 @@ func disks() []Fixture {
 		pagedisk.Read(reading(false), thisMacContext(), false))
 }
 
-func allMachines() machines.Fleet {
-	return machines.Fleet{Macs: []machines.HostView{
-		{Name: "macbook", User: "jterrazz", StationVersion: "v2.0.0-250", ThisMac: true, Reachable: true, Engine: machines.DaemonInfo{Known: true, Running: true, Version: "v2.0.0-250"}, Node: machines.Node{Online: true, IP: "100.98.133.14"},
-			VMs: []machines.VM{
-				sized(machines.VM{Name: "linux-1", Image: "linux", Version: "3", Mac: "macbook", Kind: catalog.Linux, Lifetime: machines.Throwaway, State: machines.Running, SizeGB: 20, IP: "192.168.64.5", CreatedAt: built}, 4, 4),
-				sized(machines.VM{Name: "api", Image: "linux", Version: "3", Mac: "macbook", Kind: catalog.Linux, Lifetime: machines.Permanent, State: machines.Stopped, SizeGB: 40, CreatedAt: built}, 4, 8),
+func allMachines() model.AllMachines {
+	return model.AllMachines{Macs: []model.MacView{
+		{Name: "macbook", User: "jterrazz", StationVersion: "v2.0.0-250", ThisMac: true, Reachable: true, Engine: model.EngineView{Known: true, Running: true, Version: "v2.0.0-250"}, Node: model.Node{Online: true, IP: "100.98.133.14"},
+			VMs: []model.VM{
+				sized(model.VM{Name: "linux-1", Image: "linux", Version: "3", Mac: "macbook", Kind: catalog.Linux, Lifetime: model.Throwaway, State: model.Running, SizeGB: 20, IP: "192.168.64.5", CreatedAt: built}, 4, 4),
+				sized(model.VM{Name: "api", Image: "linux", Version: "3", Mac: "macbook", Kind: catalog.Linux, Lifetime: model.Permanent, State: model.Stopped, SizeGB: 40, CreatedAt: built}, 4, 8),
 			}},
-		{Name: "mac-mini", User: "jterrazz", StationVersion: "v2.0.0-248", Reachable: true, Engine: machines.DaemonInfo{Known: true, Running: true, Version: "v2.0.0-248"}, Node: machines.Node{Online: true, IP: "100.98.133.20"}},
+		{Name: "mac-mini", User: "jterrazz", StationVersion: "v2.0.0-248", Reachable: true, Engine: model.EngineView{Known: true, Running: true, Version: "v2.0.0-248"}, Node: model.Node{Online: true, IP: "100.98.133.20"}},
 	}}
 }
 
 // value: the fleet whose daemon socket refuses: the agent's plist is there,
 // so this host reads stopped (R9.D3); the mini does not answer its ssh read.
-func stoppedAllMachines() machines.Fleet {
+func stoppedAllMachines() model.AllMachines {
 	f := allMachines()
-	f.Macs[0].Engine = machines.DaemonInfo{Known: true, Installed: true}
-	f.Macs[1] = machines.HostView{Name: "mac-mini", User: "jterrazz", Node: machines.Node{IP: "100.98.133.20"}}
+	f.Macs[0].Engine = model.EngineView{Known: true, Installed: true}
+	f.Macs[1] = model.MacView{Name: "mac-mini", User: "jterrazz", Node: model.Node{IP: "100.98.133.20"}}
 	return f
 }
 
-func sized(vm machines.VM, cpus int, memoryGB int64) machines.VM {
+func sized(vm model.VM, cpus int, memoryGB int64) model.VM {
 	vm.Resources.CPUs, vm.Resources.MemoryBytes, vm.Resources.DiskBytes = cpus, memoryGB*gb, 40*gb
 	return vm
 }
@@ -324,7 +322,7 @@ func sized(vm machines.VM, cpus int, memoryGB int64) machines.VM {
 func machineLists() []Fixture {
 	return states("machines",
 		pending(pagemachines.List(allMachines(), nil, thisMacContext())),
-		pagemachines.List(machines.Fleet{}, nil, thisMacContext()),
+		pagemachines.List(model.AllMachines{}, nil, thisMacContext()),
 		pagemachines.List(stoppedAllMachines(), nil, thisMacContext()),
 		pagemachines.List(allMachines(), []string{"mac-mini: station v2.0.0-248, This Mac v2.0.0-250"}, thisMacContext()))
 }
@@ -333,16 +331,16 @@ func machineLists() []Fixture {
 // section: running, then stopped.
 func server() pagemachines.VMOverview {
 	f := allMachines()
-	vm := sized(machines.VM{Name: "infra", Image: "linux", Version: "3", Mac: "mac-mini", Kind: catalog.Linux, Lifetime: machines.AlwaysOn, State: machines.Running, SizeGB: 80, IP: "192.168.64.7", Want: "running", Check: "https://infra:6443/readyz", Device: "infra", CreatedAt: built}, 8, 24)
-	f.Macs[1].VMs = []machines.VM{vm}
+	vm := sized(model.VM{Name: "infra", Image: "linux", Version: "3", Mac: "mac-mini", Kind: catalog.Linux, Lifetime: model.AlwaysOn, State: model.Running, SizeGB: 80, IP: "192.168.64.7", Want: "running", Check: "https://infra:6443/readyz", Device: "infra", CreatedAt: built}, 8, 24)
+	f.Macs[1].VMs = []model.VM{vm}
 	f.Macs[1].User = "jterrazz.agent"
 	return pagemachines.VMOverview{All: f, Mac: f.Macs[1], VM: vm}
 }
 
 func sshPages() []Fixture {
 	running, stopped := server(), server()
-	stopped.VM.State, stopped.VM.IP = machines.Stopped, ""
-	target := machines.SSHTarget{User: "admin", Address: "infra", Command: "ssh admin@infra"}
+	stopped.VM.State, stopped.VM.IP = model.Stopped, ""
+	target := model.SSHTarget{User: "admin", Address: "infra", Command: "ssh admin@infra"}
 	return states("ssh",
 		pending(pagemachines.SSHPage(running, target, thisMacContext())),
 		pagemachines.SSHPage(stopped, target, thisMacContext()),
@@ -382,24 +380,24 @@ func tailnetStatus() ports.Status {
 	}
 }
 
-func portsAllMachines() services.Fleet {
+func portsAllMachines() ports.AllMachines {
 	seen := built
-	return services.Fleet{Schema: ports.AllMachinesSchema, Macs: []services.HostView{
-		{Name: "macbook", ThisMac: true, Reachable: true, Engine: services.DaemonInfo{Running: true}, PublicName: "jterrazz-macbook-pro.tail1234.ts.net", Serve: "on", HTTPS: "port",
-			Range: &services.Range{Low: 40000, High: 40999, Reserved: 2, Free: 998, MaxPerVM: 20},
-			Shared: []services.View{
-				{VM: "linux-1", GuestPort: 5173, Reserved: 40001, State: services.Published, Process: "node", HTTP: true, Profile: "vite", URLs: services.URLSet{Public: "https://jterrazz-macbook-pro.tail1234.ts.net:40001"}, LastSeenAt: &seen},
-				{VM: "linux-1", GuestPort: 5432, Reserved: 40002, State: services.Waiting, Process: "postgres"},
+	return ports.AllMachines{Schema: ports.AllMachinesSchema, Macs: []ports.MacPorts{
+		{Name: "macbook", ThisMac: true, Reachable: true, Engine: ports.EngineInfo{Running: true}, PublicName: "jterrazz-macbook-pro.tail1234.ts.net", Serve: "on", HTTPS: "port",
+			Range: &ports.Range{Low: 40000, High: 40999, Reserved: 2, Free: 998, MaxPerVM: 20},
+			Shared: []ports.SharedPort{
+				{VM: "linux-1", GuestPort: 5173, Reserved: 40001, State: ports.PhaseShared, Process: "node", HTTP: true, Profile: "vite", URLs: ports.URLSet{Public: "https://jterrazz-macbook-pro.tail1234.ts.net:40001"}, LastSeenAt: &seen},
+				{VM: "linux-1", GuestPort: 5432, Reserved: 40002, State: ports.PhaseWaiting, Process: "postgres"},
 			}},
 		{Name: "mac-mini", Reachable: false},
 	}}
 }
 
-func stoppedPorts() services.Fleet {
+func stoppedPorts() ports.AllMachines {
 	f := portsAllMachines()
-	f.Macs[0].Engine = services.DaemonInfo{Installed: true}
+	f.Macs[0].Engine = ports.EngineInfo{Installed: true}
 	for i := range f.Macs[0].Shared {
-		f.Macs[0].Shared[i].State = services.Unknown
+		f.Macs[0].Shared[i].State = ports.PhaseUnknown
 	}
 	return f
 }
@@ -417,15 +415,15 @@ func portLists() []Fixture {
 // value: the reference estate's ports in their two classes: the mini's AirPlay
 // Receiver red, infra's API on its own tailnet device, a database on This
 // Mac's loopback folded.
-func estatePorts() services.Fleet {
+func estatePorts() ports.AllMachines {
 	f := portsAllMachines()
 	mini, infra := coremachine.Ref{Name: "mac-mini"}, coremachine.Ref{Name: "infra", On: "mac-mini"}
 	f.Macs[0].Ports = []ports.Port{
 		{Machine: coremachine.Ref{Name: "macbook"}, Port: 5432, Process: "postgres", Binds: []string{"127.0.0.1"}, Reach: ports.ThisMachine},
 		{Machine: coremachine.Ref{Name: "linux-1", On: "macbook"}, Port: 5173, Process: "node", Binds: []string{"0.0.0.0"}, Reach: ports.Tailnet},
 	}
-	f.Macs[1] = services.HostView{Name: "mac-mini", Reachable: true, Engine: services.DaemonInfo{Running: true}, Shared: []services.View{},
-		Range: &services.Range{Low: 40000, High: 40999, Free: 1000, MaxPerVM: 20},
+	f.Macs[1] = ports.MacPorts{Name: "mac-mini", Reachable: true, Engine: ports.EngineInfo{Running: true}, Shared: []ports.SharedPort{},
+		Range: &ports.Range{Low: 40000, High: 40999, Free: 1000, MaxPerVM: 20},
 		Ports: []ports.Port{
 			{Machine: mini, Port: 5000, Process: "ControlCenter", Binds: []string{"*"}, Reach: ports.Outside},
 			{Machine: mini, Port: 22, Process: "sshd", Binds: []string{"*"}, Reach: ports.Outside, Declared: &ports.Declaration{Machine: mini.Name, Port: 22, Via: catalog.RouteLAN, By: "sshd"}, Verified: &ports.Verified{Seen: true}},
@@ -437,7 +435,7 @@ func estatePorts() services.Fleet {
 func allMachinesStates() []Fixture {
 	f, list, svc, tn := allMachines(), imageReports(), portsAllMachines(), tailnetStatus()
 	full := pageallmachines.Reading{Machines: &f, Images: &list, Ports: &svc, Tailnet: &tn}
-	none := machines.Fleet{Macs: []machines.HostView{{Name: "macbook", ThisMac: true, Reachable: true}}}
+	none := model.AllMachines{Macs: []model.MacView{{Name: "macbook", ThisMac: true, Reachable: true}}}
 	var noImages []images.Report
 	empty := pageallmachines.Reading{Machines: &none, Images: &noImages, Tailnet: &ports.Status{State: catalog.StateAbsent}}
 	stopped, stoppedSvc := stoppedAllMachines(), stoppedPorts()
@@ -450,16 +448,16 @@ func allMachinesStates() []Fixture {
 }
 
 func outcomes() []Fixture {
-	appOutcomes := []tools.Outcome{
+	appOutcomes := []apps.Outcome{
 		{Name: "jq", Verb: "install", Result: catalog.StateOK, Method: catalog.MethodBrew, Version: "1.8.1"},
-		{Name: "mise", Verb: "install", Result: catalog.StateOK, Method: catalog.MethodBrew, Version: "2026.10.1", Steps: []tools.Step{{Item: "activate", Result: catalog.StateDegraded, Detail: "restart the shell"}}},
+		{Name: "mise", Verb: "install", Result: catalog.StateOK, Method: catalog.MethodBrew, Version: "2026.10.1", Steps: []apps.Step{{Item: "activate", Result: catalog.StateDegraded, Detail: "restart the shell"}}},
 		{Name: "typewhisper", Verb: "install", Result: catalog.StateBroken, Method: catalog.MethodCask, Detail: "brew bundle exited 1"},
 	}
 	changes := []settings.Change{
 		{Item: "restart-after-power-cut", Verb: "apply", Result: catalog.StateOK, Before: []settings.KeyValue{{Key: "autorestart", Value: "0"}}, After: []settings.KeyValue{{Key: "autorestart", Value: "1"}}},
 		{Item: catalog.HypervisorLauncher, Verb: "apply", Result: catalog.StateOK},
 	}
-	cleaned := []storage.Outcome{
+	cleaned := []disk.Outcome{
 		{Name: "homebrew", Result: catalog.StateOK, Freed: 26 * gb},
 		{Name: "bun", Result: catalog.StateAbsent, Detail: "nothing to free"},
 	}

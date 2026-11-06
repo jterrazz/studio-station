@@ -4,8 +4,8 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/jterrazz/studio-station/src/accounts"
 	"github.com/jterrazz/studio-station/src/catalog"
-	"github.com/jterrazz/studio-station/src/domain/accounts"
 	"github.com/jterrazz/studio-station/src/page"
 	"github.com/jterrazz/studio-station/src/pages"
 )
@@ -68,7 +68,7 @@ func origin(a accounts.Account) page.Value {
 	switch a.Origin {
 	case accounts.OriginBoth:
 		return page.Texts(accounts.OriginOwn, shared)
-	case accounts.OriginLent:
+	case accounts.OriginShared:
 		return page.Text(shared)
 	}
 	return page.Text(a.Origin)
@@ -151,7 +151,7 @@ func head(m accounts.Machine, rows []page.Row) page.Row {
 	switch m.Kind {
 	case accounts.KindVM:
 		kind = m.Lifetime
-	case accounts.KindHost:
+	case accounts.KindMac:
 		kind = "Mac"
 	}
 	cells := []page.Value{page.Text(kind)}
@@ -207,7 +207,7 @@ func group(m accounts.Machine, now time.Time) page.Item {
 
 func engineRow(state string) page.Row {
 	r := page.Row{ID: EngineRow, Label: EngineRow, Mark: page.Attention, Reason: page.Stopped, Cells: []page.Value{page.Text(state)}, Hint: page.Cmd("station engine start")}
-	if state == accounts.DaemonAbsent {
+	if state == accounts.EngineAbsent {
 		r.Hint = page.Cmd("station setup")
 	}
 	return r
@@ -230,19 +230,19 @@ func Section(r accounts.Report) page.Section {
 	case stopped(r):
 		d := engineRow(r.Engine)
 		s.Items = append(s.Items, page.Item{Row: &d})
-	case vms == 0 && len(r.Machines) > 0 && r.Machines[0].Kind == accounts.KindHost:
+	case vms == 0 && len(r.Machines) > 0 && r.Machines[0].Kind == accounts.KindMac:
 		s.Items = append(s.Items, page.Item{Note: &page.Note{Text: "no VMs: accounts shared with a VM appear here"}})
 	}
 	return s
 }
 
 func stopped(r accounts.Report) bool {
-	return r.Engine == accounts.DaemonStopped || r.Engine == accounts.DaemonAbsent
+	return r.Engine == accounts.EngineStopped || r.Engine == accounts.EngineAbsent
 }
 
 func Page(r accounts.Report, thisMac page.Context) page.Page {
 	p := page.Page{ID: "accounts", Command: "accounts", Context: thisMac, Sections: []page.Section{firstLine(r, thisMac), Section(r)}}
-	if len(r.Machines) == 1 && r.Machines[0].Kind == accounts.KindHost && !stopped(r) {
+	if len(r.Machines) == 1 && r.Machines[0].Kind == accounts.KindMac && !stopped(r) {
 		p.Hints = []page.Hint{*page.Cmd("station machines create")}
 	}
 	p.Actions = Actions()
@@ -262,7 +262,7 @@ func Actions() []page.Action {
 func firstLine(r accounts.Report, thisMac page.Context) page.Section {
 	r = r.Resolved()
 	label := "This Mac"
-	if thisMac.Machine != "" && thisMac.Kind != string(accounts.KindHost) {
+	if thisMac.Machine != "" && thisMac.Kind != string(accounts.KindMac) {
 		label = thisMac.Machine
 	}
 	var words []string

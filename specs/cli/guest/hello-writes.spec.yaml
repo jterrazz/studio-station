@@ -1,4 +1,4 @@
-description: 'hello writes the host''s keys into a managed block, keeping the owner''s line, and the VM''s exports'
+description: 'hello writes the Mac''s keys into a managed block, keeping the owner''s line, and the VM''s exports'
 fixture: ./__fixtures__/vm/
 env: engine
 runs:

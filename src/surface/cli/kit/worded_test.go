@@ -1,19 +1,15 @@
 package kit
 
-import "testing"
+import (
+	"errors"
+	"testing"
 
-func TestAnEmptyHintPanicsUnderTest(t *testing.T) {
-	for name, build := range map[string]func(){
-		"usage":  func() { _ = usage("unknown tool \"nope\"", "") },
-		"failed": func() { _ = failed("install failed", "", nil) },
-	} {
-		t.Run(name, func(t *testing.T) {
-			defer func() {
-				if recover() == nil {
-					t.Fatal("an error built with an empty hint did not panic")
-				}
-			}()
-			build()
-		})
+	enginecalls "github.com/jterrazz/studio-station/src/engine/calls"
+)
+
+func TestAFailureWhoseRepairIsUnknownNamesTheCommandsHelp(t *testing.T) {
+	got := Translate(&enginecalls.BootError{Message: "the engine did not boot", Cause: errors.New("exit 1")}, "engine start")
+	if got.Message != "the engine did not boot" || got.Hint != "run station engine start --help" {
+		t.Errorf("got %q / %q, want the failure with the command's help as its repair", got.Message, got.Hint)
 	}
 }

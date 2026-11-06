@@ -4,5 +4,5 @@ runs:
     - command: 'images update macos'
       exit: 1
       stderr: |
-          Error: no version of macos is published
+          Error: no version of macos is released
           Hint: station images

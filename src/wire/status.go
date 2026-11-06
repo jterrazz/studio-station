@@ -6,6 +6,10 @@ import (
 	"io/fs"
 	"path"
 
+	setupcalls "github.com/jterrazz/studio-station/src/setup/calls"
+
+	"github.com/jterrazz/studio-station/src/disk"
+
 	"github.com/spf13/cobra"
 
 	activitylinux "github.com/jterrazz/studio-station/src/activity/adapter/linux"
@@ -14,22 +18,23 @@ import (
 	"github.com/jterrazz/studio-station/src/apps/adapter/brew"
 	"github.com/jterrazz/studio-station/src/catalog"
 	coremachine "github.com/jterrazz/studio-station/src/core/machine"
-	"github.com/jterrazz/studio-station/src/domain/config"
-	"github.com/jterrazz/studio-station/src/domain/machines"
-	"github.com/jterrazz/studio-station/src/domain/setup"
-	"github.com/jterrazz/studio-station/src/domain/storage"
+	diskcalls "github.com/jterrazz/studio-station/src/disk/calls"
+
 	"github.com/jterrazz/studio-station/src/engine"
+	model "github.com/jterrazz/studio-station/src/machines"
 	"github.com/jterrazz/studio-station/src/overview"
 	overviewcalls "github.com/jterrazz/studio-station/src/overview/calls"
+	"github.com/jterrazz/studio-station/src/platform/darwin"
 	"github.com/jterrazz/studio-station/src/platform/local"
 	"github.com/jterrazz/studio-station/src/remote/adapter/unix"
+	"github.com/jterrazz/studio-station/src/settings"
 	settingscli "github.com/jterrazz/studio-station/src/settings/adapter/cli"
 	settingslinux "github.com/jterrazz/studio-station/src/settings/adapter/linux"
 	settingsmacos "github.com/jterrazz/studio-station/src/settings/adapter/macos"
+	settingscalls "github.com/jterrazz/studio-station/src/settings/calls"
 	settingscontract "github.com/jterrazz/studio-station/src/settings/contract"
 	"github.com/jterrazz/studio-station/src/surface/cli/kit"
 	overviewcmd "github.com/jterrazz/studio-station/src/surface/cli/overview"
-	"github.com/jterrazz/studio-station/src/system"
 )
 
 func overviewCommand(env kit.Env, m machine) *cobra.Command {
@@ -39,8 +44,8 @@ func overviewCommand(env kit.Env, m machine) *cobra.Command {
 // value: the one Overview `overview --on <vm>` and `machines <vm>` both
 // print (MA-06): a VM is read from All machines.
 func (m machine) overviewDeps(status bool) overviewcmd.Deps {
-	return overviewcmd.Deps{ThisMachine: m.where, Status: status, AllMachines: func(ctx context.Context) (machines.Fleet, error) {
-		return m.machines(false).Fleet(ctx, false)
+	return overviewcmd.Deps{ThisMachine: m.where, Status: status, AllMachines: func(ctx context.Context) (model.AllMachines, error) {
+		return m.machines(false).AllMachines(ctx, false)
 	}}
 }
 
@@ -65,9 +70,9 @@ func statusDeps(env kit.Env, m machine) overviewcalls.Sections {
 		Identity:   m.stores.identity(),
 		Owner:      settingscli.New(h.Run, h.FS, settingscli.Options{Home: h.Env.Home(), Pool: m.pool}),
 		Tailnet:    m.tailnetStatus(),
-		Awake:      statusAwake{s: m.awakeService()},
+		Awake:      statusAwake{s: m.awakeWaker()},
 		Apps:       appsOf(env, m),
-		Settings:   configRead{settingsOf(m)},
+		Settings:   settingsRead{settingsOf(m)},
 		Setup:      setupRead{setupOf(env, m)},
 		Disk:       diskRead{m.diskOf(env)},
 		Engine:     m.macEngine(),
@@ -93,7 +98,7 @@ func (m machine) meter() activitycontract.Meter {
 	case m.kind == catalog.Linux:
 		return activitylinux.New(rootFS{fs: m.sys.FS, root: cmp.Or(m.systemRoot(), "/")}, m.sys.Clock)
 	}
-	return activitymacos.New(local.NewKernel(m.vars), m.sys.Clock)
+	return activitymacos.New(darwin.NewTables(m.vars), m.sys.Clock)
 }
 
 // value: the Inspector of this machine's facts: its system's own tools, or
@@ -105,7 +110,7 @@ func (m machine) facts() settingscontract.Inspector {
 	case m.kind == catalog.Linux:
 		return settingslinux.New(m.sys.Run)
 	}
-	return settingsmacos.New(m.sys.Run, m.sys.FS, m.sys.Clock, settingsmacos.Options{Root: m.systemRoot(), Jobs: m.jobs(config.ReadBudget)})
+	return settingsmacos.New(m.sys.Run, m.sys.FS, m.sys.Clock, settingsmacos.Options{Root: m.systemRoot(), Jobs: m.jobs(settingscalls.ReadBudget)})
 }
 
 type hostedServers struct{ d macEngine }
@@ -127,11 +132,11 @@ func (s hostedServers) Hosted(ctx context.Context) bool {
 	return false
 }
 
-type configRead struct{ *config.Service }
+type settingsRead struct{ *settingscalls.Catalogue }
 
-func (configRead) Placed(r config.Report) (string, catalog.State) { return r.Item.Name, r.State }
+func (settingsRead) Placed(r settings.Report) (string, catalog.State) { return r.Item.Name, r.State }
 
-type setupRead struct{ s *setup.Service }
+type setupRead struct{ s *setupcalls.Provisioner }
 
 func (r setupRead) Check(ctx context.Context) ([]overview.Step, error) {
 	report, err := r.s.Check(ctx)
@@ -145,10 +150,10 @@ func (r setupRead) Check(ctx context.Context) ([]overview.Step, error) {
 	return steps, nil
 }
 
-type diskRead struct{ s *storage.Service }
+type diskRead struct{ s *diskcalls.Surveyor }
 
-func (r diskRead) Watch(ctx context.Context) <-chan overviewcalls.DiskReading[storage.StrayReport] {
-	out := make(chan overviewcalls.DiskReading[storage.StrayReport])
+func (r diskRead) Watch(ctx context.Context) <-chan overviewcalls.DiskReading[disk.MisplacedReport] {
+	out := make(chan overviewcalls.DiskReading[disk.MisplacedReport])
 	go func() {
 		defer close(out)
 		for report := range r.s.Watch(ctx) {
@@ -166,7 +171,7 @@ const levelInstalled catalog.Level = "installed"
 
 // invariant: one row per storage row and level it holds bytes at, then its
 // installed size, then `other`, the caches no row claims.
-func diskOf(report storage.Report) overviewcalls.DiskReading[storage.StrayReport] {
+func diskOf(report disk.Survey) overviewcalls.DiskReading[disk.MisplacedReport] {
 	rows := []overview.Disk{}
 	for _, r := range report.Rows {
 		for _, level := range []catalog.Level{catalog.LevelCache, catalog.LevelData} {
@@ -181,12 +186,12 @@ func diskOf(report storage.Report) overviewcalls.DiskReading[storage.StrayReport
 	if report.Other > 0 {
 		rows = append(rows, overview.Disk{Name: "other", Level: catalog.LevelCache, Bytes: report.Other})
 	}
-	return overviewcalls.DiskReading[storage.StrayReport]{Rows: rows, Misplaced: append(make([]storage.StrayReport, 0, len(report.Misplaced)), report.Misplaced...)}
+	return overviewcalls.DiskReading[disk.MisplacedReport]{Rows: rows, Misplaced: append(make([]disk.MisplacedReport, 0, len(report.Misplaced)), report.Misplaced...)}
 }
 
 // value: the machine's files under its root, as the Linux Meter reads /proc.
 type rootFS struct {
-	fs   system.FS
+	fs   local.FS
 	root string
 }
 

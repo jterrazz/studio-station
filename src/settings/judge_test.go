@@ -32,8 +32,8 @@ func TestJudgeSetGivesEachSetByStationStateItsCause(t *testing.T) {
 		{"never applied, nothing there", true, nil, gone, false, settings.StateNotApplied, false},
 		{"never applied, a file of your own there", true, nil, edited, false, settings.StateNotApplied, false},
 		{"never recorded, but exactly what station writes", true, nil, same, false, settings.StateApplied, false},
-		{"off here, even though applied", true, record, same, true, settings.StateOffHere, false},
-		{"off here, your edit kept", true, record, edited, true, settings.StateOffHere, false},
+		{"off here, even though applied", true, record, same, true, settings.StateOffThisMac, false},
+		{"off here, your edit kept", true, record, edited, true, settings.StateOffThisMac, false},
 		{"does not live on this machine, off or not", false, record, same, true, settings.StateNotForThisMachine, false},
 	} {
 		t.Run(c.name, func(t *testing.T) {
