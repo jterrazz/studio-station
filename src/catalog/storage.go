@@ -63,7 +63,7 @@ type Stray struct {
 type SizeProbe string
 
 const (
-	SizeDirs     SizeProbe = ""
+	SizeDirs       SizeProbe = ""
 	SizeContainers SizeProbe = "docker-system-df"
 )
 

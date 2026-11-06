@@ -9,8 +9,8 @@ import (
 	"time"
 
 	"github.com/jterrazz/studio-station/src/awake"
-	"github.com/jterrazz/studio-station/src/awake/contract"
 	"github.com/jterrazz/studio-station/src/awake/calls"
+	"github.com/jterrazz/studio-station/src/awake/contract"
 )
 
 type clock struct{ At time.Time }
