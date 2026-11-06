@@ -86,7 +86,7 @@ func (m *Mas) each(ctx context.Context, verb string, installs []catalog.Install)
 		c.Answer = m.answer
 		err := local.Attach(ctx, m.run, c)
 		if errors.Is(err, local.ErrSilent) {
-			return &apps.SignedOutError{Manager: "the App Store", Waited: m.answer, Hint: "open the App Store and sign in"}
+			return &apps.SignedOutError{Store: "the App Store", Waited: m.answer, Hint: "open the App Store and sign in"}
 		}
 		if err != nil {
 			return err

@@ -80,13 +80,13 @@ func livesOn(places []catalog.MachineKind) string {
 }
 
 type SignedOutError struct {
-	// value: a manager that waits on a sign-in it cannot ask for, read from
+	// value: a store that waits on a sign-in it cannot ask for, read from
 	// its silence: the App Store queues nothing while it is signed out.
-	Manager string
-	Waited  time.Duration
-	Hint    string
+	Store  string
+	Waited time.Duration
+	Hint   string
 }
 
 func (e *SignedOutError) Error() string {
-	return e.Manager + " did not answer in " + strconv.Itoa(int(e.Waited.Seconds())) + " s, as when it is signed out: " + e.Hint
+	return e.Store + " did not answer in " + strconv.Itoa(int(e.Waited.Seconds())) + " s, as when it is signed out: " + e.Hint
 }
