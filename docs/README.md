@@ -28,19 +28,23 @@
 
 ## Reference
 
-| Page                                            | Answers                                                                                   |
-| ----------------------------------------------- | ----------------------------------------------------------------------------------------- |
-| [Commands](reference/commands.md)               | Every command and flag, the hidden plumbing, the exit codes                               |
-| [The status contract](reference/status-json.md) | The `station.status/v1` document `station status --json` prints and `studio doctor` reads |
-| [Machines](reference/machines.md)               | Hosts, VMs, lifetimes, `--on`, the tailnet, ssh, the engine, the round-5 migration        |
-| [Ports](reference/ports.md)                     | What a VM listens on: reserved ports, sharing, HTTPS, profiles, the engine protocol       |
-| [Images](reference/images.md)                   | The VM images, the recipe, the binary inside                                              |
-| [Secrets](reference/secrets.md)                 | Kept, shared and bound secrets; sharing accounts with a VM; Claude and studio in a VM     |
-| [Configuration](reference/configuration.md)     | The settings, `preferences.json`, the environment variables                               |
-| [Apps and skills](reference/apps-and-skills.md) | The catalogue, the method table, mise, skills as apps, the toolbelt                       |
-| [Dotfiles](reference/dotfiles.md)               | The embedded application configs and the `~/.zshrc` block                                 |
-| [Disk](reference/disk.md)                       | The Disk groups, the relocation rule, `station disk`, free, erase and move                |
-| [Footprint](reference/footprint.md)             | Everything `station` and the apps write on a machine, generated from the table            |
+| Page                                            | Answers                                                                                       |
+| ----------------------------------------------- | --------------------------------------------------------------------------------------------- |
+| [Commands](reference/commands.md)               | Every command and flag, the hidden aliases, the plumbing, the exit codes                      |
+| [Machines](reference/machines.md)               | Macs, servers and workspaces, lifetimes, `--on` and `station use`, Tailscale, ssh, the engine |
+| [Ports](reference/ports.md)                     | Private and Public, reserved ports, sharing, HTTPS, profiles                                  |
+| [Accounts](reference/accounts.md)               | Who is signed in, sharing an account with a VM, kept and bound secrets, Claude in a VM        |
+| [Disk](reference/disk.md)                       | The Disk groups, the relocation rule, free, erase and move                                    |
+| [Activity](reference/activity.md)               | What a machine is doing, where each value comes from, the history and its graphs              |
+| [Awake](reference/awake.md)                     | Every Mac's mode, keeping a Mac awake, the guards, Never sleeps                               |
+| [Settings](reference/settings.md)               | Every setting station applies, the Checked group, how a setting asks its values               |
+| [Preferences](reference/preferences.md)         | `preferences.json`, its groups and their owners, the environment variables                    |
+| [Apps and skills](reference/apps-and-skills.md) | The catalogue, the method table, mise, skills as apps, the toolbelt                           |
+| [Images](reference/images.md)                   | The VM images, the recipe, the binary inside                                                  |
+| [Dotfiles](reference/dotfiles.md)               | The embedded application configs and the `~/.zshrc` block                                     |
+| [The API](reference/api.md)                     | `station.api/v2`: the transport, the frames, `calls.json`, the engine's own calls             |
+| [The status contract](reference/status-json.md) | `station.status/v1`, kept for one release behind the hidden `station status --json`           |
+| [Footprint](reference/footprint.md)             | Everything `station` and the apps write on a machine, generated from the table                |
 
 ## Decisions
 

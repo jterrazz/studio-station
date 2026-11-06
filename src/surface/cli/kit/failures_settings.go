@@ -31,7 +31,7 @@ func settingsFailure(err error) (*fail.Error, bool) {
 	case errors.As(err, &terminal):
 		return Translate(fail.New(fail.NeedsTerminal, words.NeedsTerminal, terminal.Item, nil), ""), true
 	case errors.As(err, &studio):
-		return failed(studio.Error(), "see docs/reference/secrets.md#claude-in-a-vm", err), true
+		return failed(studio.Error(), "see docs/reference/accounts.md#claude-in-a-vm", err), true
 	}
 	return nil, false
 }

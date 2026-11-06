@@ -1,6 +1,6 @@
 # The status contract
 
-`station status --json` prints one JSON document, `station.status/v1`, and `studio doctor` reads it to judge the machine.
+`station status --json` prints one JSON document, `station.status/v1`, and `studio doctor` reads it to judge the machine. It is kept for one release: `station status` is a hidden alias of `station overview`, whose own document is `station.overview.read/v1` ([Commands](commands.md#station-overview)), and `status --json` alone still prints this one ([ADR-004](../decisions/004-station-status-json-is-a-contract.md)).
 
 | Section               | Answers                                     |
 | --------------------- | ------------------------------------------- |
@@ -33,7 +33,7 @@ The top-level keys, in order:
 
 A checked setting is `{"name": "filevault", "state": "ok", "value": "on", "detail": ""}`. `workspace.docker` is `{state, containers, images, volumes, dangling_bytes, total_bytes}`, its state always `unknown`: station no longer scans the workspace. `environment.network` is the `local ip` and the `dns` resolvers, both read on the machine: a status read calls no third-party server.
 
-The `macos` update reads the list the background check wrote to `/Library/Preferences/com.apple.SoftwareUpdate.plist` (`<n> pending` or `up to date`, detail `checked <age> ago`); `softwareupdate -l` runs only when that list is missing or older than 7 days. `environment.security` and `environment.updates`, `background` and `gateways` are macOS-only: they are `[]` on a Linux machine. The `setup.steps` of a Mac are `name`, `zshrc`, `layout` and `tools` (`degraded` while the App Store app's [CLI wrapper](machines.md#the-tailnet) is due); a machine that is not a Mac leaves out `name`, `layout` and `tools`.
+The `macos` update reads the list the background check wrote to `/Library/Preferences/com.apple.SoftwareUpdate.plist` (`<n> pending` or `up to date`, detail `checked <age> ago`); `softwareupdate -l` runs only when that list is missing or older than 7 days. `environment.security` and `environment.updates`, `background` and `gateways` are macOS-only: they are `[]` on a Linux machine. The `setup.steps` of a Mac are `name`, `zshrc`, `layout` and `tools` (`degraded` while the App Store app's [CLI wrapper](machines.md#tailscale) is due); a machine that is not a Mac leaves out `name`, `layout` and `tools`.
 
 `remote-login` and `encrypted-dns` are read from the state of the `sshd` and `dns` settings, so `status` and `station settings` cannot disagree about them. A machine where those settings do not live has no such row.
 

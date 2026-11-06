@@ -28,6 +28,6 @@ station settings apply ghostty-dotfiles zed-dotfiles hushlogin
 station overview
 ```
 
-Open the Tailscale app once and log in: station only reads it. A setting that needs values (a password, a token) opens a form on a terminal ([Configuration](../reference/configuration.md)). A Mac stays tidy: dev work lives in VMs ([Machines](../reference/machines.md)), and Claude Code reaches them with a shared token ([Secrets](../reference/secrets.md#claude-in-a-vm)).
+Open the Tailscale app once and log in: station only reads it. A setting that needs values (a password, a token) opens a form on a terminal ([Settings](../reference/settings.md)). A Mac stays tidy: dev work lives in VMs ([Machines](../reference/machines.md)), and Claude Code reaches them with a shared token ([Accounts](../reference/accounts.md#claude-in-a-vm)).
 
 Every command is in [Commands](../reference/commands.md); every file written is in [Footprint](../reference/footprint.md).

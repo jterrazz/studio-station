@@ -1,36 +1,58 @@
 # Commands
 
-Every command of `station`, grouped as `station --help` groups them. The words are the [Glossary](../concepts/glossary.md)'s.
+Every command of `station`, grouped as `station help` groups them. The words are the [Glossary](../concepts/glossary.md)'s.
 
-| Section        | Answers                                              |
-| -------------- | ---------------------------------------------------- |
-| Rules          | What holds for every command                         |
-| Here           | `overview`, `apps`, `settings`, `disk`, `background` |
-| All machines   | `machines`, `ports`, `images`, `accounts`            |
-| The binary     | `setup`, `--version`, `help`                         |
-| Hidden aliases | The v2 words that still run, for one release         |
-| Plumbing       | The hidden commands the machine runs for itself      |
-| Exit codes     | What 0, 1, 2 and 130 mean                            |
-
-`station help` groups the commands as SPEC v3 §4.1 does: MACHINES (`machines`), ON A MACHINE (`overview`, `activity`, `apps`, `settings`, `disk`, `ports`, `accounts`, `background`, `awake`), A MAC'S IMAGES AND ENGINE (`images`, `engine`), THIS TERMINAL (shown once `use` exists) and STATION ITSELF (`setup`, `help`). The sections below keep their v2 headings until each family takes its v3 words.
+| Section                   | Answers                                                                                        |
+| ------------------------- | ---------------------------------------------------------------------------------------------- |
+| Rules                     | What holds for every command                                                                   |
+| Machines                  | `machines`                                                                                     |
+| On a machine              | `overview`, `activity`, `apps`, `settings`, `disk`, `ports`, `accounts`, `background`, `awake` |
+| A Mac's images and engine | `images`, `engine`                                                                             |
+| This terminal             | `use`                                                                                          |
+| Station itself            | `setup`, `--version`, `help`                                                                   |
+| Hidden aliases            | The v2 words that still run, for one release                                                   |
+| Plumbing                  | The hidden commands the machine runs for itself                                                |
+| Exit codes                | What 0, 1, 2 and 130 mean                                                                      |
 
 ## Rules
 
 - Bare `station` opens the TUI on a terminal; piped, or with `--all` or `--json`, it prints `station overview`, exit 0.
 - A bare noun lists (`apps`, `settings`, `disk`, `machines`, `ports`, `images`, `accounts`). A verb whose argument is missing is refused, its hint the command with it: `station apps install` hints `station apps install <app>`.
 - An existing thing is a positional (`machines stop api`); a new thing is described by options (`machines create api --permanent`).
-- The same verbs everywhere: `install`, `uninstall`, `upgrade`, except where a family has taken its v3 words (`apps`: `install`, `update`, `remove`). The only other words are the [hidden aliases](#hidden-aliases).
+- One verb per meaning, the [Glossary](../concepts/glossary.md#the-verbs)'s: `apps` install, update, remove; `settings` apply, diff, off; `disk` free, erase, move; a VM create, start, stop, restart, edit, delete. The only other words are the [hidden aliases](#hidden-aliases).
 - Every read takes `--json`. Every destructive action asks on a terminal or takes `--yes`.
 - Every refusal exits 2 before any question; every failure is one `Error:` and one `Hint:`. With `--json`, the same refusal or failure is also the `station.error/v1` document on stdout (`schema`, `type`, `code`, `subject`, `message`, `hint`, `fix`), the exit code unchanged. A question answered no is `Error: <what> kept: you said no`, exit 1.
 - A word station does not know is `Error: unknown command "<word>"` / `Hint: station help`, exit 2; so is `station help <word>`.
 - A word under `disk` that names one of its entries, the verb forgotten, is still refused, but its hint is the command meant: `station disk go` is `"go" is a disk row: say what to do with it`, hint `station disk free go`. Under `apps` the entry is a read: `station apps jq` is jq's detail; under `settings`, a setting's name is its read: `station settings dns`.
-- `--on <machine>` runs any command below on another machine, through its engine, and renders the answer here; see [Machines](machines.md#on-another-machine).
+- `--on <machine>` runs any command below on another machine, through its engine, and renders the answer on this one; see [Machines](machines.md#on-another-machine).
 - `station use <machine>` makes every later command of this terminal run there, as `--on` would; `--on` still wins for one command. See [Machines](machines.md#this-terminals-machine).
-- A value a command needs from you is never an argv flag when it could be a secret: a setting asks in a form on a terminal ([Configuration](configuration.md)).
+- A value a command needs from you is never an argv flag when it could be a secret: a setting asks in a form on a terminal ([Settings](settings.md)).
 
-## Here
+## Machines
 
-These commands act on the machine they run on, and list only what its kind allows.
+### `station machines`
+
+```sh
+station machines [--json] # All machines: every Mac, its VMs under it, then Needs you
+station machines <machine> [--json] # that machine's Overview, as station overview --on <machine>
+station machines add <mac> [--user <login>] [--key <file>]
+station machines forget <mac> [--yes]
+station machines create [<name>] [--permanent] [--image linux] [--cpus <n>] [--memory <size>] [--disk <size>] [--network bridged]
+station machines create <name> --server [--cpus <n>] [--memory <size>] [--disk <size>] [--check <url|host:port>]
+station machines start <vm>
+station machines stop <vm> [--yes | --confirm=<name>]
+station machines restart <machine> [--yes]
+station machines edit <vm> [--cpus <n>] [--memory <size>] [--disk <size>] [--check <url|host:port> | --no-check]
+station machines ssh <machine>
+station machines delete <vm> [--confirm=<name>]
+station machines unlock <mac>
+```
+
+`--this-mac` lists This Mac only, without asking the other Macs. `unlock` is for a Mac waiting at FileVault after a power cut: a Mac that answers already says so (exit 0); otherwise it needs a terminal and dials the Mac on your LAN, at the address it last answered with (Tailscale starts only once its disk is unlocked), where you type the password into macOS's own pre-boot prompt, then waits for the Mac on Tailscale again. `restart <mac>` asks yes or no naming the VMs that pause, sends a planned restart that unlocks itself, waits for its station to answer again (`did not come back`, exit 1, past 3 minutes), starts those VMs again and says how they are. `create` makes a throwaway workspace unless `--permanent` is given, or a server with `--server` (always on, named, behind its Mac, 4 CPU · 8 GB · 50 GB by default; `--check` is its health check, refused on a workspace; `--always-on` is its hidden v2 alias), and asks the Mac on a terminal when two answer; piped it needs no question. `stop` asks a workspace yes or no and a server its name typed (`--confirm=<name>`; `--yes` never answers it), and the VM's own Mac judges the answer. `add` writes the Mac's ssh block, then reaches it as every later call will: a Mac that does not answer, or answers with no station, is not added and nothing stays written; one that runs another station version is added, with how to bring the two to one. `delete` is the only verb that destroys a machine; `forget` only unregisters a Mac, here, whatever `--on` says: it never reaches that Mac, and refuses This Mac and a VM. VMs are made and run on Macs, so these commands are refused on a VM. `create`, `start`, `stop`, `restart`, `edit` and `delete` need the Mac's engine (`Hint: station engine start`). `station machines <machine>` is that machine's Overview (`probe` is its hidden v2 alias). `--network bridged` is for macOS VMs only. See [Machines](machines.md).
+
+## On a machine
+
+These commands act on the target machine: the one `--on` names, else the one `station use` chose for this terminal, else This Mac. Each lists only what the machine's kind allows; a section its kind does not have is refused, exit 2, with the reason in words.
 
 ### `station overview`
 
@@ -46,7 +68,7 @@ This machine at a glance (SPEC §5.1): a first line that sums it up (`This Mac �
 station activity [--all-machines] [--json [--history]]
 ```
 
-What a machine is doing now (SPEC §6): CPU of the whole machine and its load, memory used of total with its pressure and swap, free space, disk read and write and network in and out with what the kernel counted since boot, thermal and battery on a Mac, how long it has been up, and the five busiest processes by CPU and by memory (a VM's hypervisor process named by its VM). The rates are the mean of the last 10 s of the history the engine keeps while a surface watches the machine (its 2 s points; a VM's is its Mac's engine's); with the engine stopped, or unwatched (its points a minute apart), two samples read now, 1 s apart, said `rates over 1 s`, its 24 h series and what must last (a CPU busy for 10 min) still the engine's. Another machine's read starts with `On <machine>:`. A VM whose guest does not answer shows its process on its Mac, `up 12d 0h (since its run started) · from mac-mini (its guest does not answer)`, and no disk or network values; a stopped VM says `○ api is stopped` and exits 0; a Meter that does not answer in 2 s turns every value to `? · no answer in 2 s` and the read still exits 0; one that answers but counted nothing shows `?`, never zeros. What it raises in Needs you (disk almost full, memory pressure critical, swap growing, running hot, battery low, a busy server) heads the page with its fix. `--all-machines` is one row per machine, a Mac that does not answer its own row, and gathers every machine's findings into one Needs you: a finding of any machine but This Mac names it, `jterrazz-mac-mini: disk almost full: 3 % free`, and its fix carries `--on` that machine (in the JSON, each of the top-level `findings` names its `machine`); with `--on` it is refused, exit 2. `--json` prints `station.activity.read/v1`; `--history` adds the engine's 24 h series in 60 s points and needs `--json` (exit 2 without).
+What a machine is doing now: CPU and load, memory and its pressure, swap, free space, disk and network rates and totals, thermal and battery on a Mac, uptime, and the busiest processes; `--all-machines` is one row per machine and gathers every machine's findings (refused with `--on`, exit 2). `--json` prints `station.activity.read/v1`; `--history` adds the engine's 24 h series and needs `--json` (exit 2 without). Where each value comes from, and the history, are [Activity](activity.md)'s.
 
 ### `station apps`
 
@@ -74,7 +96,7 @@ station settings apply [<setting...>] [--yes] [--all-machines] # bare = every se
 station settings off <setting...> [--yes] # off here: station neither applies nor watches it on this machine
 ```
 
-A setting that needs values asks them in a form on a terminal and is refused elsewhere (exit 2); a value is never an argument. An apply over a setting changed since asks first, as yours is lost; off removes only what is still exactly station's, a change of yours stays. The Always-on Mac group is applied by name only. `--all-machines` reads every Mac and workspace at once: first the machines (a stopped workspace shows its last read with its age, kept by This Mac's engine in its memory alone, so `?` once it restarted; a Mac that does not answer says when it last did; a server is named and has no column), then what needs a look with its gesture, then each group's rows with one mark per machine and their OK count, which leaves out what is not for its machine; the rows that need no look fold on one line unless `--all`. `--json` is `station.settings.matrix/v1`. `settings apply --all-machines` applies on each Mac and running workspace in turn, says each server and stopped workspace it skips, each setting named that does not live on a machine (skipped there alone, the rest applied), and each admin setting with the command that applies it on that Mac's own terminal, and exits 1 when a Mac does not answer. `station config`, `config install` and `config uninstall` are hidden aliases of `settings`, `settings apply` and `settings off` for one release. See [Configuration](configuration.md).
+A setting that needs values asks them in a form on a terminal and is refused elsewhere (exit 2); a value is never an argument. An apply over a setting changed since asks first, as yours is lost; off removes only what is still exactly station's, a change of yours stays. The Always-on Mac group is applied by name only. `--all-machines` reads every Mac and workspace at once: first the machines (a stopped workspace shows its last read with its age, kept by This Mac's engine in its memory alone, so `?` once it restarted; a Mac that does not answer says when it last did; a server is named and has no column), then what needs a look with its gesture, then each group's rows with one mark per machine and their OK count, which leaves out what is not for its machine; the rows that need no look fold on one line unless `--all`. `--json` is `station.settings.matrix/v1`. `settings apply --all-machines` applies on each Mac and running workspace in turn, says each server and stopped workspace it skips, each setting named that does not live on a machine (skipped there alone, the rest applied), and each admin setting with the command that applies it on that Mac's own terminal, and exits 1 when a Mac does not answer. `station config`, `config install` and `config uninstall` are hidden aliases of `settings`, `settings apply` and `settings off` for one release. See [Settings](settings.md).
 
 ### `station disk`
 
@@ -85,7 +107,33 @@ station disk erase <app> [--confirm=<app>] # erase an app's data, back to factor
 station disk move <folder> # move a misplaced folder where its app expects it
 ```
 
-`free` and `move` ask nothing: nothing is lost. `erase` is always one app, its name typed, and refuses while the app runs or on a Never touched row. A stale VM goes with `station machines delete`, an old image version with `station images delete`. The v2 `station storage`, `storage clean` and `storage reset` are hidden aliases for one release. See [Disk](disk.md).
+`free` and `move` ask nothing: nothing is lost. `erase` is always one app, its name typed, and refuses while the app runs or on a Never touched row. A stale VM goes with `station machines delete`, an old image version with `station images delete`. The v2 `station storage`, `storage clean` and `storage reset` are hidden aliases for one release. `station disk free docker` prunes Docker's unused data. See [Disk](disk.md).
+
+### `station ports`
+
+```sh
+station ports [--all-machines] [--all] [--json] # every listening port in its class: Needs you, Public, Private
+station ports share <vm> <port> [--json]      # reserve the port now and share it; inside a VM: station ports share <port>
+station ports stop-sharing <vm> <port> [--yes] # release it, and do not share it again until a share; inside a VM: <port>
+station ports declare [<machine>] <port> --via <route> # declare it public: cloudflare-tunnel, tailscale-funnel or lan
+station ports undeclare [<machine>] <port> [--yes]     # take the declaration back
+```
+
+`--all-machines` asks every Mac through its engine; `--all` lists the ports that listen on their machine only, otherwise counted on one line. `share` prints the URL before anything listens, piped the URL alone; a port is refused on a VM that shares 20 already (exit 1, `Hint: station ports stop-sharing <vm> <port>`) and while This Mac is signed out of Tailscale (exit 1, the reservation kept). `stop-sharing` asks yes or no and is remembered in `preferences.json` (`ports.not_shared`). `declare` and `undeclare` are kept by the machine's Mac and refused inside a VM; the route is verified on every list (see [Ports](ports.md)). `--json` is `station.ports.list/v1`. The v2 nouns of this family and `tailnet` are hidden aliases for one release. See [Ports](ports.md).
+
+#### The Tailscale line
+
+The first line of `station ports` is This Mac's node: signed in with its name and whether Serve shares, signed out, or not installed. Read only: the owner logs in through the Tailscale app, and station never drives it but for [shared ports](ports.md#serve-and-https).
+
+### `station accounts`
+
+```sh
+station accounts [--all-machines] [--json] # who has access to what here, then the shares with VMs
+station accounts share <account> --with <vm> [--for <duration>] # 12h by default, 1m to 7d
+station accounts take-back <account> --from <vm> [--yes]
+```
+
+This Mac's GitHub, npm, Claude, Tailscale, Cloudflare, git, ssh and Docker sign-ins, then `# Shared with VMs`: each share with its VM and its time left. `--on <vm>` reads a workspace's own sign-ins, by its guest; `--all-machines` prints one block per Mac and workspace, a server named and not listed, a stopped workspace and a Mac that does not answer each its own line. Identities and scopes only: no token, cookie or key body is ever read into a value, and anything shaped like one reads `?`. `--json` is `station.accounts.list/v1`: `{schema, machine, accounts, shares, share_list}`. A share is asked of the VM's own Mac. `station secrets`, `secrets lend --to` and `secrets recall --from` are hidden aliases of `accounts`, `accounts share` and `accounts take-back` for one release; `secrets allow` and `disallow` are retired (exit 2). See [Accounts](accounts.md#sharing-accounts).
 
 ### `station background`
 
@@ -99,46 +147,14 @@ An orphan is a task whose program is missing or whose app is gone. `remove` asks
 ### `station awake`
 
 ```sh
-station awake [--json] # every Mac, this one first: the session, its guards, and the Mac's reading (lid, source, battery, thermal)
+station awake [--json] # every Mac, this one first: its mode, its guards, its reading
 station awake <for> [--lid] [--battery] # keep this Mac awake: 30m, 1h, 4h, until 18:00 (1 min to 24 h); held by the engine
-station awake off # end the session now
+station awake off # end the keep-awake now; Never sleeps stays
 ```
 
-The engine that already runs holds the session, in memory only: a `PreventUserIdleSystemSleep` assertion, and with `--lid` the clamshell sleep disabled (no root, no `pmset -a`, no file). Every end sets the clamshell back to normal, and so does every engine start and quit. A guard ends the session first: thermal pressure at trapping (or heavy for 5 minutes lid closed on battery), the battery at 20 % on battery, Low Power Mode, or the lid closed on battery without `--battery`; each end is logged in `engine.log` and kept on the page for 24 hours. With `--lid`, a lid close sleeps the display with `pmset displaysleepnow`, never a display assertion. A guard already past its threshold refuses the start (exit 1). Piped, one record per row: the session (`on`, its flags, until in RFC 3339, who asked), the guards, then the reading as `key<TAB>value`. Unrelated to the `restart-after-power-cut` setting, the admin pmset policy of an always-on Mac.
+A Mac only; a guard already past its threshold refuses the start (exit 1). Piped, one record per row: the session (`on`, its flags, until in RFC 3339, who asked), the guards, then the reading as `key<TAB>value`. The modes, the guards and Never sleeps are [Awake](awake.md)'s.
 
-## All machines
-
-### `station machines`
-
-```sh
-station machines [--json] # All machines: every Mac, its VMs under it, then Needs you
-station machines <machine> [--json] # that machine's Overview, as station overview --on <machine>
-station machines add <mac> [--user <login>] [--key <file>]
-station machines forget <mac> [--yes]
-station machines create [<name>] [--permanent] [--image linux] [--cpus <n>] [--memory <size>] [--disk <size>] [--network nat|bridged]
-station machines create <name> --server [--cpus <n>] [--memory <size>] [--disk <size>] [--check <url|host:port>]
-station machines start <vm>
-station machines stop <vm> [--yes | --confirm=<name>]
-station machines restart <machine> [--yes]
-station machines edit <vm> [--cpus <n>] [--memory <size>] [--disk <size>] [--check <url|host:port> | --no-check]
-station machines ssh <machine>
-station machines delete <vm> [--confirm=<name>]
-station machines unlock <mac>
-```
-
-`--here` lists This Mac only, with no network. `unlock` is for a Mac waiting at FileVault after a power cut: a Mac that answers already says so (exit 0); otherwise it needs a terminal and dials the Mac on your LAN, at the address it last answered with (Tailscale starts only once its disk is unlocked), where you type the password into macOS's own pre-boot prompt, then waits for the Mac on Tailscale again. `restart <mac>` asks yes or no naming the VMs that pause, sends a planned restart that unlocks itself, waits for its station to answer again (`did not come back`, exit 1, past 3 minutes), starts those VMs again and says how they are. `create` makes a throwaway workspace unless `--permanent` is given, or a server with `--server` (always on, named, behind its Mac, 4 CPU · 8 GB · 50 GB by default; `--check` is its health check, refused on a workspace; `--always-on` is its hidden v2 alias), and asks the Mac on a terminal when two answer; piped it needs no question. `stop` asks a workspace yes or no and a server its name typed (`--confirm=<name>`; `--yes` never answers it), and the VM's own Mac judges the answer. `add` writes the Mac's ssh block, then reaches it as every later call will: a Mac that does not answer, or answers with no station, is not added and nothing stays written; one that runs another station version is added, with how to bring the two to one. `delete` is the only verb that destroys a machine; `forget` only unregisters a Mac, here, whatever `--on` says: it never reaches that Mac, and refuses This Mac and a VM. VMs are made and run on Macs, so these commands are refused on a VM. `create`, `start`, `stop`, `restart`, `edit` and `delete` need the Mac's engine (`Hint: station engine start`). `station machines <machine>` is that machine's Overview (`probe` is its hidden v2 alias). `--network bridged` is for macOS VMs only. See [Machines](machines.md).
-
-### `station ports`
-
-```sh
-station ports [--all-machines] [--all] [--json] # every listening port in its class: Needs you, Public, Private
-station ports share <vm> <port> [--json]      # reserve the port now and share it; inside a VM: station ports share <port>
-station ports stop-sharing <vm> <port> [--yes] # release it, and do not share it again until a share; inside a VM: <port>
-station ports declare [<machine>] <port> --via <route> # declare it public: cloudflare-tunnel, tailscale-funnel or lan
-station ports undeclare [<machine>] <port> [--yes]     # take the declaration back
-```
-
-`--all-machines` asks every Mac over ssh; `--all` lists the ports that listen on their machine only, otherwise counted on one line. `share` prints the URL before anything listens, piped the URL alone; a port is refused on a VM that shares 20 already (exit 1, `Hint: station ports stop-sharing <vm> <port>`) and while This Mac is signed out of Tailscale (exit 1, the reservation kept). `stop-sharing` asks yes or no and is remembered in `preferences.json` (`services.not_shared`). `declare` and `undeclare` are kept by the machine's Mac and refused inside a VM; the route is verified on every list (see [Ports](ports.md)). `--json` is `station.ports.list/v1`. The v2 nouns of this family and `tailnet` are hidden aliases for one release. See [Ports](ports.md).
+## A Mac's images and engine
 
 ### `station images`
 
@@ -151,16 +167,6 @@ station images delete <image>[@<version>] [--yes]
 
 A bare `build` builds every image that is missing or whose recipe changed; a bare `update` updates every image this Mac holds. An image the catalogue does not hold is `no image "debian"` (exit 2). See [Images](images.md).
 
-### `station accounts`
-
-```sh
-station accounts [--all-machines] [--json] # who has access to what here, then the shares with VMs
-station accounts share <account> --with <vm> [--for <duration>] # 12h by default, 1m to 7d
-station accounts take-back <account> --from <vm> [--yes]
-```
-
-This Mac's GitHub, npm, Claude, Tailscale, Cloudflare, git, ssh and Docker sign-ins, then `# Shared with VMs`: each share with its VM and its time left. `--on <vm>` reads a workspace's own sign-ins, by its guest; `--all-machines` prints one block per Mac and workspace, a server named and not listed, a stopped workspace and a Mac that does not answer each its own line. Identities and scopes only: no token, cookie or key body is ever read into a value, and anything shaped like one reads `?`. `--json` is `station.accounts.list/v1`: `{schema, machine, accounts, shares, share_list}`. A share is asked of the VM's own Mac. `station secrets`, `secrets lend --to` and `secrets recall --from` are hidden aliases of `accounts`, `accounts share` and `accounts take-back` for one release; `secrets allow` and `disallow` are retired (exit 2). See [Secrets](secrets.md#sharing-accounts).
-
 ### `station engine`
 
 ```sh
@@ -171,13 +177,19 @@ station engine start # the engine bootstrapped again; the VMs it stopped stay st
 
 `--json` is `station.engine.read/v1`: `{schema, engine: {state, version, up_s, vms, stopped_at, stopped_by}}`, `state` `running`, `stopped` or `not-installed`. An engine running another version than station names both and `station setup`. A Mac only; `--on <mac>` runs it on another Mac. `station stop` and `station start` are hidden aliases of `engine stop` and `engine start` for one release, saying `→ now: station engine stop` on stderr (see [Hidden aliases](#hidden-aliases)). A start the job manager refuses ends in `the engine did not start: <its last word>` (exit 1). See [Machines](machines.md#the-engine).
 
-### The Tailscale line
+## This terminal
 
-The first line of `station ports` is This Mac's node: signed in with its name and whether Serve shares, signed out, or not installed. Read only: the owner logs in through the Tailscale app, and station never drives it but for [shared ports](ports.md#serve-and-https).
+### `station use`
 
-`station disk free docker` prunes Docker's unused data.
+```sh
+station use <machine> # every later command of this terminal runs there, as --on would
+station use - # back to the machine used before
+station use # the machine this terminal uses, and since when
+```
 
-## The binary
+`--on` still wins for its one command; other terminals stay where they are. See [Machines](machines.md#this-terminals-machine).
+
+## Station itself
 
 ```sh
 station setup [--name <name>]
@@ -191,15 +203,15 @@ station help [command]
 
 A v2 word runs its v3 command with the same arguments, for one release, and prints one muted line on stderr naming it (nothing there with `--json` or `--page`); help and completion never list it.
 
-| Old                                 | Runs                                                                                                                                                                                                           |
-| ----------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `station status`                    | `station overview`; `status --json` keeps `station.status/v1`                                                                                                                                                  |
-| `station stop`                      | `station engine stop`                                                                                                                                                                                          |
-| `station start`                     | `station engine start`                                                                                                                                                                                         |
-| `station tools`                     | `station apps`; `install`, `uninstall` and `upgrade --via` run `apps install`, `apps remove` and `apps update --method`                                                                                        |
-| `station secrets`                   | `station accounts`; `lend --to` and `recall --from` run `accounts share --with` and `accounts take-back --from`                                                                                                |
-| `station run git <shortcut>`        | `git <alias>`, the [Git shortcuts](configuration.md#the-items) setting's alias (`log`, `push`, `status` are `lg`, `pushup`, `st`); refused with `station settings apply git-shortcuts` while it is not applied |
-| `station run docker rm\|rmi\|reset` | the steps of `dclean`, `dclean-images`, `dreset`, the [Docker shortcuts](configuration.md#the-items), asking as before (`--yes` off a terminal)                                                                |
+| Old                                 | Runs                                                                                                                                                                                                      |
+| ----------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `station status`                    | `station overview`; `status --json` keeps `station.status/v1`                                                                                                                                             |
+| `station stop`                      | `station engine stop`                                                                                                                                                                                     |
+| `station start`                     | `station engine start`                                                                                                                                                                                    |
+| `station tools`                     | `station apps`; `install`, `uninstall` and `upgrade --via` run `apps install`, `apps remove` and `apps update --method`                                                                                   |
+| `station secrets`                   | `station accounts`; `lend --to` and `recall --from` run `accounts share --with` and `accounts take-back --from`                                                                                           |
+| `station run git <shortcut>`        | `git <alias>`, the [Git shortcuts](settings.md#the-items) setting's alias (`log`, `push`, `status` are `lg`, `pushup`, `st`); refused with `station settings apply git-shortcuts` while it is not applied |
+| `station run docker rm\|rmi\|reset` | the steps of `dclean`, `dclean-images`, `dreset`, the [Docker shortcuts](settings.md#the-items), asking as before (`--yes` off a terminal)                                                                |
 
 ## Plumbing
 
@@ -211,7 +223,8 @@ These commands exist for the machine's own use. They are hidden from help and th
 | `station shell prompt`            | the prompt's `custom.station` segment runs it: `on linux-1` while this terminal [uses](machines.md#this-terminals-machine) another machine, nothing otherwise; it never counts as a use                                                              |
 | `station completion <shell>`      | cobra's completion script, for a shell the block does not serve                                                                                                                                                                                      |
 | `station engine run`              | the launchd agent `com.jterrazz.station.engine` runs it on a Mac: the VMs and their ports ([Machines](machines.md#the-engine))                                                                                                                       |
-| `station guest`                   | the Mac's engine runs it inside each VM over ssh: what listens there ([Ports](ports.md))                                                                                                                                                             |
+| `station guest serve --stdio`     | the Mac's engine runs it inside each VM over its one guest connection: the VM's calls, and what listens there ([The API](api.md#the-transport))                                                                                                      |
+| `station engine attach`           | another Mac runs it over ssh: bridges ssh's stdio to this Mac's engine socket ([The API](api.md#the-transport))                                                                                                                                      |
 | `station machines pipe <vm>`      | a VM's `~/.ssh/config` ProxyCommand runs it: ssh's bytes to the VM's ip behind its Mac ([Machines](machines.md#ssh-and-herdr))                                                                                                                       |
 | `station machines supervise <vm>` | retired: an old per-VM agent that still runs it exits at once; `station setup` removes those agents                                                                                                                                                  |
 
@@ -219,18 +232,17 @@ These commands exist for the machine's own use. They are hidden from help and th
 
 ## Exit codes
 
-| Code | Means                                               |
-| ---- | --------------------------------------------------- |
-| 0    | Done                                                |
-| 1    | An operation failed, or a confirmation was declined |
-| 2    | A refusal, before any question or effect            |
+| Code | Means                                                                                                                 |
+| ---- | --------------------------------------------------------------------------------------------------------------------- |
+| 0    | Done, or a read that found findings                                                                                   |
+| 1    | `failed`, `unreachable`, `engine-stopped`, `far-too-old`, `declined`: an operation failed, or you said no             |
+| 2    | `refused`, `not-found`, `not-for-this-machine`, `needs-confirmation`, `needs-terminal`: before any question or effect |
+| 130  | `interrupted`; nothing is printed                                                                                     |
 
-The exit code is computed once, from the error's type (SPEC v3 §12.2): `refused`, `not-found`, `not-for-this-machine`, `needs-confirmation`, `needs-terminal` exit 2; `failed`, `unreachable`, `engine-stopped`, `far-too-old`, `declined` exit 1; `interrupted` exits 130 and prints nothing.
-| 130 | Interrupted |
-
-A command over several items prints every outcome, then exits 1 with `<n> of <m> <noun> failed` if any failed.
+The exit code is computed once, from the error's type ([Architecture](../concepts/architecture.md#the-error-model)). A command over several items prints every outcome, then exits 1 with `<n> of <m> <noun> failed` if any failed.
 
 ## Related
 
 - [Design system](../concepts/design-system.md): the forms a document takes.
-- [Status contract](status-json.md): the JSON a script reads.
+- [Status contract](status-json.md): the v2 JSON the hidden `status --json` keeps for one release.
+- [The API](api.md): the calls behind every command.
