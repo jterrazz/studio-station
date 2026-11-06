@@ -1,4 +1,4 @@
-description: 'All machines asks every other Mac''s engine for its own view, in BatchMode, and merges the answers'
+description: 'every other Mac''s engine is asked for its own view, in BatchMode, and the answers merged'
 fixture:
     - ../../__fixtures__/hosts-x-y/
     - ../../__fixtures__/machines-stubs/

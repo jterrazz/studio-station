@@ -1,4 +1,4 @@
-description: 'create answers once the guest is connected and has written the VM''s keys block and its ports'' env file'
+description: 'create answers once the guest is connected and wrote the VM''s keys block and ports'' env file'
 fixture:
     - ../../../__fixtures__/vms/
     - ../../../__fixtures__/engine-vm/
