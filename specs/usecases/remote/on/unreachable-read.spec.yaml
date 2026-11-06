@@ -1,4 +1,4 @@
-description: 'a read of a Mac that does not answer is its finding, and exits 0'
+description: 'a read of a Mac that does not answer is its finding, and exits 0, with --json too'
 env: mini-offline
 runs:
     - command: 'apps --on mac-mini'
@@ -9,3 +9,18 @@ runs:
       exit: 0
       stdout: |
           ✗ mac-mini does not answer
+    - command: 'apps --on mac-mini --json'
+      exit: 0
+      stdout: |
+          {
+            "schema": "station.error/v1",
+            "type": "unreachable",
+            "code": "remote.unreachable",
+            "subject": "jterrazz-mac-mini",
+            "message": "mac-mini does not answer",
+            "hint": "station machines mac-mini",
+            "fix": null
+          }
+      stderr: |
+          Error: mac-mini does not answer
+          Hint: station machines mac-mini
