@@ -61,7 +61,7 @@ func calls(d *Engine, served []string) []call.Handler {
 			return h, nil
 		}),
 		own(d, engine.CallVMs, func(_ context.Context, d *Engine, _ struct{}) (any, error) { return d.VMs(), nil }),
-		own(d, engine.CallPorts, func(_ context.Context, d *Engine, in engine.VMIn) (any, error) { return d.Ports(in.VM), nil }),
+		own(d, engine.CallPorts, func(ctx context.Context, d *Engine, in engine.VMIn) (any, error) { return d.Ports(ctx, in.VM), nil }),
 		own(d, engine.CallReserve, func(ctx context.Context, d *Engine, in engine.ReserveIn) (any, error) {
 			return d.Reserve(ctx, in.VM, in.GuestPort, in.Pinned, in.Profile)
 		}),
