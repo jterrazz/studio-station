@@ -5,6 +5,7 @@ import (
 	"errors"
 	"io"
 	"io/fs"
+	"net"
 	"time"
 )
 
@@ -108,6 +109,9 @@ type Listener interface {
 type Sockets interface {
 	ListenUnix(path string) (Listener, error)
 	DialUnix(ctx context.Context, path string, timeout time.Duration) (Conn, error)
+	// value: a TCP connection to address (host:port), for a protocol a
+	// library speaks over it.
+	DialTCP(ctx context.Context, address string, timeout time.Duration) (net.Conn, error)
 	ListenTCP(ip string, port int) (Listener, error)
 	Pipe(ctx context.Context, ip string, port int, in io.Reader, out io.Writer) error
 	Join(a, b Conn)

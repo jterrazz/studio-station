@@ -8,7 +8,6 @@ import (
 	"errors"
 	"io"
 	"io/fs"
-	"net"
 	"net/netip"
 	"os"
 	"path/filepath"
@@ -21,6 +20,8 @@ import (
 
 	"github.com/jterrazz/studio-station/src/machines/contract"
 	"github.com/jterrazz/studio-station/src/machines/contract/contracttest"
+	"github.com/jterrazz/studio-station/src/platform/local"
+	"github.com/jterrazz/studio-station/src/platform/local/localtest"
 )
 
 // invariant: the guest the adapter is proved against: an x/crypto sshd that
@@ -62,33 +63,26 @@ func startSSHD(t *testing.T, host ssh.Signer) *sshd {
 		},
 	}
 	cfg.AddHostKey(host)
-	l, err := net.Listen("tcp", "127.0.0.1:0")
-	if err != nil {
-		t.Fatal(err)
-	}
-	t.Cleanup(func() { _ = l.Close() })
-	tcp, ok := l.Addr().(*net.TCPAddr)
-	if !ok {
-		t.Fatalf("the sshd listens on %v, not TCP", l.Addr())
-	}
-	s.addr = tcp.AddrPort()
+	l := localtest.Loopback(t)
+	s.addr = netip.MustParseAddrPort(l.Addr().String())
 	go func() {
 		for {
 			conn, err := l.Accept()
 			if err != nil {
 				return
 			}
-			go s.serve(conn, cfg)
+			go func() {
+				_, chans, reqs, err := ssh.NewServerConn(conn, cfg)
+				if err == nil {
+					s.serve(chans, reqs)
+				}
+			}()
 		}
 	}()
 	return s
 }
 
-func (s *sshd) serve(conn net.Conn, cfg *ssh.ServerConfig) {
-	_, chans, reqs, err := ssh.NewServerConn(conn, cfg)
-	if err != nil {
-		return
-	}
+func (s *sshd) serve(chans <-chan ssh.NewChannel, reqs <-chan *ssh.Request) {
 	go ssh.DiscardRequests(reqs)
 	for nc := range chans {
 		switch nc.ChannelType() {
@@ -204,7 +198,7 @@ func TestTheSSHGuestKeepsTheContract(t *testing.T) {
 		s := startSSHD(t, newHostKey(t))
 		known := filepath.Join(t.TempDir(), "known_hosts", "dev")
 		return contracttest.GuestSubject{
-			Dialer: New(),
+			Dialer: dial(t),
 			Target: func(t *testing.T) contract.GuestTarget { return target(t, s, known) },
 			Program: func(line string, a contracttest.Answer) {
 				s.mu.Lock()
@@ -222,11 +216,21 @@ func TestTheSSHGuestKeepsTheContract(t *testing.T) {
 				if err != nil {
 					t.Fatal(err)
 				}
-				info, err := os.Stat(file)
+				entries, err := os.ReadDir(filepath.Dir(file))
 				if err != nil {
 					t.Fatal(err)
 				}
-				return data, info.Mode()
+				for _, e := range entries {
+					if e.Name() == filepath.Base(file) {
+						info, err := e.Info()
+						if err != nil {
+							t.Fatal(err)
+						}
+						return data, info.Mode()
+					}
+				}
+				t.Fatalf("%s is not in its folder", path)
+				return nil, 0
 			},
 			Path: "station",
 		}
@@ -236,13 +240,13 @@ func TestTheSSHGuestKeepsTheContract(t *testing.T) {
 func TestAVMWhoseHostKeyChangedIsRefused(t *testing.T) {
 	known := filepath.Join(t.TempDir(), "known_hosts", "dev")
 	first := startSSHD(t, newHostKey(t))
-	g, err := New().Dial(t.Context(), target(t, first, known))
+	g, err := dial(t).Dial(t.Context(), target(t, first, known))
 	if err != nil {
 		t.Fatalf("the first sight of the VM was refused: %v", err)
 	}
 	_ = g.Close()
 	again := startSSHD(t, newHostKey(t))
-	if g, err := New().Dial(t.Context(), target(t, again, known)); err == nil {
+	if g, err := dial(t).Dial(t.Context(), target(t, again, known)); err == nil {
 		_ = g.Close()
 		t.Fatal("a VM answering with another host key was let in")
 	}
@@ -251,7 +255,7 @@ func TestAVMWhoseHostKeyChangedIsRefused(t *testing.T) {
 func TestABuildVMIsReachedByItsImagePassword(t *testing.T) {
 	s := startSSHD(t, newHostKey(t))
 	s.answers["true"] = contracttest.Answer{}
-	g, err := New().Dial(t.Context(), contract.GuestTarget{VM: "build", Address: s.addr, User: "admin", Password: "admin"})
+	g, err := dial(t).Dial(t.Context(), contract.GuestTarget{VM: "build", Address: s.addr, User: "admin", Password: "admin"})
 	if err != nil {
 		t.Fatalf("the image password was refused: %v", err)
 	}
@@ -259,4 +263,10 @@ func TestABuildVMIsReachedByItsImagePassword(t *testing.T) {
 	if res, err := g.Exec(t.Context(), contract.GuestCommand{Line: "true"}); err != nil || res.Code != 0 {
 		t.Errorf("a command over the password session came back %+v (%v)", res, err)
 	}
+}
+
+func dial(t *testing.T) contract.GuestDialer {
+	t.Helper()
+	h := local.New(nil, nil, io.Discard, io.Discard)
+	return New(h.FS, h.Sockets)
 }

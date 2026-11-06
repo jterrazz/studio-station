@@ -15,7 +15,7 @@ import (
 func ruleEngineNoTCP(w *world) []finding {
 	var out []finding
 	for _, f := range w.files {
-		if f.test || f.pkg == "platform/local" {
+		if f.test || f.pkg == "platform/local" || f.pkg == "platform/local/localtest" {
 			continue
 		}
 		api := topOf(f.pkg) == "remote" || f.pkg == "engine/process"

@@ -83,6 +83,11 @@ func (sockets) ListenUnix(path string) (Listener, error) {
 	return listener{l: l, sock: sock}, nil
 }
 
+func (sockets) DialTCP(ctx context.Context, address string, timeout time.Duration) (net.Conn, error) {
+	d := net.Dialer{Timeout: timeout}
+	return d.DialContext(ctx, "tcp", address)
+}
+
 func (sockets) DialUnix(ctx context.Context, path string, timeout time.Duration) (Conn, error) {
 	d := net.Dialer{Timeout: timeout}
 	var conn net.Conn

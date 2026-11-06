@@ -3,13 +3,12 @@ package ssh
 import (
 	"bytes"
 	"context"
-	"crypto/ed25519"
 	"errors"
 	"io"
 	"io/fs"
-	"net"
-	"os"
+	"net/netip"
 	"path/filepath"
+	"slices"
 	"strconv"
 	"strings"
 	"sync"
@@ -19,6 +18,7 @@ import (
 	"golang.org/x/crypto/ssh/knownhosts"
 
 	"github.com/jterrazz/studio-station/src/machines/contract"
+	"github.com/jterrazz/studio-station/src/platform/local"
 )
 
 const (
@@ -26,9 +26,14 @@ const (
 	missed    = 3
 )
 
-type dialer struct{}
+type dialer struct {
+	files   local.FS
+	sockets local.Sockets
+}
 
-func New() contract.GuestDialer { return dialer{} }
+func New(files local.FS, sockets local.Sockets) contract.GuestDialer {
+	return dialer{files: files, sockets: sockets}
+}
 
 type client struct {
 	c    *ssh.Client
@@ -39,30 +44,34 @@ type client struct {
 // invariant: the VM's host key is checked against the same per-machine
 // known_hosts file the CLI's ssh uses, accept-new: an absent entry is appended,
 // a different key refuses.
-func hostKeys(file, name string) ssh.HostKeyCallback {
-	return func(_ string, remote net.Addr, key ssh.PublicKey) error {
-		if err := os.MkdirAll(filepath.Dir(file), 0o700); err != nil {
-			return err
+func (d dialer) knownHosts(file string) (ssh.HostKeyCallback, error) {
+	if err := d.files.MkdirAll(filepath.Dir(file), 0o700); err != nil {
+		return nil, err
+	}
+	if _, err := d.files.Stat(file); errors.Is(err, fs.ErrNotExist) {
+		if err := d.files.WriteFile(file, nil, 0o600); err != nil {
+			return nil, err
 		}
-		f, err := os.OpenFile(file, os.O_CREATE|os.O_RDONLY, 0o600)
+	}
+	return knownhosts.New(file)
+}
+
+func (d dialer) pin(file, name string) func(ssh.PublicKey) error {
+	return func(key ssh.PublicKey) error {
+		known, err := d.files.ReadFile(file)
 		if err != nil {
 			return err
 		}
-		_ = f.Close()
-		check, err := knownhosts.New(file)
-		if err != nil {
-			return err
-		}
-		err = check(name+":22", remote, key)
+		return d.files.WriteFile(file, append(known, knownhosts.Line([]string{name}, key)+"\n"...), 0o600)
+	}
+}
+
+func acceptNew[A any](check func(string, A, ssh.PublicKey) error, name string, pin func(ssh.PublicKey) error) func(string, A, ssh.PublicKey) error {
+	return func(_ string, remote A, key ssh.PublicKey) error {
+		err := check(name+":22", remote, key)
 		var unknown *knownhosts.KeyError
 		if errors.As(err, &unknown) && len(unknown.Want) == 0 {
-			w, openErr := os.OpenFile(file, os.O_APPEND|os.O_WRONLY, 0o600)
-			if openErr != nil {
-				return openErr
-			}
-			defer func() { _ = w.Close() }()
-			_, writeErr := w.WriteString(knownhosts.Line([]string{name}, key) + "\n")
-			return writeErr
+			return pin(key)
 		}
 		return err
 	}
@@ -71,22 +80,23 @@ func hostKeys(file, name string) ssh.HostKeyCallback {
 // invariant: a VM already pinned is asked only for the key types of its pins,
 // so a pin OpenSSH made with one type (ed25519) is never refused because Go
 // would negotiate another (ecdsa).
-func pinnedAlgorithms(file, name string, remote net.Addr) []string {
-	check, err := knownhosts.New(file)
+func (d dialer) pinnedAlgorithms(file, name string) []string {
+	rest, err := d.files.ReadFile(file)
 	if err != nil {
-		return nil
-	}
-	probe, err := ssh.NewPublicKey(ed25519.PublicKey(make([]byte, ed25519.PublicKeySize)))
-	if err != nil {
-		return nil
-	}
-	var mismatch *knownhosts.KeyError
-	if !errors.As(check(name+":22", remote, probe), &mismatch) {
 		return nil
 	}
 	var algos []string
-	for _, want := range mismatch.Want {
-		switch t := want.Key.Type(); t {
+	for len(rest) > 0 {
+		var hosts []string
+		var key ssh.PublicKey
+		_, hosts, key, _, rest, err = ssh.ParseKnownHosts(rest)
+		if err != nil {
+			break
+		}
+		if !slices.Contains(hosts, name) && !slices.Contains(hosts, knownhosts.Normalize(name+":22")) {
+			continue
+		}
+		switch t := key.Type(); t {
 		case ssh.KeyAlgoRSA:
 			algos = append(algos, ssh.KeyAlgoRSASHA512, ssh.KeyAlgoRSASHA256, ssh.KeyAlgoRSA)
 		default:
@@ -96,11 +106,11 @@ func pinnedAlgorithms(file, name string, remote net.Addr) []string {
 	return algos
 }
 
-func auth(t contract.GuestTarget) (ssh.AuthMethod, error) {
+func (d dialer) auth(t contract.GuestTarget) (ssh.AuthMethod, error) {
 	if t.Password != "" {
 		return ssh.Password(t.Password), nil
 	}
-	key, err := os.ReadFile(t.Key)
+	key, err := d.files.ReadFile(t.Key)
 	if err != nil {
 		return nil, err
 	}
@@ -111,8 +121,8 @@ func auth(t contract.GuestTarget) (ssh.AuthMethod, error) {
 	return ssh.PublicKeys(signer), nil
 }
 
-func (dialer) Dial(ctx context.Context, t contract.GuestTarget) (contract.Guest, error) {
-	method, err := auth(t)
+func (d dialer) Dial(ctx context.Context, t contract.GuestTarget) (contract.Guest, error) {
+	method, err := d.auth(t)
 	if err != nil {
 		return nil, err
 	}
@@ -126,20 +136,20 @@ func (dialer) Dial(ctx context.Context, t contract.GuestTarget) (contract.Guest,
 	if t.KnownHosts == "" {
 		cfg.HostKeyCallback = ssh.InsecureIgnoreHostKey() //nolint:gosec // outside: the trust of a fresh clone is its image key, as above.
 	} else {
-		cfg.HostKeyCallback = hostKeys(t.KnownHosts, t.VM)
+		check, err := d.knownHosts(t.KnownHosts)
+		if err != nil {
+			return nil, err
+		}
+		cfg.HostKeyCallback = acceptNew(check, t.VM, d.pin(t.KnownHosts, t.VM))
+		cfg.HostKeyAlgorithms = d.pinnedAlgorithms(t.KnownHosts, t.VM)
 	}
 	addr := t.Address.String()
-	d := net.Dialer{Timeout: 10 * time.Second}
-	conn, err := d.DialContext(ctx, "tcp", addr)
+	conn, err := d.sockets.DialTCP(ctx, addr, 10*time.Second)
 	if err != nil {
 		return nil, err
 	}
-	if t.KnownHosts != "" {
-		cfg.HostKeyAlgorithms = pinnedAlgorithms(t.KnownHosts, t.VM, conn.RemoteAddr())
-	}
 	c, chans, reqs, err := ssh.NewClientConn(conn, addr, cfg)
 	if err != nil {
-		_ = conn.Close()
 		return nil, err
 	}
 	cl := &client{c: ssh.NewClient(c, chans, reqs), done: make(chan struct{})}
@@ -226,12 +236,20 @@ func (c *client) Put(ctx context.Context, path string, data []byte, mode fs.File
 
 func (c *client) Forward(ctx context.Context, ip string, port int) (io.ReadWriteCloser, error) {
 	type result struct {
-		conn net.Conn
+		conn io.ReadWriteCloser
 		err  error
+	}
+	at, err := netip.ParseAddr(ip)
+	if err != nil {
+		return nil, err
+	}
+	addr := ip + ":" + strconv.Itoa(port)
+	if at.Is6() {
+		addr = "[" + ip + "]:" + strconv.Itoa(port)
 	}
 	got := make(chan result, 1)
 	go func() {
-		conn, err := c.c.Dial("tcp", net.JoinHostPort(ip, strconv.Itoa(port)))
+		conn, err := c.c.Dial("tcp", addr)
 		got <- result{conn, err}
 	}()
 	select {

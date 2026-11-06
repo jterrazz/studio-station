@@ -989,6 +989,10 @@ var errNoSSHD = errors.New("no sshd answers at this address in the world")
 
 // invariant: inside a VM of the world, the socket its Mac's engine offers
 // there is that engine, as the guest relays it.
+func (worldSockets) DialTCP(context.Context, string, time.Duration) (net.Conn, error) {
+	return nil, errors.New("the world dials no TCP")
+}
+
 func (s worldSockets) DialUnix(ctx context.Context, _ string, _ time.Duration) (local.Conn, error) {
 	m := s.m
 	if p, inside := m.placement(); inside {
