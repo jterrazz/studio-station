@@ -57,7 +57,6 @@ func storeWritersTolerated() map[string]string {
 		"src/domain/machines/create.go " + src + "machines/contract.MachineStore":                "L14: machines.create and machines.delete become calls",
 		"src/domain/images/records.go " + src + "images/contract.ImageStore":                     "L14: images.build becomes a call",
 		"src/domain/images/service.go " + src + "images/contract.ImageStore":                     "L14: images.delete becomes a call",
-		"src/domain/secrets/service.go " + src + "accounts/contract.ShareStore":                  "L56: the share service moves out of domain/ into the accounts family",
 		"src/settings/adapter/vault/claude_token.go " + src + "accounts/contract.ShareListPrefs": "L56: the claude-token setting puts claude on the share list through the accounts family",
 		"src/domain/services/lease.go " + src + "domain/services.Reservations":                   "L14: ports.share and ports.stop-sharing become calls the engine runs",
 		"src/domain/services/service.go " + src + "domain/services.Reservations":                 "L14: ports.stop-sharing becomes a call",

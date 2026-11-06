@@ -22,6 +22,8 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/jterrazz/studio-station/src/accounts"
+
 	"github.com/spf13/cobra"
 
 	accountsfake "github.com/jterrazz/studio-station/src/accounts/adapter/fake"
@@ -43,7 +45,6 @@ import (
 	diskfake "github.com/jterrazz/studio-station/src/disk/adapter/fake"
 	diskcontract "github.com/jterrazz/studio-station/src/disk/contract"
 	"github.com/jterrazz/studio-station/src/domain/guest"
-	"github.com/jterrazz/studio-station/src/domain/secrets"
 	"github.com/jterrazz/studio-station/src/engine"
 	enginefake "github.com/jterrazz/studio-station/src/engine/adapter/fake"
 	imagesfake "github.com/jterrazz/studio-station/src/images/adapter/fake"
@@ -1074,7 +1075,7 @@ func (g worldGuest) credentials(cmd contract.GuestCommand) (contract.GuestResult
 	switch {
 	case cmd.Line == "command -v studio":
 		return contract.GuestResult{Stdout: "/usr/local/bin/studio\n"}, true, nil
-	case cmd.Line == secrets.VMStudio("import"):
+	case cmd.Line == accounts.VMStudio("import"):
 		g.r.w.Lock()
 		broke := g.r.w.Fails("Guest.Exec")
 		g.r.w.Unlock()
@@ -1092,14 +1093,14 @@ func (g worldGuest) credentials(cmd contract.GuestCommand) (contract.GuestResult
 			return contract.GuestResult{Code: 1, Stderr: "studio: the import is not a JSON object of names\n"}, true, nil
 		}
 		return contract.GuestResult{}, true, nil
-	case strings.HasPrefix(cmd.Line, secrets.VMStudio("delete")+" "):
+	case strings.HasPrefix(cmd.Line, accounts.VMStudio("delete")+" "):
 		g.r.w.Lock()
 		broke := g.r.w.Fails("Guest.Exec")
 		g.r.w.Unlock()
 		if broke {
 			return contract.GuestResult{Code: 1, Stderr: "studio: the credential store is not writable\n"}, true, nil
 		}
-		store.Delete(strings.Fields(strings.TrimPrefix(cmd.Line, secrets.VMStudio("delete"))))
+		store.Delete(strings.Fields(strings.TrimPrefix(cmd.Line, accounts.VMStudio("delete"))))
 		return contract.GuestResult{}, true, nil
 	}
 	return contract.GuestResult{}, false, nil

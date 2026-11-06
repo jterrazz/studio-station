@@ -1,11 +1,9 @@
-package secrets
+package calls
 
 import (
 	"context"
 	"errors"
 	"fmt"
-	"io/fs"
-	"path"
 	"slices"
 	"strings"
 	"time"
@@ -15,33 +13,38 @@ import (
 	"github.com/jterrazz/studio-station/src/catalog"
 	"github.com/jterrazz/studio-station/src/core/store"
 	machinescontract "github.com/jterrazz/studio-station/src/machines/contract"
-	"github.com/jterrazz/studio-station/src/platform/local"
 	setupcontract "github.com/jterrazz/studio-station/src/setup/contract"
 )
 
 const (
-	ClaudeToken  = catalog.ClaudeTokenName
 	stepBudget   = 2 * time.Minute
 	ExportBudget = stepBudget
 )
 
-type Options struct {
+type SharingOptions struct {
 	Here catalog.MachineKind
 	// value: whether a VM of this Mac runs now, as its engine says.
 	Running func(ctx context.Context, vm string) (bool, error)
 	// value: whether a running VM of this Mac keeps accounts, by
 	// accounts.SharedInto over the kind the VM itself says it is.
 	Receives func(ctx context.Context, vm string) (bool, error)
-	// value: the file a failed export's cause is kept in, never shown raw.
-	Log string
+	// value: keeps a failed step's cause, never shown raw, and answers
+	// where it is kept, empty when it is not.
+	Keep func(line string) string
+	Now  func() time.Time
 }
 
 type Guest interface {
 	// invariant: a command inside a VM rides its engine's one connection to it.
-	GuestExec(ctx context.Context, vm, line, stdin string) (local.Output, error)
+	GuestExec(ctx context.Context, vm, line, stdin string) (GuestRun, error)
 }
 
-type Stores struct {
+type GuestRun struct {
+	Stdout, Stderr string
+	ExitCode       int
+}
+
+type SharingStores struct {
 	ShareList contract.ShareListPrefs
 	Hosts     machinescontract.MacsPrefs
 	Name      setupcontract.NamePrefs
@@ -49,21 +52,19 @@ type Stores struct {
 	Machines  machinescontract.MachineStore
 }
 
-type Service struct {
-	h      local.Host
-	clock  local.Clock
+type Sharing struct {
 	guest  Guest
-	st     Stores
+	st     SharingStores
 	source contract.SecretSource
 	ids    contract.Identities
-	o      Options
+	o      SharingOptions
 }
 
-func New(h local.Host, guest Guest, st Stores, source contract.SecretSource, ids contract.Identities, o Options) *Service {
-	return &Service{h: h, clock: h.Clock, guest: guest, st: st, source: source, ids: ids, o: o}
+func NewSharing(guest Guest, st SharingStores, source contract.SecretSource, ids contract.Identities, o SharingOptions) *Sharing {
+	return &Sharing{guest: guest, st: st, source: source, ids: ids, o: o}
 }
 
-func (s *Service) ShareList() []string {
+func (s *Sharing) ShareList() []string {
 	list, err := s.st.ShareList.Get()
 	if err != nil {
 		return nil
@@ -71,11 +72,11 @@ func (s *Service) ShareList() []string {
 	return list
 }
 
-func (s *Service) Shares(ctx context.Context) (map[string][]accounts.Share, error) {
+func (s *Sharing) Shares(ctx context.Context) (map[string][]accounts.Share, error) {
 	return s.st.Shares.List(ctx)
 }
 
-func (s *Service) here() string {
+func (s *Sharing) here() string {
 	name, err := s.st.Name.Get()
 	if err != nil || name == "" {
 		return "This Mac"
@@ -83,12 +84,12 @@ func (s *Service) here() string {
 	return name
 }
 
-func (s *Service) CheckShare(ctx context.Context, account, vm string) (secret string, err error) {
+func (s *Sharing) CheckShare(ctx context.Context, account, vm string) (secret string, err error) {
 	// invariant: a share is refused before anything is read or copied: an
 	// unknown account, one the share list does not hold, a VM that may not
 	// receive it, an account not signed in here.
 	if s.o.Here != catalog.Host {
-		return "", &OffHostError{Here: s.o.Here}
+		return "", &accounts.OffHostError{Here: s.o.Here}
 	}
 	if !accounts.Known(account) {
 		return "", &accounts.UnknownError{Account: account}
@@ -117,7 +118,7 @@ func (s *Service) CheckShare(ctx context.Context, account, vm string) (secret st
 	return secret, nil
 }
 
-func (s *Service) CheckFrom(ctx context.Context, account, vm, from string) error {
+func (s *Sharing) CheckFrom(ctx context.Context, account, vm, from string) error {
 	// invariant: a share is its VM's own Mac's: asked from another Mac, the
 	// VM is judged first, so a server's refusal stands, then it is refused.
 	if from == "" || from == s.here() {
@@ -129,7 +130,7 @@ func (s *Service) CheckFrom(ctx context.Context, account, vm, from string) error
 	return &accounts.OtherMacError{Account: account, VM: vm, Mac: s.here()}
 }
 
-func (s *Service) CheckReceiver(ctx context.Context, vm string) error {
+func (s *Sharing) CheckReceiver(ctx context.Context, vm string) error {
 	// invariant: a share lands only in a running VM this Mac keeps that
 	// keeps accounts: a server keeps its own secrets.
 	if err := s.checkVM(ctx, vm); err != nil {
@@ -147,7 +148,7 @@ func (s *Service) CheckReceiver(ctx context.Context, vm string) error {
 	if s.o.Receives != nil {
 		receives, err := s.o.Receives(ctx, vm)
 		if err != nil {
-			return &StepError{VM: vm, Step: "reaching it", Cause: err}
+			return &accounts.StepError{VM: vm, Step: "reaching it", Cause: err}
 		}
 		if !receives {
 			return &accounts.ToServerError{VM: vm}
@@ -156,7 +157,7 @@ func (s *Service) CheckReceiver(ctx context.Context, vm string) error {
 	return nil
 }
 
-func (s *Service) Share(ctx context.Context, account, vm string, term time.Duration) (accounts.Shared, error) {
+func (s *Sharing) Share(ctx context.Context, account, vm string, term time.Duration) (accounts.Shared, error) {
 	if term == 0 {
 		term = accounts.DefaultShareTerm
 	}
@@ -167,9 +168,9 @@ func (s *Service) Share(ctx context.Context, account, vm string, term time.Durat
 	probe, err := s.inVM(ctx, vm, "command -v studio", "")
 	switch {
 	case err != nil:
-		return accounts.Shared{}, &StepError{VM: vm, Step: "reaching it", Cause: err}
+		return accounts.Shared{}, &accounts.StepError{VM: vm, Step: "reaching it", Cause: err}
 	case probe.ExitCode != 0:
-		return accounts.Shared{}, &NoStudioError{VM: vm}
+		return accounts.Shared{}, &accounts.NoStudioError{VM: vm}
 	}
 	exported, err := s.source.Export(ctx, []string{secret})
 	if err != nil {
@@ -177,11 +178,11 @@ func (s *Service) Share(ctx context.Context, account, vm string, term time.Durat
 	}
 	// invariant: the secret travels from the export's output to the VM's
 	// stdin and nowhere else: never argv, never a file on the Mac.
-	imported, err := s.inVM(ctx, vm, VMStudio("import"), string(exported))
+	imported, err := s.inVM(ctx, vm, accounts.VMStudio("import"), string(exported))
 	if err != nil || imported.ExitCode != 0 {
-		return accounts.Shared{}, &StepError{VM: vm, Step: "copying " + accounts.Label(account), Cause: failure(err, imported)}
+		return accounts.Shared{}, &accounts.StepError{VM: vm, Step: "copying " + accounts.Label(account), Cause: failure(err, imported)}
 	}
-	at := s.clock.Now().UTC().Truncate(time.Second)
+	at := s.o.Now().UTC().Truncate(time.Second)
 	share := accounts.Share{Name: secret, At: at, Until: at.Add(term)}
 	held, err := s.st.Shares.Get(ctx, vm)
 	if err != nil {
@@ -194,30 +195,16 @@ func (s *Service) Share(ctx context.Context, account, vm string, term time.Durat
 	return accounts.Shared{Account: account, VM: vm, At: share.At, Until: share.Until}, nil
 }
 
-func (s *Service) keep(what string, cause error) string {
+func (s *Sharing) keep(what string, cause error) string {
 	// invariant: a source's own words go to the log and only there; the
 	// refusal names the file, shown from home, or nothing when none is kept.
-	if s.o.Log == "" {
+	if s.o.Keep == nil {
 		return ""
 	}
-	before, err := s.h.FS.ReadFile(s.o.Log)
-	if err != nil && !errors.Is(err, fs.ErrNotExist) {
-		return ""
-	}
-	if err := s.h.FS.MkdirAll(path.Dir(s.o.Log), 0o700); err != nil {
-		return ""
-	}
-	line := s.clock.Now().UTC().Format(time.RFC3339) + " " + what + ": " + cause.Error() + "\n"
-	if err := s.h.FS.WriteFile(s.o.Log, append(before, line...), 0o600); err != nil {
-		return ""
-	}
-	if home := s.h.Env.Home(); home != "" && strings.HasPrefix(s.o.Log, home+"/") {
-		return "~" + strings.TrimPrefix(s.o.Log, home)
-	}
-	return s.o.Log
+	return s.o.Keep(s.o.Now().UTC().Format(time.RFC3339) + " " + what + ": " + cause.Error() + "\n")
 }
 
-func (s *Service) CheckTakeBack(ctx context.Context, account, vm string) (string, error) {
+func (s *Sharing) CheckTakeBack(ctx context.Context, account, vm string) (string, error) {
 	// invariant: a take-back names an account this Mac shares with that VM;
 	// anything else is refused before the VM is asked.
 	if !accounts.Known(account) {
@@ -237,7 +224,7 @@ func (s *Service) CheckTakeBack(ctx context.Context, account, vm string) (string
 	return secret, nil
 }
 
-func (s *Service) TakeBack(ctx context.Context, account, vm string) error {
+func (s *Sharing) TakeBack(ctx context.Context, account, vm string) error {
 	secret, err := s.CheckTakeBack(ctx, account, vm)
 	if err != nil {
 		return err
@@ -245,11 +232,11 @@ func (s *Service) TakeBack(ctx context.Context, account, vm string) error {
 	return s.Expire(ctx, vm, []string{secret})
 }
 
-func (s *Service) Expire(ctx context.Context, vm string, secrets []string) error {
+func (s *Sharing) Expire(ctx context.Context, vm string, secrets []string) error {
 	// value: deletes the VM's copies of these secrets, then their shares.
-	out, err := s.inVM(ctx, vm, VMStudio(append([]string{"delete"}, secrets...)...), "")
+	out, err := s.inVM(ctx, vm, accounts.VMStudio(append([]string{"delete"}, secrets...)...), "")
 	if err != nil || out.ExitCode != 0 {
-		return &StepError{VM: vm, Step: "deleting the copies", Cause: failure(err, out)}
+		return &accounts.StepError{VM: vm, Step: "deleting the copies", Cause: failure(err, out)}
 	}
 	held, err := s.st.Shares.Get(ctx, vm)
 	if err != nil {
@@ -258,12 +245,12 @@ func (s *Service) Expire(ctx context.Context, vm string, secrets []string) error
 	return s.st.Shares.Put(ctx, vm, slices.DeleteFunc(held, func(sh accounts.Share) bool { return slices.Contains(secrets, sh.Name) }))
 }
 
-func (s *Service) Forget(ctx context.Context, vm string) error {
+func (s *Sharing) Forget(ctx context.Context, vm string) error {
 	// value: a deleted VM takes its copies with its disk; its shares go too.
 	return s.st.Shares.Delete(ctx, vm)
 }
 
-func (s *Service) checkVM(ctx context.Context, name string) error {
+func (s *Sharing) checkVM(ctx context.Context, name string) error {
 	var unreadable *store.UnreadableError
 	if _, err := s.st.Machines.Get(ctx, name); err == nil || errors.As(err, &unreadable) {
 		return nil
@@ -275,24 +262,18 @@ func (s *Service) checkVM(ctx context.Context, name string) error {
 		return err
 	}
 	if _, host := hosts[name]; host || name == s.here() {
-		return &NotAVMError{Name: name}
+		return &accounts.NotAVMError{Name: name}
 	}
 	return &accounts.UnknownVMError{VM: name}
 }
 
-func (s *Service) inVM(ctx context.Context, vm, line, stdin string) (local.Output, error) {
+func (s *Sharing) inVM(ctx context.Context, vm, line, stdin string) (GuestRun, error) {
 	ctx, cancel := context.WithTimeout(ctx, stepBudget)
 	defer cancel()
 	return s.guest.GuestExec(ctx, vm, line, stdin)
 }
 
-func VMStudio(args ...string) string {
-	// value: studio's command line inside a VM, its credential store a file
-	// there: import reads the secrets on stdin, delete takes their names.
-	return strings.Join(append([]string{"STUDIO_CREDENTIALS_BACKEND=file", "studio", "credentials"}, args...), " ")
-}
-
-func failure(err error, out local.Output) error {
+func failure(err error, out GuestRun) error {
 	if err != nil {
 		return err
 	}

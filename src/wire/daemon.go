@@ -3,16 +3,18 @@ package wire
 import (
 	"context"
 	"errors"
+	"os"
+	"path/filepath"
+	"strings"
+	"time"
+
 	"github.com/jterrazz/studio-station/src/accounts"
+	accountscalls "github.com/jterrazz/studio-station/src/accounts/calls"
 	"github.com/jterrazz/studio-station/src/activity"
 	coremachine "github.com/jterrazz/studio-station/src/core/machine"
 	enginejobs "github.com/jterrazz/studio-station/src/engine/jobs"
 	"github.com/jterrazz/studio-station/src/ports"
 	portscalls "github.com/jterrazz/studio-station/src/ports/calls"
-	"os"
-	"path/filepath"
-	"strings"
-	"time"
 
 	"github.com/spf13/cobra"
 
@@ -20,7 +22,6 @@ import (
 	"github.com/jterrazz/studio-station/src/catalog"
 	"github.com/jterrazz/studio-station/src/domain/machines"
 	"github.com/jterrazz/studio-station/src/domain/power"
-	"github.com/jterrazz/studio-station/src/domain/secrets"
 	"github.com/jterrazz/studio-station/src/domain/services"
 	"github.com/jterrazz/studio-station/src/domain/setup"
 	"github.com/jterrazz/studio-station/src/engine"
@@ -147,7 +148,7 @@ func retiredDaemonCommand(env kit.Env, m machine) *cobra.Command {
 	return cmd
 }
 
-type daemonLends struct{ s *secrets.Service }
+type daemonLends struct{ s *accountscalls.Sharing }
 
 func (l *daemonLends) Held() (map[string][]accounts.Share, error) {
 	return l.s.Shares(context.Background())

@@ -1,6 +1,10 @@
-package secrets
+package accounts
 
-import "github.com/jterrazz/studio-station/src/catalog"
+import (
+	"strings"
+
+	"github.com/jterrazz/studio-station/src/catalog"
+)
 
 type NotAVMError struct{ Name string }
 
@@ -32,3 +36,9 @@ func (e *StepError) Error() string {
 }
 
 func (e *StepError) Unwrap() error { return e.Cause }
+
+func VMStudio(args ...string) string {
+	// value: studio's command line inside a VM, its credential store a file
+	// there: import reads the secrets on stdin, delete takes their names.
+	return strings.Join(append([]string{"STUDIO_CREDENTIALS_BACKEND=file", "studio", "credentials"}, args...), " ")
+}
