@@ -7,6 +7,7 @@ import (
 	"github.com/jterrazz/studio-station/src/core/machine"
 	"github.com/jterrazz/studio-station/src/machines"
 	machinescalls "github.com/jterrazz/studio-station/src/machines/calls"
+	"github.com/jterrazz/studio-station/src/page"
 )
 
 type Held struct {
@@ -35,10 +36,11 @@ func Holder(ctx context.Context, env Env, vm string) (Held, bool) {
 }
 
 func (h Held) OnTarget(env Env) bool {
-	// value: whether the Mac the command runs on is the one that holds the VM.
+	// value: whether the Mac the command runs on is the one that holds the
+	// VM, named in full or as the interface names it (mac-mini).
 	t := env.Target()
 	if t.Name == "" || t.Name == env.Self.Name {
 		return h.MacIsThisMac
 	}
-	return t.Name == h.Mac
+	return t.Name == h.Mac || t.Name == page.MacName(h.Mac, env.Self.Name)
 }
