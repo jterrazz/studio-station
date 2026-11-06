@@ -2,6 +2,7 @@ package kit
 
 import (
 	"errors"
+	"github.com/jterrazz/studio-station/src/catalog"
 	"strconv"
 
 	"github.com/jterrazz/studio-station/src/core/fail"
@@ -125,6 +126,8 @@ func vmFailure(err error) (*fail.Error, bool) {
 		return usage(badLifetime.Error(), "station machines create --permanent"), true
 	case errors.As(err, &unknownImage):
 		return usage(unknownImage.Error(), "station images for the images"), true
+	case errors.As(err, &noImage) && fetchedOnly(noImage.Image):
+		return usage("image "+noImage.Image+" is not on This Mac", "station images update "+noImage.Image), true
 	case errors.As(err, &noImage):
 		return usage(noImage.Error(), "station images build "+noImage.Image), true
 	case errors.As(err, &noEngine):
@@ -171,4 +174,14 @@ func pipeFailure(err error) (*fail.Error, bool) {
 		return failed(running.Error(), "stop the permanent VMs and delete the throwaway ones (station machines), then station setup", err), true
 	}
 	return nil, false
+}
+
+// value: an image station has no recipe for: it is fetched, never built.
+func fetchedOnly(image string) bool {
+	for _, img := range catalog.Images {
+		if img.Name == image {
+			return img.Recipe == ""
+		}
+	}
+	return false
 }

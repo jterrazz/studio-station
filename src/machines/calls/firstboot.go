@@ -22,6 +22,11 @@ func renderFirstboot(script, name string, l model.Lifetime) string {
 }
 
 func (s *Machinist) firstBoot(ctx context.Context, img catalog.Image, name string, l model.Lifetime) error {
+	if img.Firstboot == "" {
+		// invariant: an image station only fetches carries its own setup:
+		// no first boot runs inside it.
+		return nil
+	}
 	script, err := catalog.Recipes.ReadFile(img.Firstboot)
 	if err != nil {
 		return err
