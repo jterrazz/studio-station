@@ -30,38 +30,38 @@ type sectionRead func(ctx context.Context, r call.Router, self machine.Ref) (ove
 // value: the read of each section an Overview has a line for, by its call
 // (SSH is the door, by the machine's name).
 func sectionReads() map[section.ID]sectionRead {
-	here := machine.Ref{}
+	thisMac := machine.Ref{}
 	return map[section.ID]sectionRead{
 		section.Activity: func(ctx context.Context, r call.Router, _ machine.Ref) (overview.Read, error) {
-			out, err := call.Read(ctx, r, here, activitycalls.Read, activitycalls.ReadIn{Quick: true}, nil)
+			out, err := call.Read(ctx, r, thisMac, activitycalls.Read, activitycalls.ReadIn{Quick: true}, nil)
 			return overview.ActivityRead(out), err
 		},
 		section.Apps: func(ctx context.Context, r call.Router, self machine.Ref) (overview.Read, error) {
-			out, err := call.Read(ctx, r, here, appscalls.List, appscalls.ListIn{}, nil)
+			out, err := call.Read(ctx, r, thisMac, appscalls.List, appscalls.ListIn{}, nil)
 			return overview.AppsRead(out, self), err
 		},
 		section.Settings: func(ctx context.Context, r call.Router, self machine.Ref) (overview.Read, error) {
-			out, err := call.Read(ctx, r, here, settingscalls.List, settingscalls.ListIn{}, nil)
+			out, err := call.Read(ctx, r, thisMac, settingscalls.List, settingscalls.ListIn{}, nil)
 			return overview.SettingsRead(out, self), err
 		},
 		section.Disk: func(ctx context.Context, r call.Router, self machine.Ref) (overview.Read, error) {
-			out, err := call.Read(ctx, r, here, diskcalls.Read, diskcalls.ReadIn{}, nil)
+			out, err := call.Read(ctx, r, thisMac, diskcalls.Read, diskcalls.ReadIn{}, nil)
 			return overview.DiskRead(out, self), err
 		},
 		section.Ports: func(ctx context.Context, r call.Router, _ machine.Ref) (overview.Read, error) {
-			out, err := call.Invoke(ctx, r, here, portscalls.List, portscalls.ListIn{}, nil)
+			out, err := call.Invoke(ctx, r, thisMac, portscalls.List, portscalls.ListIn{}, nil)
 			return overview.PortsRead(out), err
 		},
 		section.Accounts: func(ctx context.Context, r call.Router, self machine.Ref) (overview.Read, error) {
-			out, err := call.Read(ctx, r, here, accountscalls.List, accountscalls.ListIn{}, nil)
+			out, err := call.Read(ctx, r, thisMac, accountscalls.List, accountscalls.ListIn{}, nil)
 			return overview.AccountsRead(out, self), err
 		},
 		section.Background: func(ctx context.Context, r call.Router, self machine.Ref) (overview.Read, error) {
-			out, err := call.Invoke(ctx, r, here, backgroundcalls.List, backgroundcalls.ListIn{}, nil)
+			out, err := call.Invoke(ctx, r, thisMac, backgroundcalls.List, backgroundcalls.ListIn{}, nil)
 			return overview.BackgroundRead(out, self), err
 		},
 		section.Awake: func(ctx context.Context, r call.Router, self machine.Ref) (overview.Read, error) {
-			out, err := call.Read(ctx, r, here, awakecalls.Read, awakecalls.ReadIn{}, nil)
+			out, err := call.Read(ctx, r, thisMac, awakecalls.Read, awakecalls.ReadIn{}, nil)
 			return overview.AwakeRead(out, self), err
 		},
 		section.SSH: func(_ context.Context, _ call.Router, self machine.Ref) (overview.Read, error) {

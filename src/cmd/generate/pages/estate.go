@@ -385,7 +385,7 @@ func tailnetStatus() ports.Status {
 func serviceAllMachines() services.Fleet {
 	seen := built
 	return services.Fleet{Schema: "station.services/v1", Hosts: []services.HostView{
-		{Name: "macbook", Here: true, Reachable: true, Engine: services.DaemonInfo{Running: true}, PublicHost: "jterrazz-macbook-pro.tail1234.ts.net", Serve: "on", HTTPS: "port",
+		{Name: "macbook", ThisMac: true, Reachable: true, Engine: services.DaemonInfo{Running: true}, PublicHost: "jterrazz-macbook-pro.tail1234.ts.net", Serve: "on", HTTPS: "port",
 			Range: &services.Range{Low: 40000, High: 40999, Reserved: 2, Free: 998, MaxPerVM: 20},
 			Services: []services.View{
 				{VM: "linux-1", GuestPort: 5173, HostPort: 40001, State: services.Published, Process: "node", HTTP: true, Profile: "vite", URLs: services.URLSet{Public: "https://jterrazz-macbook-pro.tail1234.ts.net:40001"}, LastSeenAt: &seen},

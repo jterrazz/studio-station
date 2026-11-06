@@ -38,9 +38,9 @@ func Command(d Deps, env kit.Env, children ...*cobra.Command) *cobra.Command {
 		Pages: true,
 		Entry: kit.Entry("station disk free", "disk row", d.Names),
 		Run: func(ctx context.Context, in *Input, io kit.IO) error {
-			here := d.Here
+			thisMac := d.Here
 			if env.Far() {
-				here = page.Context{Machine: env.Target().Name}
+				thisMac = page.Context{Machine: env.Target().Name}
 			}
 			if io.CanLive() {
 				updates, err := call.Follow(ctx, env.Calls, env.Target(), diskcalls.Read, diskcalls.ReadIn{}, nil)
@@ -48,7 +48,7 @@ func Command(d Deps, env kit.Env, children ...*cobra.Command) *cobra.Command {
 					return err
 				}
 				if err := io.LivePage(kit.Updates(updates, func(r disk.Reading) page.Page {
-					return pagedisk.Read(r, here, in.All)
+					return pagedisk.Read(r, thisMac, in.All)
 				})); err != nil {
 					return err
 				}
@@ -58,7 +58,7 @@ func Command(d Deps, env kit.Env, children ...*cobra.Command) *cobra.Command {
 			if err != nil {
 				return err
 			}
-			return io.Page(pagedisk.Read(reading, here, in.All), pagedisk.ReadContract(reading))
+			return io.Page(pagedisk.Read(reading, thisMac, in.All), pagedisk.ReadContract(reading))
 		},
 	}, env)
 	cmd.AddCommand(children...)

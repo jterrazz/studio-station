@@ -28,15 +28,15 @@ type Reading struct {
 	Failed   map[string]page.Error
 }
 
-func Tab(r Reading, here page.Context) page.Page {
-	p := page.Page{ID: "fleet", Context: here}
+func Tab(r Reading, thisMac page.Context) page.Page {
+	p := page.Page{ID: "fleet", Context: thisMac}
 	p.Sections = append(p.Sections, part(r, "fleet", "All machines", r.Machines != nil, func() []page.Section {
 		s := pagemachines.Section(*r.Machines, links(r.Services))
 		s.Fold = page.Open
 		return []page.Section{s}
 	})...)
 	p.Sections = append(p.Sections, part(r, "images", "Images", r.Images != nil, func() []page.Section {
-		s := pageimages.Section(*r.Images, here)
+		s := pageimages.Section(*r.Images, thisMac)
 		s.Role, s.Fold = page.Plain, page.Open
 		return []page.Section{s}
 	})...)

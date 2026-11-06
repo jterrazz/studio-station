@@ -98,7 +98,7 @@ func Command(d Deps, env kit.Env, children ...*cobra.Command) *cobra.Command {
 	return cmd
 }
 
-func listPage(out machinescalls.ListOut, here page.Context, far bool) page.Page {
+func listPage(out machinescalls.ListOut, thisMac page.Context, far bool) page.Page {
 	if far {
 		out.Fleet = machines.Elsewhere(out.Fleet)
 	}
@@ -106,5 +106,5 @@ func listPage(out machinescalls.ListOut, here page.Context, far bool) page.Page 
 	if out.Unrefreshed != nil {
 		warnings = append(warnings, "ssh config not refreshed: "+out.Unrefreshed.Error())
 	}
-	return pagemachines.List(out.Fleet, warnings, here)
+	return pagemachines.List(out.Fleet, warnings, thisMac)
 }

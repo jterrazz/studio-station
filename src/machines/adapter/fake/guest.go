@@ -89,12 +89,12 @@ func (g *Guests) Serving(session string) *Guests {
 
 func GuestsOf(w *world.World) *Guests { return &Guests{w: w, vms: map[string]*VM{}} }
 
-func NewGuests() *Guests { return GuestsOf(&world.World{Here: "here"}) }
+func NewGuests() *Guests { return GuestsOf(&world.World{ThisMac: "here"}) }
 
 func (g *Guests) Add(vm string) *VM {
 	g.w.Lock()
 	if g.w.Holder(vm) == "" {
-		g.w.Mac(g.w.Here).VMs[vm] = &world.VM{}
+		g.w.Mac(g.w.ThisMac).VMs[vm] = &world.VM{}
 	}
 	g.w.Macs[g.w.Holder(vm)].VMs[vm].Guest = &world.Guest{}
 	g.w.Unlock()

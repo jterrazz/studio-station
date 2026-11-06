@@ -218,7 +218,7 @@ func Section(r accounts.Report) page.Section {
 	s := page.Section{ID: "accounts", Title: "Accounts", Columns: columns()}
 	vms := 0
 	for _, m := range r.Machines {
-		if m.Kind == accounts.KindVM && !m.Here {
+		if m.Kind == accounts.KindVM && !m.ThisMac {
 			vms++
 			if stopped(r) {
 				continue
@@ -240,8 +240,8 @@ func stopped(r accounts.Report) bool {
 	return r.Daemon == accounts.DaemonStopped || r.Daemon == accounts.DaemonAbsent
 }
 
-func Page(r accounts.Report, here page.Context) page.Page {
-	p := page.Page{ID: "accounts", Command: "accounts", Context: here, Sections: []page.Section{firstLine(r, here), Section(r)}}
+func Page(r accounts.Report, thisMac page.Context) page.Page {
+	p := page.Page{ID: "accounts", Command: "accounts", Context: thisMac, Sections: []page.Section{firstLine(r, thisMac), Section(r)}}
 	if len(r.Machines) == 1 && r.Machines[0].Kind == accounts.KindHost && !stopped(r) {
 		p.Hints = []page.Hint{*page.Cmd("station machines create")}
 	}
@@ -259,16 +259,16 @@ func Actions() []page.Action {
 
 // value: the first line: the machine, its accounts, what needs you and the
 // VMs its accounts are shared with.
-func firstLine(r accounts.Report, here page.Context) page.Section {
+func firstLine(r accounts.Report, thisMac page.Context) page.Section {
 	r = r.Resolved()
 	label := "This Mac"
-	if here.Machine != "" && here.Kind != string(accounts.KindHost) {
-		label = here.Machine
+	if thisMac.Machine != "" && thisMac.Kind != string(accounts.KindHost) {
+		label = thisMac.Machine
 	}
 	var words []string
 	shared := 0
 	for _, m := range r.Machines {
-		if !m.Here {
+		if !m.ThisMac {
 			for _, a := range m.Accounts {
 				if a.Shared != nil {
 					shared++

@@ -230,7 +230,7 @@ func (r *worldRun) mac(name string) *worldMac {
 	return m
 }
 
-func (r *worldRun) here() *worldMac { return r.mac(r.w.Here) }
+func (r *worldRun) here() *worldMac { return r.mac(r.w.ThisMac) }
 
 func (r *worldRun) farFrom(far func(w *worldMac) farMac) { r.far = far }
 
@@ -252,7 +252,7 @@ func (m *worldMac) host(h system.Host) system.Host {
 	h.Run = rootless{Runner: h.Run, w: m.run.w}
 	m.home = h.Env.Home()
 	h.FS = worldFS{FS: h.FS, m: m, plist: catalog.EnginePlist(h.Env.Home()), files: m.files()}
-	h.Env = worldEnv{Env: h.Env, here: m.name, user: m.run.w.User, admin: m.run.w.Admin && m.name == m.run.w.Here || m.slice().Root}
+	h.Env = worldEnv{Env: h.Env, here: m.name, user: m.run.w.User, admin: m.run.w.Admin && m.name == m.run.w.ThisMac || m.slice().Root}
 	h.Clock = m.run.clock()
 	h.Sockets = worldSockets{Sockets: h.Sockets, m: m}
 	return h
@@ -507,7 +507,7 @@ func (m *worldMac) up(ctx context.Context) (*engine.Engine, bool) {
 		m.down(false)
 		return nil, false
 	}
-	if m.start == nil && m.name != m.run.w.Here && m.run.far != nil && m.runs() {
+	if m.start == nil && m.name != m.run.w.ThisMac && m.run.far != nil && m.runs() {
 		m.serve()
 	}
 	if m.start == nil || m.starting || !m.runs() {

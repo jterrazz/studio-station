@@ -198,7 +198,7 @@ func (s shell) answer(msg answered) (tea.Model, tea.Cmd) {
 			}
 		}
 		for _, n := range s.nodes {
-			if n.kind == machine.Mac && !n.here {
+			if n.kind == machine.Mac && !n.thisMac {
 				var cmd tea.Cmd
 				s, cmd = s.ask(s.key(n, section.Overview), s.words(n, section.Overview))
 				cmds = append(cmds, cmd)
@@ -806,7 +806,7 @@ func (s shell) header() ui.Header {
 	if n.all() {
 		n = s.nodes[1]
 		for _, x := range s.nodes {
-			if x.here {
+			if x.thisMac {
 				n = x
 			}
 		}

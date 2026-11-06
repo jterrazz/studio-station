@@ -147,11 +147,11 @@ func SetupOf(steps []Step) Setup {
 	return Setup{State: state, Steps: steps}
 }
 
-func Gateways(here catalog.MachineKind, t ports.Status) []Check {
+func Gateways(thisMac catalog.MachineKind, t ports.Status) []Check {
 	// invariant: the tailnet's Serve is the way every VM service leaves the host, so a
 	// host whose tailnet is connected says whether it is on, and the admin step
 	// when it is not.
-	if here != catalog.Host || !t.Connected {
+	if thisMac != catalog.Host || !t.Connected {
 		return []Check{}
 	}
 	if t.ServeOn {

@@ -69,30 +69,30 @@ func Run(args, env []string, stdin, stdout, stderr *os.File) int {
 	if session != nil {
 		world = session.here()
 	}
-	here := resolve(local.New(env, childIn, stdout, stderr), local.NewPower(env), vars, world)
+	thisMac := resolve(local.New(env, childIn, stdout, stderr), local.NewPower(env), vars, world)
 	kenv := kit.Env{
 		Out:         writer,
 		Prompt:      output.Terminal(stdin, stderr),
 		Interactive: inTTY && errTTY,
 		Screen:      inTTY && outTTY,
-		On:          &kit.On{Here: here.here(), Known: here.known},
-		Use:         here.uses(),
+		On:          &kit.On{Here: thisMac.thisMac(), Known: thisMac.known},
+		Use:         thisMac.uses(),
 		Stdin:       frameIn,
 		Stdout:      frames,
-		Self:        here.profile.Ref,
-		Kind:        here.profile.Kind,
-		Now:         here.host.Clock.Now,
-		Locate:      here.locate,
+		Self:        thisMac.profile.Ref,
+		Kind:        thisMac.profile.Kind,
+		Now:         thisMac.host.Clock.Now,
+		Locate:      thisMac.locate,
 	}
-	router := here.router(kenv)
+	router := thisMac.router(kenv)
 	defer router.Close()
 	kenv.Calls = router
 	if session != nil {
-		world.engineFrom(func() *engine.Engine { return here.engine(kenv) })
-		session.farFrom(func(w *worldMac) farMac { return here.farMac(kenv, w) })
+		world.engineFrom(func() *engine.Engine { return thisMac.engine(kenv) })
+		session.farFrom(func(w *worldMac) farMac { return thisMac.farMac(kenv, w) })
 	}
 	kenv.On.Refresh = func(ctx context.Context) error {
-		allMachines := here.machines(false)
+		allMachines := thisMac.machines(false)
 		f, err := allMachines.Fleet(ctx, false)
 		if err != nil {
 			return err
@@ -101,37 +101,37 @@ func Run(args, env []string, stdin, stdout, stderr *os.File) int {
 	}
 
 	commands := []*cobra.Command{
-		activityCommand(kenv, here),
-		appsCommand(kenv, here),
-		settingsCommand(kenv, here),
-		diskCommand(kenv, here),
+		activityCommand(kenv, thisMac),
+		appsCommand(kenv, thisMac),
+		settingsCommand(kenv, thisMac),
+		diskCommand(kenv, thisMac),
 	}
-	commands = append(commands, portsCommands(kenv, here)...)
+	commands = append(commands, portsCommands(kenv, thisMac)...)
 	commands = append(commands,
-		accountsCommand(kenv, here),
-		backgroundCommand(kenv, here),
-		awakeCommand(kenv, here),
-		machinesCommand(kenv, here),
-		imagesCommand(kenv, here),
-		engineCommand(kenv, here),
-		useCommand(kenv, here),
-		setupCommand(kenv, here),
-		statusCommand(kenv, here),
-		toolsAlias(kenv, here),
-		storageAlias(kenv, here),
-		secretsAlias(kenv, here),
-		retiredEngineCommand(kenv, here),
-		guestCommand(kenv, here),
-		runCommand(kenv, here),
+		accountsCommand(kenv, thisMac),
+		backgroundCommand(kenv, thisMac),
+		awakeCommand(kenv, thisMac),
+		machinesCommand(kenv, thisMac),
+		imagesCommand(kenv, thisMac),
+		engineCommand(kenv, thisMac),
+		useCommand(kenv, thisMac),
+		setupCommand(kenv, thisMac),
+		statusCommand(kenv, thisMac),
+		toolsAlias(kenv, thisMac),
+		storageAlias(kenv, thisMac),
+		secretsAlias(kenv, thisMac),
+		retiredEngineCommand(kenv, thisMac),
+		guestCommand(kenv, thisMac),
+		runCommand(kenv, thisMac),
 		shellcmd.Command(kenv),
 	)
-	commands = append(commands, engineAliases(kenv, here)...)
-	commands = append(commands, settingsAliases(kenv, here)...)
-	commands = append(commands, awakeAliases(kenv, here)...)
+	commands = append(commands, engineAliases(kenv, thisMac)...)
+	commands = append(commands, settingsAliases(kenv, thisMac)...)
+	commands = append(commands, awakeAliases(kenv, thisMac)...)
 	if session != nil {
 		commands = append(commands, session.command())
 	}
-	root := cli.NewRoot(kenv, tuiOpener(kenv, here, vars["NO_COLOR"] != ""), overviewCommand(kenv, here), commands...)
+	root := cli.NewRoot(kenv, tuiOpener(kenv, thisMac, vars["NO_COLOR"] != ""), overviewCommand(kenv, thisMac), commands...)
 	root.SetArgs(args)
 	root.SetIn(stdin)
 	root.SetOut(stdout)
@@ -150,7 +150,7 @@ func Run(args, env []string, stdin, stdout, stderr *os.File) int {
 		fang.WithColorSchemeFunc(help.FangScheme),
 		fang.WithNotifySignal(os.Interrupt, syscall.SIGTERM),
 	)
-	here.pool.Close()
+	thisMac.pool.Close()
 	if session != nil {
 		if closed := session.close(context.Background()); closed != nil && err == nil {
 			err = closed
@@ -351,7 +351,7 @@ func (m machine) systemRoot() string {
 	return ""
 }
 
-func (m machine) here() string {
-	here, _ := m.stores.name().Get()
-	return here
+func (m machine) thisMac() string {
+	thisMac, _ := m.stores.name().Get()
+	return thisMac
 }

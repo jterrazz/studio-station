@@ -433,7 +433,7 @@ func (d *Engine) hostView(vm string) services.HostView {
 	defer d.mu.Unlock()
 	e := d.exposureLocked()
 	out := services.HostView{
-		Name: d.m.HereName(), Here: true, Reachable: true, Engine: services.DaemonInfo{Running: true, Version: d.o.Version},
+		Name: d.m.HereName(), ThisMac: true, Reachable: true, Engine: services.DaemonInfo{Running: true, Version: d.o.Version},
 		PublicHost: e.PublicHost, Serve: e.Word(), HTTPS: p.HTTPS, Services: []services.View{},
 	}
 	if vm == "" {

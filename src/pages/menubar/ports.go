@@ -26,15 +26,15 @@ type PortsOf struct {
 	Machine string
 }
 
-func Ports(l ports.Listing, of PortsOf, here page.Context) page.Page {
+func Ports(l ports.Listing, of PortsOf, thisMac page.Context) page.Page {
 	// invariant: SPEC §10.2 Ports and A port: the ports page of §5.6, red on
 	// top, then Public, then Private, each row's class in words; every action
 	// it shows is a call, but Review, which opens a terminal on the same list.
-	return portsPage(PortsID, l, of, here, declarePublic(l))
+	return portsPage(PortsID, l, of, thisMac, declarePublic(l))
 }
 
-func portsPage(id page.ID, l ports.Listing, of PortsOf, here page.Context, offer page.Action) page.Page {
-	p := pageports.Listed(l, here, false)
+func portsPage(id page.ID, l ports.Listing, of PortsOf, thisMac page.Context, offer page.Action) page.Page {
+	p := pageports.Listed(l, thisMac, false)
 	p.ID = id
 	p.Actions = nil
 	if of.Machine != "" && len(p.Sections) > 0 && p.Sections[0].ID == "summary" {
@@ -75,7 +75,7 @@ func reviews(p page.Page, l ports.Listing, of PortsOf) []page.Action {
 			continue
 		}
 		machine := of.Machine
-		if machine == "" && !h.Here {
+		if machine == "" && !h.ThisMac {
 			machine = h.Name
 		}
 		if of.Machine != "" && len(out) > 0 {

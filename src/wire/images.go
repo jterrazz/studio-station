@@ -70,7 +70,7 @@ func (s imageBuilds) Update(ctx context.Context, names []string, step func(label
 // invariant: the images of This Mac, then of every other Mac that answers,
 // each Mac's own; a Mac that does not answer has no row.
 func (m machine) everyMacImages(ctx context.Context, env kit.Env) ([]model.Report, error) {
-	here, err := call.Invoke(ctx, env.Calls, env.Self, imagescalls.List, imagescalls.ListIn{}, nil)
+	thisMac, err := call.Invoke(ctx, env.Calls, env.Self, imagescalls.List, imagescalls.ListIn{}, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -81,8 +81,8 @@ func (m machine) everyMacImages(ctx context.Context, env kit.Env) ([]model.Repor
 	})
 	for _, mac := range others {
 		if got[mac].Err == nil {
-			here = append(here, got[mac].Value...)
+			thisMac = append(thisMac, got[mac].Value...)
 		}
 	}
-	return here, nil
+	return thisMac, nil
 }

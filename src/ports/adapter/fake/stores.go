@@ -29,7 +29,7 @@ var (
 
 func ReservationsOf(w *world.World, mac string) *Reservations { return &Reservations{w: w, mac: mac} }
 
-func NewReservations() *Reservations { return ReservationsOf(alone(), here) }
+func NewReservations() *Reservations { return ReservationsOf(alone(), thisMac) }
 
 func (r *Reservations) all() *[]ports.Reservation { return &r.w.Mac(r.mac).Store().Reservations }
 
@@ -82,7 +82,7 @@ type Declarations struct {
 
 func DeclarationsOf(w *world.World, mac string) *Declarations { return &Declarations{w: w, mac: mac} }
 
-func NewDeclarations() *Declarations { return DeclarationsOf(alone(), here) }
+func NewDeclarations() *Declarations { return DeclarationsOf(alone(), thisMac) }
 
 func (d *Declarations) all() *[]ports.Declaration { return &d.w.Mac(d.mac).Store().Declarations }
 

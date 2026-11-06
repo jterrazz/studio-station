@@ -17,7 +17,7 @@ import (
 // shows it raw.
 var errScripted = errors.New("exited 1: Error: the run failed, as the world scripted it")
 
-const here = "here"
+const thisMac = "here"
 
 type State struct {
 	Absent    bool
@@ -49,12 +49,12 @@ func InstallerOf(w *world.World, mac string, m catalog.Method, lined bool) contr
 }
 
 func New(m catalog.Method, s *State) *Installer {
-	w := &world.World{Here: here}
-	w.Mac(here).Apps = map[catalog.Method]*world.Manager{m: {Absent: s.Absent, Installed: maps.Clone(s.Installed), Behind: maps.Clone(s.Behind)}}
+	w := &world.World{ThisMac: thisMac}
+	w.Mac(thisMac).Apps = map[catalog.Method]*world.Manager{m: {Absent: s.Absent, Installed: maps.Clone(s.Installed), Behind: maps.Clone(s.Behind)}}
 	if s.Fails {
 		w.Script = []world.Fault{{Call: "Installer.Install"}, {Call: "Installer.Update"}, {Call: "Installer.Remove"}}
 	}
-	return &Installer{w: w, mac: here, method: m}
+	return &Installer{w: w, mac: thisMac, method: m}
 }
 
 func (f *Installer) manager() *world.Manager { return manager(f.w, f.mac, f.method) }

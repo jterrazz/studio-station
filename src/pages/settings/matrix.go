@@ -14,7 +14,7 @@ import (
 	"github.com/jterrazz/studio-station/src/settings"
 )
 
-func Matrix(m settings.Matrix, now time.Time, all bool, label func(string) string, here page.Context) page.Page {
+func Matrix(m settings.Matrix, now time.Time, all bool, label func(string) string, thisMac page.Context) page.Page {
 	// invariant: the first line counts the settings, the machines and what
 	// needs a look; then what needs a look, with its gesture; then the
 	// machines, each read now, kept from its last read or said silent, and
@@ -22,7 +22,7 @@ func Matrix(m settings.Matrix, now time.Time, all bool, label func(string) strin
 	// row per setting and one column per
 	// machine, a group's rows that need no look folded on one line unless
 	// every row is unfolded.
-	p := page.Page{ID: ID, Command: "settings --all-machines", Context: here, Actions: matrixActions(m)}
+	p := page.Page{ID: ID, Command: "settings --all-machines", Context: thisMac, Actions: matrixActions(m)}
 	machines := machinesSection(m, now, label)
 	p.Sections = append(p.Sections, matrixLine(m, machines.Caption))
 	machines.Caption = nil
@@ -252,10 +252,10 @@ func foldedRow(m settings.Matrix, rows []settings.MatrixRow, more bool) page.Row
 	var marks []page.Mark
 	for i, c := range m.Columns {
 		ok, of := 0, 0
-		var here []page.Mark
+		var thisMac []page.Mark
 		for _, r := range rows {
 			if r.Cells[i] != settings.Cell(settings.StateNotForThisMachine) {
-				here = append(here, cellMark(r.Cells[i]))
+				thisMac = append(thisMac, cellMark(r.Cells[i]))
 			}
 			if r.Counts[i] {
 				of++
@@ -264,8 +264,8 @@ func foldedRow(m settings.Matrix, rows []settings.MatrixRow, more bool) page.Row
 				}
 			}
 		}
-		okAll, ofAll, lives = okAll+ok, ofAll+of, lives || (c.Known() && len(here) > 0)
-		mark := worst(here)
+		okAll, ofAll, lives = okAll+ok, ofAll+of, lives || (c.Known() && len(thisMac) > 0)
+		mark := worst(thisMac)
 		if c.Known() {
 			marks = append(marks, mark)
 		}
@@ -372,10 +372,10 @@ func contractKind(kind string) string {
 	return "workspace"
 }
 
-func MatrixContract(m settings.Matrix, now time.Time, here page.Context) MatrixJSON {
+func MatrixContract(m settings.Matrix, now time.Time, thisMac page.Context) MatrixJSON {
 	// invariant: a machine that could not be read now is a finding, in the
 	// words of its row in Machines.
-	body := MatrixJSON{Schema: "station.settings.matrix/v1", Machine: MachineJSON{Name: here.Machine, Kind: contractKind(here.Kind)}, Columns: []string{}, Skipped: []SkippedJSON{}, Rows: []MatrixRowJSON{}}
+	body := MatrixJSON{Schema: "station.settings.matrix/v1", Machine: MachineJSON{Name: thisMac.Machine, Kind: contractKind(thisMac.Kind)}, Columns: []string{}, Skipped: []SkippedJSON{}, Rows: []MatrixRowJSON{}}
 	var fs []finding.Finding
 	for _, c := range m.Columns {
 		body.Columns = append(body.Columns, c.Name)

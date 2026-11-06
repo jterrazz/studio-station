@@ -20,7 +20,7 @@ type SSHConfig struct {
 func SSHConfigOf(w *world.World, mac string) *SSHConfig { return &SSHConfig{w: w, mac: mac} }
 
 func NewSSHConfig() *SSHConfig {
-	w := &world.World{Here: "here"}
+	w := &world.World{ThisMac: "here"}
 	w.Mac("here")
 	return SSHConfigOf(w, "here")
 }
@@ -59,7 +59,7 @@ func (c *SSHConfig) put(blocks []contract.HostBlock) error {
 			}
 			continue
 		}
-		cfg.Blocks[b.Name] = world.HostBlock{User: b.User, Key: b.Key, Behind: b.Behind, Here: b.Here}
+		cfg.Blocks[b.Name] = world.HostBlock{User: b.User, Key: b.Key, Behind: b.Behind, ThisMac: b.Here}
 	}
 	return refused
 }

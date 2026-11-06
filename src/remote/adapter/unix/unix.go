@@ -30,10 +30,12 @@ type Engine interface {
 type Dialer struct {
 	engine Engine
 	// value: this Mac's own Hello: its engine is this binary.
-	here func() contract.Hello
+	thisMac func() contract.Hello
 }
 
-func New(engine Engine, here func() contract.Hello) Dialer { return Dialer{engine: engine, here: here} }
+func New(engine Engine, thisMac func() contract.Hello) Dialer {
+	return Dialer{engine: engine, thisMac: thisMac}
+}
 
 func (d Dialer) Dial(context.Context, string) (contract.Endpoint, error) {
 	return endpoint(d), nil
@@ -41,7 +43,7 @@ func (d Dialer) Dial(context.Context, string) (contract.Endpoint, error) {
 
 type endpoint Dialer
 
-func (e endpoint) Hello(context.Context) (contract.Hello, error) { return e.here(), nil }
+func (e endpoint) Hello(context.Context) (contract.Hello, error) { return e.thisMac(), nil }
 
 func (e endpoint) Close() error { return nil }
 

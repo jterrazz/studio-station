@@ -24,7 +24,7 @@ var (
 func StoreOf(w *world.World, mac string) *Store { return &Store{w: w, mac: mac} }
 
 func NewStore() *Store {
-	w := &world.World{Here: "here"}
+	w := &world.World{ThisMac: "here"}
 	w.Mac("here")
 	return StoreOf(w, "here")
 }

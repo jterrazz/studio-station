@@ -25,9 +25,9 @@ type World struct {
 
 	Now time.Time `json:"now"`
 	// value: the Mac the binary runs on, and its owner's login.
-	Here string          `json:"here"`
-	User string          `json:"user,omitempty"`
-	Macs map[string]*Mac `json:"macs"`
+	ThisMac string          `json:"here"`
+	User    string          `json:"user,omitempty"`
+	Macs    map[string]*Mac `json:"macs"`
 	// value: what the engine told the owner, in the order told.
 	Told []engine.Notification `json:"told,omitempty"`
 	// value: each image's latest version, as its registry answers it.
@@ -183,10 +183,10 @@ type SSH struct {
 }
 
 type HostBlock struct {
-	User   string `json:"user,omitempty"`
-	Key    string `json:"key,omitempty"`
-	Behind string `json:"behind,omitempty"`
-	Here   bool   `json:"here,omitempty"`
+	User    string `json:"user,omitempty"`
+	Key     string `json:"key,omitempty"`
+	Behind  string `json:"behind,omitempty"`
+	ThisMac bool   `json:"here,omitempty"`
 }
 
 type Stores struct {

@@ -99,21 +99,21 @@ func KindWord(k machine.Kind) string {
 	return "Workspace"
 }
 
-func Behind(h HostView, here string) (fix string, differs bool) {
-	if h.Here || h.StationVersion == "" || here == "" || h.StationVersion == here {
+func Behind(h HostView, thisMac string) (fix string, differs bool) {
+	if h.Here || h.StationVersion == "" || thisMac == "" || h.StationVersion == thisMac {
 		return "", false
 	}
-	if newer(h.StationVersion, here) {
+	if newer(h.StationVersion, thisMac) {
 		return "update station here (scripts/install.sh)", true
 	}
 	return "update station there (scripts/install.sh)", true
 }
 
 func Findings(f AllMachines) []finding.Finding {
-	here := ""
+	thisMac := ""
 	for _, h := range f.Hosts {
 		if h.Here {
-			here = h.StationVersion
+			thisMac = h.StationVersion
 		}
 	}
 	var out []finding.Finding
@@ -136,7 +136,7 @@ func Findings(f AllMachines) []finding.Finding {
 		case h.Daemon.Known && !h.Daemon.Running:
 			add(mac, finding.Broken, label, label+" has its engine stopped", "station engine start"+on)
 		}
-		if fix, ok := Behind(h, here); ok && h.Reachable {
+		if fix, ok := Behind(h, thisMac); ok && h.Reachable {
 			out = append(out, finding.Finding{Machine: mac, Section: section.Overview, Severity: finding.NeedsALook, Subject: label, Text: label + " runs " + h.StationVersion, Fix: finding.Fix{Path: fix}})
 		}
 		for _, vm := range Ordered(h.VMs) {

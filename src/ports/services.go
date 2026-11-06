@@ -50,7 +50,7 @@ type EngineInfo struct {
 
 type HostServices struct {
 	Name       string        `json:"name"`
-	Here       bool          `json:"here"`
+	ThisMac    bool          `json:"here"`
 	Reachable  bool          `json:"reachable"`
 	Engine     EngineInfo    `json:"daemon"`
 	PublicHost string        `json:"public_host"`

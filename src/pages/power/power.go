@@ -208,13 +208,13 @@ func Session(r power.Report) page.Section {
 	return s
 }
 
-func Page(r power.Report, here page.Context) page.Page {
+func Page(r power.Report, thisMac page.Context) page.Page {
 	gs := guards(r)
 	rows := make([]page.Row, 0, len(gs))
 	for _, g := range gs {
 		rows = append(rows, guardRow(r, g, false))
 	}
-	p := page.Page{ID: "power", Command: "awake", Context: here, Sections: []page.Section{
+	p := page.Page{ID: "power", Command: "awake", Context: thisMac, Sections: []page.Section{
 		Session(r),
 		{ID: "guards", Title: "Guards", Columns: columns(), Items: items(rows)},
 		{ID: "reading", Title: "Reading", Uncounted: true, Columns: columns(), Items: reading(r.Reading)},
@@ -233,7 +233,7 @@ func Actions() []page.Action {
 	}
 }
 
-func Awake(a power.Awoken, zone *time.Location, here page.Context) page.Page {
+func Awake(a power.Awoken, zone *time.Location, thisMac page.Context) page.Page {
 	r := pages.Done(RowAwake, catalog.StateOK, "")
 	words := []string{"on"}
 	if a.Refreshed {
@@ -242,14 +242,14 @@ func Awake(a power.Awoken, zone *time.Location, here page.Context) page.Page {
 		words = append(words, flags(a.Session)...)
 	}
 	r.Detail = page.Texts(append(words, until(a.Session, zone))...)
-	return pages.Outcome("awake", here, nil, []page.Row{r}, "Awake session")
+	return pages.Outcome("awake", thisMac, nil, []page.Row{r}, "Awake session")
 }
 
-func Slept(s power.Slept, here page.Context) page.Page {
+func Slept(s power.Slept, thisMac page.Context) page.Page {
 	if !s.Ended {
-		return pages.Outcome("awake off", here, nil, nil, "Awake session to end")
+		return pages.Outcome("awake off", thisMac, nil, nil, "Awake session to end")
 	}
 	r := pages.Done(RowAwake, catalog.StateOK, "")
 	r.Detail = page.Texts("off", "ended after "+pages.Term(s.After))
-	return pages.Outcome("awake off", here, nil, []page.Row{r}, "Awake session to end")
+	return pages.Outcome("awake off", thisMac, nil, []page.Row{r}, "Awake session to end")
 }

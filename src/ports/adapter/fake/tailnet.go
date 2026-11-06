@@ -20,8 +20,8 @@ func TailnetOf(w *world.World, mac string) *Tailnet { return &Tailnet{w: w, mac:
 
 func NewTailnet(self ports.Self) *Tailnet {
 	w := alone()
-	w.Mac(here).Tailnet = &world.Node{Self: self}
-	return TailnetOf(w, here)
+	w.Mac(thisMac).Tailnet = &world.Node{Self: self}
+	return TailnetOf(w, thisMac)
 }
 
 func (t *Tailnet) node() *world.Node {

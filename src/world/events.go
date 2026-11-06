@@ -370,18 +370,18 @@ const (
 // and is refused on one that has not the capability it moves.
 func power(needs need, move func(p *Power) error) func(w *World, args []string) error {
 	return func(w *World, _ []string) error {
-		m, err := w.known(w.Here)
+		m, err := w.known(w.ThisMac)
 		if err != nil {
 			return err
 		}
 		p := m.Power
 		switch {
 		case p == nil:
-			return fmt.Errorf("%s has no power management", w.Here)
+			return fmt.Errorf("%s has no power management", w.ThisMac)
 		case needs == battery && !p.HasBattery:
-			return fmt.Errorf("%s has no battery", w.Here)
+			return fmt.Errorf("%s has no battery", w.ThisMac)
 		case needs == lid && p.Lid == "":
-			return fmt.Errorf("%s has no lid", w.Here)
+			return fmt.Errorf("%s has no lid", w.ThisMac)
 		}
 		return move(p)
 	}

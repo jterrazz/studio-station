@@ -160,7 +160,7 @@ func AccountsRead(r accounts.Report, m machine.Ref) Read {
 	ok := 0
 	var broken []Part
 	for _, mm := range r.Machines {
-		if !mm.Here {
+		if !mm.ThisMac {
 			continue
 		}
 		for _, a := range mm.Accounts {

@@ -15,16 +15,16 @@ import (
 // value: the Needs-you lines an Overview shows folded; --all shows every one.
 const folded = 5
 
-func Summary(s overview.Summary, here page.Context, all bool) page.Page {
+func Summary(s overview.Summary, thisMac page.Context, all bool) page.Page {
 	// invariant: SPEC §5.1: the first line sums the machine up, Needs you
 	// comes first, then one line per section in the one order, then the VMs
 	// of a Mac, then one or two next steps.
-	sections := append([]page.Section{{ID: "overview", Title: title(s, here), Caption: caption(s, here), Joined: true, Role: page.Banner, Uncounted: true}}, Body(s, all)...)
+	sections := append([]page.Section{{ID: "overview", Title: title(s, thisMac), Caption: caption(s, thisMac), Joined: true, Role: page.Banner, Uncounted: true}}, Body(s, all)...)
 	state := page.Ready
 	if s.Pending {
 		state = page.Loading
 	}
-	p := page.Page{ID: "overview", Command: "overview", Context: here, State: state, Sections: sections, Hints: Hints(s, all)}
+	p := page.Page{ID: "overview", Command: "overview", Context: thisMac, State: state, Sections: sections, Hints: Hints(s, all)}
 	if len(s.Needs) > 0 {
 		p.Actions = []page.Action{{Key: KeyFix, Label: "fix", On: page.OnRow, Rows: needsRows(sections), Priority: 1, Mutates: true}}
 	}
@@ -82,8 +82,8 @@ func Body(s overview.Summary, all bool) []page.Section {
 
 // value: the Mac this binary runs on; another Mac read through --on is
 // itself "here" on its side and goes by its name on this one.
-func thisMac(s overview.Summary, here page.Context) bool {
-	return s.Head.Here && s.Head.Mac() && (!here.Registered || here.Machine == "" || here.Machine == s.Head.Name)
+func thisMac(s overview.Summary, thisMac page.Context) bool {
+	return s.Head.Here && s.Head.Mac() && (!thisMac.Registered || thisMac.Machine == "" || thisMac.Machine == s.Head.Name)
 }
 
 func title(s overview.Summary, here page.Context) string {

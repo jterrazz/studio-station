@@ -12,7 +12,7 @@ import (
 
 func machinesFailure(err error) (*fail.Error, bool) {
 	var unknown *machines.UnknownMachineError
-	var here *machines.HereMachineError
+	var thisMac *machines.HereMachineError
 	var notHost *machines.NotAHostError
 	var onlyHost *machines.OnlyOnHostError
 	var taken *machines.NameTakenError
@@ -29,10 +29,10 @@ func machinesFailure(err error) (*fail.Error, bool) {
 	switch {
 	case errors.As(err, &unknown):
 		return usage(unknown.Error(), "station machines"), true
-	case errors.As(err, &here) && here.Verb == "forget":
-		return usage(here.Error(), "station machines"), true
-	case errors.As(err, &here):
-		return usage(here.Error(), "pick another machine: run station machines for the fleet"), true
+	case errors.As(err, &thisMac) && thisMac.Verb == "forget":
+		return usage(thisMac.Error(), "station machines"), true
+	case errors.As(err, &thisMac):
+		return usage(thisMac.Error(), "pick another machine: run station machines for the fleet"), true
 	case errors.As(err, &notHost):
 		return usage(notHost.Error(), notAHostHint(notHost)), true
 	case errors.As(err, &onlyHost):

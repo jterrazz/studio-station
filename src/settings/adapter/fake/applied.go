@@ -25,7 +25,7 @@ var (
 func AppliedOf(w *world.World, mac string) *Applied { return &Applied{w: w, mac: mac} }
 
 func NewApplied() *Applied {
-	w := &world.World{Here: "here"}
+	w := &world.World{ThisMac: "here"}
 	w.Mac("here")
 	return AppliedOf(w, "here")
 }

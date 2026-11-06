@@ -78,11 +78,11 @@ func hourOfActivity() pageactivity.View {
 // value: the menu bar's own pages of SPEC §10.2 in the two-macs world,
 // named menubar.<page>.<world>.
 func menubarOwnPages() []Fixture {
-	here := menubarHere()
+	thisMac := menubarHere()
 	return []Fixture{
-		{Name: "menubar.ports.mini", Page: pagemenubar.Ports(miniPorts(), pagemenubar.PortsOf{Machine: "mac-mini"}, here)},
-		{Name: "menubar.ports.linux-1", Page: pagemenubar.Ports(linuxPorts(), pagemenubar.PortsOf{Machine: "linux-1"}, here)},
-		{Name: "menubar.awake.two-macs", Page: pagemenubar.Awake(twoMacsAwake(), here)},
-		{Name: "menubar.activity.mac", Page: pagemenubar.Activity(hourOfActivity(), here)},
+		{Name: "menubar.ports.mini", Page: pagemenubar.Ports(miniPorts(), pagemenubar.PortsOf{Machine: "mac-mini"}, thisMac)},
+		{Name: "menubar.ports.linux-1", Page: pagemenubar.Ports(linuxPorts(), pagemenubar.PortsOf{Machine: "linux-1"}, thisMac)},
+		{Name: "menubar.awake.two-macs", Page: pagemenubar.Awake(twoMacsAwake(), thisMac)},
+		{Name: "menubar.activity.mac", Page: pagemenubar.Activity(hourOfActivity(), thisMac)},
 	}
 }

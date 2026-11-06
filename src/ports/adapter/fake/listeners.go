@@ -20,8 +20,8 @@ func ListenersOf(w *world.World, mac string) *Listeners { return &Listeners{w: w
 
 func NewListeners(listening ...ports.Listener) *Listeners {
 	w := alone()
-	w.Mac(here).Listening = listening
-	return ListenersOf(w, here)
+	w.Mac(thisMac).Listening = listening
+	return ListenersOf(w, thisMac)
 }
 
 // value: what a scripted fault of Listeners.Read answers, as a listeners

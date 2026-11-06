@@ -49,9 +49,9 @@ func Command(d Deps, env kit.Env, children ...*cobra.Command) *cobra.Command {
 				}
 				return io.Page(pageapps.Show(out.Report, out.Here, d.Here), pageapps.ListContract(call.Schema(appscalls.Show.Name), []apps.Report{out.Report}))
 			}
-			here := d.Here
+			thisMac := d.Here
 			if env.Far() {
-				here = page.Context{Machine: env.Target().Name}
+				thisMac = page.Context{Machine: env.Target().Name}
 			}
 			if io.CanLive() {
 				updates, err := call.Follow(ctx, env.Calls, env.Target(), appscalls.List, appscalls.ListIn{}, nil)
@@ -59,7 +59,7 @@ func Command(d Deps, env kit.Env, children ...*cobra.Command) *cobra.Command {
 					return err
 				}
 				if err := io.LivePage(kit.Updates(updates, func(r []apps.Report) page.Page {
-					return pageapps.List(r, here, in.All)
+					return pageapps.List(r, thisMac, in.All)
 				})); err != nil {
 					return err
 				}
@@ -69,7 +69,7 @@ func Command(d Deps, env kit.Env, children ...*cobra.Command) *cobra.Command {
 			if err != nil {
 				return err
 			}
-			return io.Page(pageapps.List(reports, here, in.All), pageapps.ListContract(call.Schema(appscalls.List.Name), reports))
+			return io.Page(pageapps.List(reports, thisMac, in.All), pageapps.ListContract(call.Schema(appscalls.List.Name), reports))
 		},
 	}, env)
 	cmd.AddCommand(children...)

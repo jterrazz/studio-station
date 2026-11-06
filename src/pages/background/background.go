@@ -54,14 +54,14 @@ func columns() []page.Column {
 	}
 }
 
-func List(tasks []background.Task, here page.Context, all bool) page.Page {
+func List(tasks []background.Task, thisMac page.Context, all bool) page.Page {
 	// invariant: SPEC §5.8: Failing and Orphans open, then Station, Known apps
 	// and Unknown folded; --all unfolds them.
-	p := page.Page{ID: "background", Command: "background", Context: here, Actions: Actions()}
+	p := page.Page{ID: "background", Command: "background", Context: thisMac, Actions: Actions()}
 	if !all {
 		p.Hints = append(p.Hints, page.Hint{Command: "station background --all", Text: "for every row"})
 	}
-	p.Sections = append(p.Sections, summary(tasks, here))
+	p.Sections = append(p.Sections, summary(tasks, thisMac))
 	if len(tasks) == 0 {
 		p.Sections = append(p.Sections, page.Section{ID: "tasks", Title: "Background", Columns: columns(), Items: []page.Item{{Empty: &page.Empty{Noun: "background tasks"}}}})
 	}
@@ -85,7 +85,7 @@ func List(tasks []background.Task, here page.Context, all bool) page.Page {
 	return page.Seal(p)
 }
 
-func summary(tasks []background.Task, here page.Context) page.Section {
+func summary(tasks []background.Task, thisMac page.Context) page.Section {
 	failing, orphans := counts(tasks)
 	words := []string{plural(len(tasks), "background task")}
 	if failing > 0 {
@@ -102,8 +102,8 @@ func summary(tasks []background.Task, here page.Context) page.Section {
 		mark = page.Attention
 	}
 	label := "This Mac"
-	if here.Kind != string(catalog.Host) && here.Machine != "" {
-		label = here.Machine
+	if thisMac.Kind != string(catalog.Host) && thisMac.Machine != "" {
+		label = thisMac.Machine
 	}
 	row := page.Row{ID: "summary/background", Label: label, Mark: mark, Cells: []page.Value{page.Texts(words...)}}
 	return page.Section{ID: "summary", Title: "Summary", Role: page.Summary, Fold: page.Open, Uncounted: true,
@@ -211,13 +211,13 @@ func owner(t background.Task) page.Value {
 	return page.Text(t.Owner)
 }
 
-func Removed(t background.Task, here page.Context) page.Page {
+func Removed(t background.Task, thisMac page.Context) page.Page {
 	r := page.Row{ID: t.Label, Label: t.Label, Mark: page.OK, Cells: []page.Value{page.Text("removed")}}
 	if t.Plist != "" {
 		r.Cells = append(r.Cells, page.Text(t.Plist+" deleted"))
 	}
 	columns := []page.Column{{Key: "label", Kind: page.KindText, Keep: 100}, {Key: "outcome", Kind: page.KindText, Keep: 90}, {Key: "file", Kind: page.KindText, Keep: 40}}
-	return page.Seal(page.Page{ID: "background-remove", Command: "background remove", Context: here,
+	return page.Seal(page.Page{ID: "background-remove", Command: "background remove", Context: thisMac,
 		Sections: []page.Section{{ID: "removed", Title: "Removed", Role: page.Banner, Uncounted: true, Columns: columns, Items: []page.Item{{Row: &r}}}}})
 }
 

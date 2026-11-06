@@ -36,7 +36,7 @@ type Lend struct {
 type Machine struct {
 	Name     string    `json:"name"`
 	Kind     string    `json:"kind"`
-	Here     bool      `json:"here,omitempty"`
+	ThisMac  bool      `json:"here,omitempty"`
 	Lifetime string    `json:"lifetime,omitempty"`
 	Guest    string    `json:"guest,omitempty"`
 	Running  bool      `json:"-"`

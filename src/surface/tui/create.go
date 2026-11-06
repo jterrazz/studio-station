@@ -35,7 +35,7 @@ func (s shell) createOn() node {
 		}
 	}
 	for _, x := range s.nodes {
-		if x.here {
+		if x.thisMac {
 			return x
 		}
 	}
@@ -131,7 +131,7 @@ func (s shell) created(f *screen.Form, a []string) gesture.Gesture {
 	}
 	on := answer("On")
 	for _, x := range s.nodes {
-		if x.kind == machine.Mac && x.label == on && !x.here {
+		if x.kind == machine.Mac && x.label == on && !x.thisMac {
 			words = append(words, "--on", x.name)
 		}
 	}

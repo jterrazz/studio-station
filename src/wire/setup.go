@@ -127,8 +127,8 @@ type allMachinesRegistrar struct {
 }
 
 func (r allMachinesRegistrar) Here() (string, bool) {
-	here, err := r.name.Get()
-	return here, err == nil && here != ""
+	thisMac, err := r.name.Get()
+	return thisMac, err == nil && thisMac != ""
 }
 
 func (r allMachinesRegistrar) Register(name string) error { return r.machines.Init(name) }

@@ -20,7 +20,7 @@ import (
 
 const ReadBudget = defaultBudget
 
-type Here struct {
+type ThisMac struct {
 	Kind catalog.MachineKind
 	// value: what the process knows of this machine without asking it.
 	Hostname, OS, Arch, User, Shell string
@@ -42,7 +42,7 @@ type Deps[App, Item, Misplaced any] struct {
 	Calls call.Router
 	Kind  machine.Kind
 	Clock Clock
-	Here  Here
+	Here  ThisMac
 	Name  setupcontract.NamePrefs
 	// value: the git identity the owner's preferences expect.
 	Identity setupcontract.IdentityPrefs

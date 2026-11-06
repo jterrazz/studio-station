@@ -45,8 +45,8 @@ func (m machine) registry(env kit.Env) *call.Registry {
 		named = setupAsk{setup: setupService, ask: env.Prompt}
 	}
 	sections := statusDeps(env, m)
-	here := &localCalls{profile: m.profile, late: m.far}
-	sections.Calls, sections.Kind = here, kind
+	thisMac := &localCalls{profile: m.profile, late: m.far}
+	sections.Calls, sections.Kind = thisMac, kind
 	registry, err := call.NewRegistry(
 		activitycalls.All(m.activityDeps(sections.Meter)),
 		overviewcalls.All(sections),
@@ -64,13 +64,13 @@ func (m machine) registry(env kit.Env) *call.Registry {
 		settingscalls.All(settingscalls.Deps{
 			Settings: config, Appliers: config.Appliers(), Applied: m.stores.applied, OffHere: settingscontract.OffHere(m.stores.prefs),
 			Now: m.host.Clock.Now, Ask: ask, Shortcuts: docker.New(m.host.Run), GitAliases: gitaliases.NewShortcuts(m.host.Run), Shell: m.shell(), Kind: kind,
-			Facts: m.facts(), Caps: m.profile.Caps, Admin: m.host.Env.Euid() == 0, Mac: m.profile.Ref.Name, Fleet: settingsAllMachines{m}, Public: settingsPublic{here},
+			Facts: m.facts(), Caps: m.profile.Caps, Admin: m.host.Env.Euid() == 0, Mac: m.profile.Ref.Name, Fleet: settingsAllMachines{m}, Public: settingsPublic{thisMac},
 		}),
 	)
 	if err != nil {
 		panic(err)
 	}
-	here.registry = registry
+	thisMac.registry = registry
 	return registry
 }
 

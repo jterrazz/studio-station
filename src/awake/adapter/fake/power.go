@@ -10,7 +10,7 @@ import (
 	"github.com/jterrazz/studio-station/src/world"
 )
 
-const here = "here"
+const thisMac = "here"
 
 type Power struct {
 	// invariant: the power of one Mac of the world: its reading is the world's,
@@ -25,15 +25,15 @@ type Power struct {
 func PowerOf(w *world.World, mac string) *Power { return &Power{w: w, mac: mac} }
 
 func NewPower(r awake.Reading) *Power {
-	w := &world.World{Here: here}
-	w.Mac(here).Power = &world.Power{Reading: r}
-	return PowerOf(w, here)
+	w := &world.World{ThisMac: thisMac}
+	w.Mac(thisMac).Power = &world.Power{Reading: r}
+	return PowerOf(w, thisMac)
 }
 
 func NewNoPower() *Power {
-	w := &world.World{Here: here}
-	w.Mac(here)
-	return PowerOf(w, here)
+	w := &world.World{ThisMac: thisMac}
+	w.Mac(thisMac)
+	return PowerOf(w, thisMac)
 }
 
 func (p *Power) slice() *world.Power { return p.w.Mac(p.mac).Power }

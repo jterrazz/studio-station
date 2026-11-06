@@ -7,7 +7,7 @@ import (
 	"github.com/jterrazz/studio-station/src/page"
 )
 
-func Show(r apps.Report, lives bool, here page.Context) page.Page {
+func Show(r apps.Report, lives bool, thisMac page.Context) page.Page {
 	// invariant: an app's detail (SPEC §5.3): its state, method, version,
 	// where it lives, its category, what it brings and what it keeps on disk.
 	t := r.Tool
@@ -34,7 +34,7 @@ func Show(r apps.Report, lives bool, here page.Context) page.Page {
 	p := page.Page{
 		ID:      "app",
 		Command: "apps " + t.Name,
-		Context: here,
+		Context: thisMac,
 		Sections: []page.Section{
 			{ID: "app", Title: t.Name, Role: page.Banner, Columns: Columns(), Items: []page.Item{{Row: &row}}},
 			{ID: "detail", Title: "Detail", Fold: page.Open, Uncounted: true, Items: facts},

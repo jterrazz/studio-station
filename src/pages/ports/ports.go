@@ -31,12 +31,12 @@ func Columns() []page.Column {
 	}
 }
 
-func List(l ports.Listing, here page.Context) page.Page { return Listed(l, here, false) }
+func List(l ports.Listing, thisMac page.Context) page.Page { return Listed(l, thisMac, false) }
 
-func Listed(l ports.Listing, here page.Context, all bool) page.Page {
+func Listed(l ports.Listing, thisMac page.Context, all bool) page.Page {
 	// invariant: OU-01: what needs you comes first, before the Tailscale
 	// line, as on every page.
-	sections := Sections(l.AllMachines, here, all)
+	sections := Sections(l.AllMachines, thisMac, all)
 	if line := TailnetLine(l.Tailnet); line != nil {
 		at := 0
 		if len(sections) > 0 && sections[0].ID == "needs-you" {
@@ -44,8 +44,8 @@ func Listed(l ports.Listing, here page.Context, all bool) page.Page {
 		}
 		sections = slices.Insert(sections, at, *line)
 	}
-	sections = append([]page.Section{firstLine(sections, whose(l.AllMachines, here))}, sections...)
-	return page.Seal(page.Page{ID: "ports", Command: "ports", Context: here, Sections: sections, Actions: Actions(l.AllMachines)})
+	sections = append([]page.Section{firstLine(sections, whose(l.AllMachines, thisMac))}, sections...)
+	return page.Seal(page.Page{ID: "ports", Command: "ports", Context: thisMac, Sections: sections, Actions: Actions(l.AllMachines)})
 }
 
 func TailnetLine(s ports.Status) *page.Section {
@@ -77,7 +77,7 @@ func TailnetLine(s ports.Status) *page.Section {
 		Items:   []page.Item{{Row: &row}}}
 }
 
-func Sections(f ports.AllMachines, here page.Context, all bool) []page.Section {
+func Sections(f ports.AllMachines, thisMac page.Context, all bool) []page.Section {
 	// invariant: SPEC 5.6: what needs you first, then Public, then Private;
 	// what listens on its machine only is a count, unfolded by all; each Mac's
 	// reserved ports one line.
@@ -96,22 +96,22 @@ func Sections(f ports.AllMachines, here page.Context, all bool) []page.Section {
 		for _, p := range h.Ports {
 			switch {
 			case p.Red():
-				row := named(RedRow(p), here)
+				row := named(RedRow(p), thisMac)
 				red = append(red, page.Item{Row: &row})
 			case p.Declared != nil:
-				row := named(PublicRow(p), here)
+				row := named(PublicRow(p), thisMac)
 				public = append(public, page.Item{Row: &row})
 			case shared[p.Key()]:
 			case p.Reach == ports.ThisMachine:
-				row := named(LocalRow(p), here)
+				row := named(LocalRow(p), thisMac)
 				local = append(local, page.Item{Row: &row})
 			default:
-				row := named(PrivateRow(p), here)
+				row := named(PrivateRow(p), thisMac)
 				private = append(private, page.Item{Row: &row})
 			}
 		}
 		if h.Range != nil {
-			notes = append(notes, page.Item{Note: &page.Note{Text: reserved(h, here)}})
+			notes = append(notes, page.Item{Note: &page.Note{Text: reserved(h, thisMac)}})
 		}
 	}
 	var out []page.Section
@@ -152,7 +152,7 @@ func hostRows(h ports.HostServices) []page.Item {
 		row = page.Row{ID: h.Name, Label: h.Name, Mark: page.Attention, Reason: page.Unreachable,
 			Cells: []page.Value{page.None(), page.None(), page.None(), page.Text("does not answer")},
 			Hint:  page.Cmd("station machines")}
-	case h.Here && !h.Engine.Running:
+	case h.ThisMac && !h.Engine.Running:
 		reason, word, fix := page.Stopped, "not shared while the engine is stopped", "station engine start"
 		if !h.Engine.Installed {
 			reason, word, fix = page.Missing, "the engine is not installed", "station setup"
@@ -199,8 +199,8 @@ func ListensOn(p ports.Port) page.Value {
 
 // value: a port's row names its machine as the interface does on a
 // terminal (SPEC §2.5: This Mac, mac-mini); its records keep the full name.
-func named(r page.Row, here page.Context) page.Row {
-	if short := page.MacName(r.Label, here.Machine); short != r.Label {
+func named(r page.Row, thisMac page.Context) page.Row {
+	if short := page.MacName(r.Label, thisMac.Machine); short != r.Label {
 		r.Short = short
 	}
 	return r
@@ -255,9 +255,9 @@ func PrivateRow(p ports.Port) page.Row {
 		Cells: []page.Value{page.Port(int64(p.Port)), page.Text(ClassPrivate), page.None(), page.Text(how), page.Text(p.What())}}
 }
 
-func reserved(h ports.HostServices, here page.Context) string {
-	r, mac := h.Range, page.MacName(h.Name, here.Machine)
-	if mac == "" && h.Here {
+func reserved(h ports.HostServices, thisMac page.Context) string {
+	r, mac := h.Range, page.MacName(h.Name, thisMac.Machine)
+	if mac == "" && h.ThisMac {
 		mac = "This Mac"
 	}
 	size := r.High - r.Low + 1
@@ -328,41 +328,41 @@ func Link(s ports.ServiceView) page.Link {
 	return l
 }
 
-func Shared(s ports.ServiceView, here page.Context) page.Page {
+func Shared(s ports.ServiceView, thisMac page.Context) page.Page {
 	row := pages.Done(rowID(s.VM, s.GuestPort), catalog.StateOK, "")
 	row.Cells = []page.Value{page.URL(s.URLs.Public)}
-	return pages.Outcome("ports share "+strconv.Itoa(s.GuestPort), here,
+	return pages.Outcome("ports share "+strconv.Itoa(s.GuestPort), thisMac,
 		[]page.Column{{Key: "port", Kind: page.KindText, Keep: 100}, {Key: "url", Kind: page.KindURL, Keep: 90}}, []page.Row{row}, "shared ports")
 }
 
-func Declared(d ports.Declaration, here page.Context) page.Page {
+func Declared(d ports.Declaration, thisMac page.Context) page.Page {
 	r, _ := catalog.RouteNamed(d.Via)
 	row := pages.Done(d.Key(), catalog.StateOK, "declared public ("+r.Label+")")
 	row.Label = strconv.Itoa(d.Port) + " on " + d.Machine
-	return pages.Outcome("ports declare", here, nil, []page.Row{row}, "declared ports")
+	return pages.Outcome("ports declare", thisMac, nil, []page.Row{row}, "declared ports")
 }
 
-func Undeclared(d ports.Declaration, here page.Context) page.Page {
+func Undeclared(d ports.Declaration, thisMac page.Context) page.Page {
 	row := pages.Done(d.Key(), catalog.StateOK, "not declared")
 	row.Label = strconv.Itoa(d.Port) + " on " + d.Machine
-	return pages.Outcome("ports undeclare", here, nil, []page.Row{row}, "declared ports")
+	return pages.Outcome("ports undeclare", thisMac, nil, []page.Row{row}, "declared ports")
 }
 
-func Stopped(r ports.Reservation, here page.Context) page.Page {
-	return pages.Outcome("ports stop-sharing", here, nil, []page.Row{pages.Done(r.Key(), catalog.StateOK, "not shared")}, "shared ports")
+func Stopped(r ports.Reservation, thisMac page.Context) page.Page {
+	return pages.Outcome("ports stop-sharing", thisMac, nil, []page.Row{pages.Done(r.Key(), catalog.StateOK, "not shared")}, "shared ports")
 }
 
 // value: the first line: whose ports, how many, and how many need you
 // (vision 07 "station ports": `mac-mini and infra · 9 ports · 4 need you`).
 // value: whose ports a list holds: every Mac's, another Mac's, This Mac's.
-func whose(f ports.AllMachines, here page.Context) string {
+func whose(f ports.AllMachines, thisMac page.Context) string {
 	switch {
 	case len(f.Hosts) > 1:
 		return "Every Mac"
-	case len(f.Hosts) == 1 && here.Machine != "" && f.Hosts[0].Name != here.Machine:
-		return page.MacName(f.Hosts[0].Name, here.Machine)
-	case here.Machine != "" && here.Kind != string(catalog.Host):
-		return here.Machine
+	case len(f.Hosts) == 1 && thisMac.Machine != "" && f.Hosts[0].Name != thisMac.Machine:
+		return page.MacName(f.Hosts[0].Name, thisMac.Machine)
+	case thisMac.Machine != "" && thisMac.Kind != string(catalog.Host):
+		return thisMac.Machine
 	}
 	return "This Mac"
 }

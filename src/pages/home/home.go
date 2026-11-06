@@ -44,7 +44,7 @@ func Columns() []page.Column {
 	return []page.Column{{Key: "name", Kind: page.KindText, Keep: 100}, {Key: "value", Kind: page.KindList, Keep: 60}}
 }
 
-func Snapshot(s Overview, here page.Context, all bool) page.Page {
+func Snapshot(s Overview, thisMac page.Context, all bool) page.Page {
 	detail := []page.Section{
 		section("machine", "Machine", machineRows(s)),
 		section("environment", "Environment", environmentRows(s)),
@@ -72,7 +72,7 @@ func Snapshot(s Overview, here page.Context, all bool) page.Page {
 	p := page.Page{
 		ID:      "home",
 		Command: "status",
-		Context: here,
+		Context: thisMac,
 		Hints: []page.Hint{
 			{Command: "station overview --all", Text: "for every row"},
 			{Command: "station overview | cat", Text: "for records", External: true},

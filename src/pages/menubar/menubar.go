@@ -49,8 +49,8 @@ type Reading struct {
 	Macs []awake.Report
 }
 
-func Page(r Reading, here page.Context) page.Page {
-	p := page.Page{ID: ID, Command: "menubar", Context: here, Strip: strip(r.Samples)}
+func Page(r Reading, thisMac page.Context) page.Page {
+	p := page.Page{ID: ID, Command: "menubar", Context: thisMac, Strip: strip(r.Samples)}
 	needs := needsYou(r)
 	p.Sections = []page.Section{needs, Tree(r.Fleet, r.Services, homeLine(r)), awakeTile(r), accountsTile(r.Home)}
 	p.Actions = append([]page.Action{newVM(), openStation(), stopAll(r)}, powerAction(r.Power))
@@ -82,7 +82,7 @@ func badge(r Reading, needs page.Section) *page.Badge {
 	return &b
 }
 
-func Stopped(here page.Context, installed bool) page.Page {
+func Stopped(thisMac page.Context, installed bool) page.Page {
 	// invariant: the page the app draws when no daemon answers is bundled into
 	// it, so it holds only what is true without one.
 	row := page.Row{ID: "engine", Label: "engine", Mark: page.Attention, Reason: page.Stopped, Cells: []page.Value{page.Text("stopped")}}
@@ -93,7 +93,7 @@ func Stopped(here page.Context, installed bool) page.Page {
 		actions = actions[1:]
 	}
 	s := page.Section{ID: SectionNeeds, Title: "Needs you", Role: page.Actions, Columns: columns(), Items: []page.Item{{Row: &row}}}
-	return page.Seal(page.Page{ID: ID, Command: "menubar", Context: here, Sections: []page.Section{s}, Actions: actions})
+	return page.Seal(page.Page{ID: ID, Command: "menubar", Context: thisMac, Sections: []page.Section{s}, Actions: actions})
 }
 
 func columns() []page.Column {
@@ -410,12 +410,12 @@ func titled(s string) string {
 	return strings.ToUpper(s[:1]) + s[1:]
 }
 
-func Opening(id page.ID, here page.Context) page.Page {
+func Opening(id page.ID, thisMac page.Context) page.Page {
 	// invariant: the frame of one of the menu bar's own pages, before its
 	// first read.
-	return page.Page{ID: id, Context: here, State: page.Loading}
+	return page.Page{ID: id, Context: thisMac, State: page.Loading}
 }
 
-func Unread(id page.ID, here page.Context, err error) page.Page {
-	return page.Seal(page.Page{ID: id, Context: here, Error: &page.Error{Message: err.Error()}})
+func Unread(id page.ID, thisMac page.Context, err error) page.Page {
+	return page.Seal(page.Page{ID: id, Context: thisMac, Error: &page.Error{Message: err.Error()}})
 }

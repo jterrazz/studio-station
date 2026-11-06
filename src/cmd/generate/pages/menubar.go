@@ -76,7 +76,7 @@ func twoMacs() machines.Fleet {
 func twoMacsServices() services.Fleet {
 	public := "jterrazz-macbook-pro.tail77a797.ts.net"
 	return services.Fleet{Schema: "station.services/v1", Hosts: []services.HostView{
-		{Name: thisMacName, Here: true, Reachable: true, Engine: services.DaemonInfo{Running: true}, PublicHost: public, Serve: "on", HTTPS: "port",
+		{Name: thisMacName, ThisMac: true, Reachable: true, Engine: services.DaemonInfo{Running: true}, PublicHost: public, Serve: "on", HTTPS: "port",
 			Services: []services.View{
 				{VM: "linux-1", GuestPort: 5173, HostPort: 40001, State: services.Published, Process: "node", HTTP: true, Profile: "vite", URLs: services.URLSet{Public: "https://" + public + ":40001"}},
 				{VM: "linux-1", GuestPort: 7000, HostPort: 40002, State: services.Published, Process: "nc"},

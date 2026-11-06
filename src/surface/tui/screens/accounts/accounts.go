@@ -25,18 +25,18 @@ func Gesture(p page.Page, a page.Action, rows []page.Row) (gesture.Gesture, bool
 	if account == "" {
 		return gesture.Gesture{}, false
 	}
-	here := machine == p.Context.Machine
+	thisMac := machine == p.Context.Machine
 	switch a.Key {
 	case pageaccounts.KeyShare:
 		vms := others(p)
-		if !here || len(vms) == 0 {
+		if !thisMac || len(vms) == 0 {
 			return gesture.Gesture{}, false
 		}
 		return gesture.Gesture{Pick: &gesture.Pick{Title: "Share " + account + " with", Options: vms, Then: func(vm string) gesture.Gesture {
 			return gesture.Gesture{Steps: []gesture.Step{gesture.V("Share", "Sharing", "Shared").Step(account+" with "+vm, []string{"accounts", "share", account, "--with", vm})}}
 		}}}, true
 	case pageaccounts.KeyTakeBack:
-		if here {
+		if thisMac {
 			return gesture.Gesture{}, false
 		}
 		return gesture.Gesture{Steps: []gesture.Step{{Words: []string{"accounts", "take-back", account, "--from", machine}, Ask: "Take " + account + " back from " + machine + "?", Doing: "Taking " + account + " back from " + machine, Done: "Took " + account + " back from " + machine}}}, true

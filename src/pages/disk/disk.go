@@ -57,11 +57,11 @@ func ReadContract(r disk.Reading) ReadJSON {
 	return out
 }
 
-func machineLabel(here page.Context) string {
-	if here.Kind == string(catalog.Host) || here.Machine == "" {
+func machineLabel(thisMac page.Context) string {
+	if thisMac.Kind == string(catalog.Host) || thisMac.Machine == "" {
 		return "This Mac"
 	}
-	return here.Machine
+	return thisMac.Machine
 }
 
 func plural(n int, word string) string {
@@ -75,10 +75,10 @@ func plural(n int, word string) string {
 // the rest (vision 07 "station disk").
 const top = 3
 
-func Read(r disk.Reading, here page.Context, all bool) page.Page {
-	p := page.Page{ID: "disk", Command: "disk", Context: here, Actions: Actions(r)}
+func Read(r disk.Reading, thisMac page.Context, all bool) page.Page {
+	p := page.Page{ID: "disk", Command: "disk", Context: thisMac, Actions: Actions(r)}
 	misplaced := r.Of(disk.Misplaced)
-	head := page.Row{ID: "volume", Label: machineLabel(here), Mark: page.OK, Cells: []page.Value{
+	head := page.Row{ID: "volume", Label: machineLabel(thisMac), Mark: page.OK, Cells: []page.Value{
 		page.List(page.SizeOf(r.Free, r.Total, "free"), page.Text(plural(len(misplaced), "misplaced folder"))),
 	}}
 	if len(misplaced) > 0 {
@@ -196,7 +196,7 @@ func Actions(r disk.Reading) []page.Action {
 	return out
 }
 
-func Freed(outcomes []disk.Outcome, here page.Context) page.Page {
+func Freed(outcomes []disk.Outcome, thisMac page.Context) page.Page {
 	rows := make([]page.Row, 0, len(outcomes))
 	var total int64
 	for _, o := range outcomes {
@@ -210,19 +210,19 @@ func Freed(outcomes []disk.Outcome, here page.Context) page.Page {
 		sum := page.Row{ID: "freed", Label: "Freed", Mark: page.OK, Cells: []page.Value{page.Size(total)}, Detail: page.Text("nothing is lost")}
 		extra = append(extra, page.Section{ID: "freed", Title: "Freed", Role: page.Banner, Uncounted: true, Columns: outcomeColumns(), Items: []page.Item{{Row: &sum}}})
 	}
-	return pages.Outcome("disk free", here, outcomeColumns(), rows, "files to free", extra...)
+	return pages.Outcome("disk free", thisMac, outcomeColumns(), rows, "files to free", extra...)
 }
 
-func Erased(o disk.Outcome, here page.Context) page.Page {
+func Erased(o disk.Outcome, thisMac page.Context) page.Page {
 	r := pages.Done(o.Name, o.Result, o.Reason)
 	r.Cells = []page.Value{detail(o, "erased")}
-	return pages.Outcome("disk erase", here, outcomeColumns(), []page.Row{r}, "data to erase")
+	return pages.Outcome("disk erase", thisMac, outcomeColumns(), []page.Row{r}, "data to erase")
 }
 
-func Moved(o disk.Outcome, here page.Context) page.Page {
+func Moved(o disk.Outcome, thisMac page.Context) page.Page {
 	r := pages.Done(o.Name, o.Result, "")
 	r.Cells = []page.Value{page.Text(o.Detail)}
-	return pages.Outcome("disk move", here, outcomeColumns(), []page.Row{r}, "folders to move")
+	return pages.Outcome("disk move", thisMac, outcomeColumns(), []page.Row{r}, "folders to move")
 }
 
 func outcomeColumns() []page.Column {

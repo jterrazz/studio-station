@@ -139,9 +139,9 @@ func (f *menubar) todo(ctx context.Context, in engine.FeedInput) {
 	}
 }
 
-func (f *menubar) read(ctx context.Context, here bool) (allMachines machines.AllMachines, services ports.AllMachines, allMachinesErr, servicesErr error) {
-	listed, allMachinesErr := call.Read(ctx, f.o.Calls, machine.Ref{}, machinescalls.List, machinescalls.ListIn{Here: here, Unwritten: true}, nil)
-	shared, servicesErr := call.Invoke(ctx, f.o.Calls, machine.Ref{}, portscalls.List, portscalls.ListIn{AllMachines: !here}, nil)
+func (f *menubar) read(ctx context.Context, thisMac bool) (allMachines machines.AllMachines, services ports.AllMachines, allMachinesErr, servicesErr error) {
+	listed, allMachinesErr := call.Read(ctx, f.o.Calls, machine.Ref{}, machinescalls.List, machinescalls.ListIn{Here: thisMac, Unwritten: true}, nil)
+	shared, servicesErr := call.Invoke(ctx, f.o.Calls, machine.Ref{}, portscalls.List, portscalls.ListIn{AllMachines: !thisMac}, nil)
 	return listed.Fleet, shared.AllMachines, allMachinesErr, servicesErr
 }
 
@@ -196,7 +196,7 @@ func (f *menubar) local(ctx context.Context, in engine.FeedInput) {
 				r.Fleet = hereAllMachines(r.Fleet, fl)
 			}
 			if serr == nil && len(sv.Hosts) == 1 {
-				r.Services = hereServices(r.Services, sv)
+				r.Services = thisMacServices(r.Services, sv)
 			}
 		})
 	}
@@ -204,29 +204,29 @@ func (f *menubar) local(ctx context.Context, in engine.FeedInput) {
 
 // value: the fleet as last read with this host's row replaced by here's
 // one; here itself when nothing was read yet.
-func hereAllMachines(was *machines.AllMachines, here machines.AllMachines) *machines.AllMachines {
+func hereAllMachines(was *machines.AllMachines, thisMac machines.AllMachines) *machines.AllMachines {
 	if was == nil {
-		return &here
+		return &thisMac
 	}
 	out := *was
 	out.Hosts = append([]machines.HostView(nil), was.Hosts...)
 	for i, h := range out.Hosts {
 		if h.Here {
-			out.Hosts[i] = here.Hosts[0]
+			out.Hosts[i] = thisMac.Hosts[0]
 		}
 	}
 	return &out
 }
 
-func hereServices(was *ports.AllMachines, here ports.AllMachines) *ports.AllMachines {
+func thisMacServices(was *ports.AllMachines, thisMac ports.AllMachines) *ports.AllMachines {
 	if was == nil {
-		return &here
+		return &thisMac
 	}
 	out := *was
 	out.Hosts = append([]ports.HostServices(nil), was.Hosts...)
 	for i, h := range out.Hosts {
-		if h.Here {
-			out.Hosts[i] = here.Hosts[0]
+		if h.ThisMac {
+			out.Hosts[i] = thisMac.Hosts[0]
 		}
 	}
 	return &out

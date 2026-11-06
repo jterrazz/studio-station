@@ -136,7 +136,7 @@ func (s *Service) offline(ctx context.Context) HostView {
 	if s.o.Exposure != nil {
 		e = s.o.Exposure(ctx)
 	}
-	view := HostView{Name: s.o.HereName, Here: true, Reachable: true, PublicHost: e.PublicHost, Serve: e.Word(), HTTPS: s.policy().HTTPS, Services: []View{}}
+	view := HostView{Name: s.o.HereName, ThisMac: true, Reachable: true, PublicHost: e.PublicHost, Serve: e.Word(), HTTPS: s.policy().HTTPS, Services: []View{}}
 	leases, _ := s.st.Reservations.List(ctx)
 	for _, l := range leases {
 		view.Services = append(view.Services, ViewOf(l, e, view.HTTPS, Unknown))
@@ -168,7 +168,7 @@ func (s *Service) Here(ctx context.Context) (HostView, error) {
 	if err != nil {
 		return HostView{}, err
 	}
-	view.Name, view.Here, view.Reachable = s.o.HereName, true, true
+	view.Name, view.ThisMac, view.Reachable = s.o.HereName, true, true
 	view.Range = s.rangeOf()
 	ps, err := s.survey(ctx, view.Listening)
 	if err != nil {
@@ -260,7 +260,7 @@ func answered(name string, answers map[string]HostView) HostView {
 	if !ok {
 		return HostView{Name: name, Services: []View{}}
 	}
-	view.Name, view.Here, view.Reachable = name, false, true
+	view.Name, view.ThisMac, view.Reachable = name, false, true
 	if view.Services == nil {
 		view.Services = []View{}
 	}

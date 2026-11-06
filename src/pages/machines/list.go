@@ -22,7 +22,7 @@ func listColumns() []page.Column {
 	}
 }
 
-func List(f machines.Fleet, warnings []string, here page.Context) page.Page {
+func List(f machines.Fleet, warnings []string, thisMac page.Context) page.Page {
 	hereVersion := ""
 	for _, h := range f.Hosts {
 		if h.Here {
@@ -67,7 +67,7 @@ func List(f machines.Fleet, warnings []string, here page.Context) page.Page {
 		}
 		sections = append(sections, page.Section{ID: "warnings", Title: "Warnings", Role: page.Banner, Items: notes})
 	}
-	return page.Seal(page.Page{ID: "machines", Command: "machines", Context: here, Sections: sections, Hints: hints, Actions: Actions()})
+	return page.Seal(page.Page{ID: "machines", Command: "machines", Context: thisMac, Sections: sections, Hints: hints, Actions: Actions()})
 }
 
 func firstLine(c machines.Counts, needs int) (string, []page.Value) {

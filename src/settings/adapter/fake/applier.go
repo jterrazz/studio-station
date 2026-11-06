@@ -25,7 +25,7 @@ func ApplierOf(w *world.World, mac string, kind catalog.EffectKind) *Applier {
 }
 
 func NewApplier(kind catalog.EffectKind) *Applier {
-	w := &world.World{Here: "here"}
+	w := &world.World{ThisMac: "here"}
 	w.Mac("here")
 	return ApplierOf(w, "here", kind)
 }

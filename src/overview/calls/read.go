@@ -158,9 +158,9 @@ func (r *Reader[App, Item, Misplaced]) frame() snapshot[App, Item, Misplaced] {
 		snap.Environment.Protections = pendingChecks(r.protectionRows())
 		snap.Environment.Updates = pendingChecks(r.updateRows())
 	}
-	here, err := r.d.Name.Get()
+	thisMac, err := r.d.Name.Get()
 	snap.Machine = overview.Machine{
-		Name: here, Registered: err == nil && here != "", Kind: h.Kind,
+		Name: thisMac, Registered: err == nil && thisMac != "", Kind: h.Kind,
 		Hostname: h.Hostname, OS: h.OS, Arch: h.Arch, User: h.User, Shell: overview.ShellName(h.Shell),
 	}
 	if !snap.Machine.Registered {

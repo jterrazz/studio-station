@@ -187,7 +187,7 @@ func (s *Service) entry() Account {
 
 func (s *Service) Read(ctx context.Context, withVMs bool) <-chan Report {
 	now := s.h.Clock.Now().UTC()
-	here := Machine{Name: s.o.HereName, Kind: s.where(), Here: true}
+	here := Machine{Name: s.o.HereName, Kind: s.where(), ThisMac: true}
 	ps := s.providers()
 	for _, p := range ps {
 		here.Accounts = append(here.Accounts, Account{Provider: p.ID, State: catalog.StatePending})
@@ -253,7 +253,7 @@ func (s *Service) merge(r *Report, vms []VM, reads []VMRead, daemon string) {
 	}
 	for i := range r.Machines {
 		m := &r.Machines[i]
-		if m.Kind != KindVM || m.Here {
+		if m.Kind != KindVM || m.ThisMac {
 			continue
 		}
 		var v VM
