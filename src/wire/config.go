@@ -6,6 +6,8 @@ import (
 	"path/filepath"
 	"strings"
 
+	accountscalls "github.com/jterrazz/studio-station/src/accounts/calls"
+
 	"github.com/jterrazz/studio-station/src/settings/adapter/gitaliases"
 	"github.com/jterrazz/studio-station/src/settings/adapter/zshblock"
 
@@ -108,7 +110,7 @@ func settingAppliers(m machine) []settingscontract.Applier {
 	appliers = append(appliers, mac.Appliers()...)
 	appliers = append(appliers, settingsdefaults.NewDock(m.host.Run)...)
 	return append(appliers,
-		vault.NewClaudeToken(m.host.Run, m.stores.shareList()),
+		vault.NewClaudeToken(m.host.Run, accountscalls.NewShareList(m.stores.shareList())),
 		git.NewSigning(m.host.Run, m.stores.identity()),
 		git.NewLogin(m.host.Run, m.sharedRead()),
 	)
