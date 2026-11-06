@@ -66,15 +66,17 @@ public struct Bars: View {
     let height: CGFloat
     let accented: Int
     let tint: Color?
+    let chart: Bool
     var waiting = false
     var full = false
     @Environment(\.stationPalette) private var palette
 
-    public init(_ points: [Int], height: CGFloat = Token.Tile.bars, accented: Int = 1, tint: Color? = nil) {
+    public init(_ points: [Int], height: CGFloat = Token.Tile.bars, accented: Int = 1, tint: Color? = nil, chart: Bool = false) {
         self.points = points
         self.height = height
         self.accented = accented
         self.tint = tint
+        self.chart = chart
     }
 
     // value: a bar's height, 0 to 1, over the band its points move in, so
@@ -82,6 +84,7 @@ public struct Bars: View {
     func level(_ p: Int) -> Double {
         guard !waiting else { return 0.25 }
         guard !full else { return 1 }
+        if chart, let hi = points.max() { return max(Double(p) / Double(max(hi, 1)), 0.06) }
         guard let hi = points.max(), let low = points.min(), hi != low else { return 0.5 }
         let top = Double(max(hi, 1)), lo = Double(low)
         let floor = max(lo - max(top - lo, top / 10), 0)
@@ -110,8 +113,8 @@ public struct Bars: View {
         let ink = tint ?? palette.accent
         let recent = points.count - accented
         Chart(Array(points.enumerated()), id: \.offset) { i, p in
-            BarMark(x: .value("t", "\(i)"), yStart: .value("floor", 0), yEnd: .value("v", level(p)), width: .ratio(0.55))
-                .clipShape(Capsule())
+            BarMark(x: .value("t", "\(i)"), yStart: .value("floor", 0), yEnd: .value("v", level(p)), width: .ratio(chart ? 0.8 : 0.6))
+                .clipShape(RoundedRectangle(cornerRadius: chart ? 2 : 1, style: .continuous))
                 .foregroundStyle(i >= recent ? ink : waiting ? palette.faint : palette.subtle)
         }
         .chartXAxis(.hidden)

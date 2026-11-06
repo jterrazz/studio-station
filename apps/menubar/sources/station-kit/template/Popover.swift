@@ -158,7 +158,7 @@ public struct Popover: View {
     }
 
     var panel: some View {
-        VStack(alignment: .leading, spacing: Token.Space.gap + 2) {
+        VStack(alignment: .leading, spacing: Token.Glass.spacing + 2) {
             header
             if state.menu { menu }
             if let shown = state.shown {
@@ -196,38 +196,36 @@ public struct Popover: View {
             Button(action: handlers.back) {
                 HStack(spacing: 3) {
                     Image(systemName: Token.Symbol.back).font(.system(size: Token.Space.small, weight: .semibold))
-                    Text("All machines").font(.system(size: Token.Space.text, weight: .medium))
+                    Text("All machines").font(.system(size: Token.Space.small + 1, weight: .medium))
                 }
                 .foregroundStyle(palette.accent)
             }
             .buttonStyle(.plain)
+            .padding(.horizontal, 4)
         } else {
-            HStack(spacing: Token.Space.gap) {
+            HStack(alignment: .center, spacing: 6) {
                 Button(action: state.pushed == nil ? handlers.openSwitcher : handlers.back) {
-                    HStack(spacing: 6) {
-                        IconCircle(Token.Symbol.mac, tint: palette.accent, size: Token.Tile.smallCircle)
-                        Text(Page.ThisMacWord).font(.system(size: Token.Space.text, weight: .semibold)).foregroundStyle(palette.text)
+                    HStack(alignment: .firstTextBaseline, spacing: 5) {
+                        Image(systemName: Token.Symbol.mac).font(.system(size: Token.Space.text, weight: .semibold)).foregroundStyle(palette.accent)
+                        Text(Page.ThisMacWord).font(.system(size: Token.Space.head, weight: .bold)).foregroundStyle(palette.text)
                         Image(systemName: Token.Symbol.down).font(.system(size: Token.Space.small - 2, weight: .bold)).foregroundStyle(palette.muted)
                             .rotationEffect(.degrees(state.pushed == nil ? 0 : 180))
                     }
-                    .padding(.leading, 4).padding(.trailing, 10).padding(.vertical, 4)
-                    .stationGlassCapsule(tint: state.pushed == nil ? nil : palette.accent, id: "switcher")
-                    .contentShape(Capsule())
+                    .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
                 .keyboardShortcut("0", modifiers: .command)
                 if state.pushed == nil {
-                    Text(state.page?.context?.machine ?? "station").font(.system(size: Token.Space.small)).foregroundStyle(palette.muted).lineLimit(1)
+                    Text(state.page?.context?.machine ?? "station").font(.system(size: Token.Space.text)).foregroundStyle(palette.muted).lineLimit(1).minimumScaleFactor(0.85).truncationMode(.middle)
                 }
-                Spacer()
-                Button(action: handlers.toggleMenu) {
-                    Image(systemName: Token.Symbol.gear).font(.system(size: Token.Space.small + 1, weight: .bold)).foregroundStyle(palette.text)
-                        .frame(width: 28, height: 28)
-                        .stationGlassCapsule(tint: state.menu ? palette.accent : nil, id: "menu")
-                        .contentShape(Circle())
+                Spacer(minLength: 4)
+                if state.connection == .live {
+                    PlainIcon(Token.Symbol.activity) { handlers.push(Navigation.activity) }
                 }
-                .buttonStyle(.plain)
+                PlainIcon(Token.Symbol.settings, picked: state.menu, tap: handlers.toggleMenu)
             }
+            .padding(.horizontal, 4)
+            .padding(.top, 2)
         }
     }
 

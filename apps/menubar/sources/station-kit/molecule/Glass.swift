@@ -4,12 +4,23 @@ private struct GlassSpaceKey: EnvironmentKey {
     static let defaultValue: Namespace.ID? = nil
 }
 
+private struct InCardKey: EnvironmentKey {
+    static let defaultValue = false
+}
+
 extension EnvironmentValues {
     // value: the namespace a page's glass shapes morph in, from a row of
     // Home to the header of the page it pushes.
     public var stationGlassSpace: Namespace.ID? {
         get { self[GlassSpaceKey.self] }
         set { self[GlassSpaceKey.self] = newValue }
+    }
+
+    // value: whether a view is drawn inside a card, where nothing is glass
+    // again: a card never holds a card.
+    public var stationInCard: Bool {
+        get { self[InCardKey.self] }
+        set { self[InCardKey.self] = newValue }
     }
 }
 
@@ -25,10 +36,13 @@ struct StationGlass<S: InsettableShape>: ViewModifier {
     let interactive: Bool
     @Environment(\.stationStill) private var still
     @Environment(\.stationGlassSpace) private var space
+    @Environment(\.stationInCard) private var inCard
     @Environment(\.colorScheme) private var scheme
 
     func body(content: Content) -> some View {
-        if still {
+        if inCard {
+            content
+        } else if still {
             content.background { GlassDrawn(shape: shape, tint: tint, scheme: scheme) }
         } else {
             let glass = (tint.map { Glass.regular.tint($0.opacity(Token.Glass.tint * 1.6)) } ?? .regular).interactive(interactive)
@@ -57,18 +71,14 @@ struct GlassDrawn<S: InsettableShape>: View {
 }
 
 extension View {
-    // value: a tile or a grouped card of glass, 16 pt round unless said.
+    // value: a card of glass, 14 pt round unless said; inside a card,
+    // nothing.
     public func stationGlass(tint: Color? = nil, radius: CGFloat = Token.Glass.radius, id: String? = nil) -> some View {
         modifier(StationGlass(shape: RoundedRectangle(cornerRadius: radius, style: .continuous), tint: tint, id: id, interactive: false))
     }
 
-    public func stationGlassCapsule(tint: Color? = nil, id: String? = nil) -> some View {
-        modifier(StationGlass(shape: Capsule(), tint: tint, id: id, interactive: true))
-    }
-
-    // value: a sunken well of glass a field, an address or a picker's
-    // options sit in: live, the system's clear glass; drawn still, a
-    // shade deeper than what lies behind, its rim lit from below.
+    // value: a flat inset a field or an address sits in, as the
+    // references draw one in a card: a shade darker, no rim.
     public func stationWell(radius: CGFloat = Token.Tile.hover) -> some View {
         modifier(StationWell(shape: RoundedRectangle(cornerRadius: radius, style: .continuous)))
     }
@@ -76,24 +86,19 @@ extension View {
     // value: the panel's own window: the MenuBarExtra's system glass shows
     // through live, so nothing is painted; a snapshot draws that window.
     public func stationPanel() -> some View { modifier(PanelGlass()) }
+
+    // value: a card in the panel's own words: a top-level group of glass.
+    public func stationCard() -> some View {
+        environment(\.stationInCard, true).padding(Token.Glass.padding).frame(maxWidth: .infinity, alignment: .topLeading).stationGlass()
+    }
 }
 
 struct StationWell<S: InsettableShape>: ViewModifier {
     let shape: S
-    @Environment(\.stationStill) private var still
     @Environment(\.colorScheme) private var scheme
 
     func body(content: Content) -> some View {
-        if still {
-            content.background {
-                ZStack {
-                    shape.fill(LinearGradient(colors: Token.Glass.sunken(scheme), startPoint: .top, endPoint: .bottom))
-                    shape.strokeBorder(LinearGradient(colors: Token.Glass.sunkenRim(scheme), startPoint: .top, endPoint: .bottom), lineWidth: 0.6)
-                }
-            }
-        } else {
-            content.glassEffect(.clear, in: shape)
-        }
+        content.background(shape.fill(Token.Glass.inset(scheme)))
     }
 }
 
@@ -118,7 +123,7 @@ struct PanelGlass: ViewModifier {
     }
 }
 
-// invariant: one GlassEffectContainer per page, so its tiles blend and
+// invariant: one GlassEffectContainer per page, so its cards blend and
 // morph as one surface and no glass is drawn inside another.
 public struct GlassPage<Content: View>: View {
     let content: Content
@@ -135,8 +140,10 @@ public struct GlassPage<Content: View>: View {
     }
 }
 
-// invariant: the menu bar's pages are Liquid Glass (VISION-v3 panels a-g):
-// each group one rounded pane of glass, its rows inside it.
+// invariant: the owner's references taken literally: ONE panel, a card of
+// glass only for a top-level group, and nothing inside a card is a
+// bubble again: what it holds is drawn flat, its rows apart by space and
+// hairlines.
 public struct GlassCard<Content: View>: View {
     let tint: Color?
     let id: String?
@@ -156,41 +163,15 @@ public struct GlassCard<Content: View>: View {
 
     public var body: some View {
         VStack(alignment: .leading, spacing: spacing) { content }
+            .environment(\.stationInCard, true)
             .padding(padding)
             .frame(maxWidth: .infinity, maxHeight: fill ? .infinity : nil, alignment: .topLeading)
             .stationGlass(tint: tint, id: id)
     }
 }
 
-// value: Control Center's state circle: a white glyph on the state's
-// colour, the glyph alone on a faint disc when off.
-public struct IconCircle: View {
-    let symbol: String
-    let tint: Color?
-    let size: CGFloat
-    let pulse: Bool
-    @Environment(\.stationPalette) private var palette
-    @Environment(\.stationStill) private var still
-
-    public init(_ symbol: String, tint: Color?, size: CGFloat = Token.Tile.circle, pulse: Bool = false) {
-        self.symbol = symbol
-        self.tint = tint
-        self.size = size
-        self.pulse = pulse
-    }
-
-    public var body: some View {
-        Image(systemName: symbol)
-            .font(.system(size: size * 0.46, weight: .semibold))
-            .foregroundStyle(tint == nil ? palette.muted : palette.onTint)
-            .contentTransition(.symbolEffect(.replace))
-            .symbolEffect(.pulse, isActive: pulse && !still)
-            .frame(width: size, height: size)
-            .background(Circle().fill(tint ?? palette.faint))
-    }
-}
-
-// value: a line the pointer is over lights up, 8 pt round, as a menu's.
+// value: a line the pointer is over lights up across the whole row,
+// faintly, as a menu's.
 struct Hover: ViewModifier {
     @State private var over = false
     @Environment(\.stationPalette) private var palette
@@ -198,7 +179,7 @@ struct Hover: ViewModifier {
     func body(content: Content) -> some View {
         content
             .contentShape(Rectangle())
-            .background(RoundedRectangle(cornerRadius: Token.Tile.hover, style: .continuous).fill(over ? palette.hover : .clear).padding(.horizontal, -6))
+            .background(RoundedRectangle(cornerRadius: Token.Tile.hover - 2, style: .continuous).fill(over ? palette.hover : .clear).padding(.horizontal, -6))
             .onHover { over = $0 }
     }
 }
@@ -207,12 +188,14 @@ extension View {
     public func stationHover() -> some View { modifier(Hover()) }
 }
 
+// value: a pushed page's head as the references' "Mizu Pro": the way
+// back in the accent, then the title in bold and its words in grey on the
+// same line, a small glyph before it, no tile.
 public struct PushedHeader: View {
     let back: String
     let title: String
     let subtitle: String?
     let symbol: String?
-    let tint: Color?
     let id: String?
     let action: () -> Void
     @Environment(\.stationPalette) private var palette
@@ -222,7 +205,6 @@ public struct PushedHeader: View {
         self.title = title
         self.subtitle = subtitle
         self.symbol = symbol
-        self.tint = tint
         self.id = id
         self.action = action
     }
@@ -231,29 +213,27 @@ public struct PushedHeader: View {
         VStack(alignment: .leading, spacing: 6) {
             Button(action: action) {
                 HStack(spacing: 3) {
-                    Image(systemName: Token.Symbol.back).font(.system(size: Token.Space.small, weight: .semibold))
-                    Text(back).font(.system(size: Token.Space.text, weight: .medium))
+                    Image(systemName: Token.Symbol.back).font(.system(size: Token.Space.small - 1, weight: .semibold))
+                    Text(back).font(.system(size: Token.Space.small + 1, weight: .medium))
                 }
                 .foregroundStyle(palette.accent)
             }
             .buttonStyle(.plain)
-            HStack(spacing: Token.Space.gap + 2) {
-                if let symbol { IconTile(symbol, tint: tint, size: Token.Tile.icon + 8) }
-                VStack(alignment: .leading, spacing: 1) {
-                    Text(title).font(.system(size: Token.Space.title, weight: .bold)).foregroundStyle(palette.text)
-                    if let subtitle, !subtitle.isEmpty {
-                        Text(subtitle).font(.system(size: Token.Space.small)).foregroundStyle(palette.muted).lineLimit(2)
-                    }
+            HStack(alignment: .firstTextBaseline, spacing: 6) {
+                if let symbol { Image(systemName: symbol).font(.system(size: Token.Space.text, weight: .semibold)).foregroundStyle(palette.muted) }
+                Text(title).font(.system(size: Token.Space.head, weight: .bold)).foregroundStyle(palette.text)
+                if let subtitle, !subtitle.isEmpty {
+                    Text(subtitle).font(.system(size: Token.Space.text)).foregroundStyle(palette.muted).lineLimit(1).truncationMode(.tail)
                 }
                 Spacer(minLength: 0)
             }
-            .padding(.horizontal, 2)
             .modifier(MorphID(id: id))
         }
+        .padding(.horizontal, 4)
     }
 }
 
-// value: a header that takes over the glass id of the tile that pushed it.
+// value: a header that takes over the glass id of the card that pushed it.
 struct MorphID: ViewModifier {
     let id: String?
     @Environment(\.stationStill) private var still
@@ -270,26 +250,10 @@ struct MorphID: ViewModifier {
 
 public enum PillRole { case plain, primary, danger }
 
-// invariant: every button of the kit is a glass button: `.glass`, the one
-// primary action `.glassProminent`; drawn still, a capsule of the same.
-struct GlassButton: ViewModifier {
-    let role: PillRole
-    let picked: Bool
-    @Environment(\.stationStill) private var still
-    @Environment(\.stationPalette) private var palette
-
-    func body(content: Content) -> some View {
-        if still {
-            content.buttonStyle(DrawnGlassButton(role: role, picked: picked))
-        } else if role == .primary || picked {
-            content.buttonStyle(.glassProminent).tint(palette.accent)
-        } else {
-            content.buttonStyle(.glass)
-        }
-    }
-}
-
-struct DrawnGlassButton: ButtonStyle {
+// invariant: a button of a sheet is small and flat, never glass: the
+// plain one on a faint fill, the primary one on the accent, what
+// destroys in red.
+struct FlatButton: ButtonStyle {
     let role: PillRole
     let picked: Bool
     @Environment(\.stationPalette) private var palette
@@ -297,15 +261,9 @@ struct DrawnGlassButton: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         let filled = role == .primary || picked
         return configuration.label
-            .padding(.horizontal, 12)
-            .padding(.vertical, 5)
-            .background {
-                if filled {
-                    Capsule().fill(palette.accent)
-                } else {
-                    Capsule().fill(.clear).stationGlassCapsule()
-                }
-            }
+            .padding(.horizontal, 10)
+            .padding(.vertical, 4)
+            .background(RoundedRectangle(cornerRadius: Token.Tile.hover - 1, style: .continuous).fill(filled ? palette.accent : palette.hover))
             .opacity(configuration.isPressed ? 0.7 : 1)
     }
 }
@@ -336,17 +294,15 @@ public struct Pill: View {
 
     public var body: some View {
         Button(action: action) {
-            Text(label).font(.system(size: wide ? Token.Space.text : Token.Space.small + 1, weight: .semibold)).foregroundStyle(ink).lineLimit(1).fixedSize()
+            Text(label).font(.system(size: Token.Space.small + 1, weight: .medium)).foregroundStyle(ink).lineLimit(1).fixedSize()
                 .frame(maxWidth: wide ? .infinity : nil)
-                .padding(.vertical, wide ? 3 : 0)
         }
-        .modifier(GlassButton(role: role, picked: picked))
-        .controlSize(wide ? .large : .regular)
+        .buttonStyle(FlatButton(role: role, picked: picked))
     }
 }
 
-// value: a grouped card's head, as the owner's references draw one: its
-// small grey title, a count, words after it, and its one action on the
+// value: a card's head, as the references draw "Live 10": its small
+// title, a count in grey, words after it, and its one action on the
 // right in the accent ("+ Add", "Open").
 public struct CardHead: View {
     let title: String
@@ -362,19 +318,36 @@ public struct CardHead: View {
         self.action = action
     }
 
+    // value: a long title cut at its colon: the name on the head's line,
+    // what it means in grey under it ("Public: reachable from anywhere").
+    var cut: (String, String?) {
+        guard let r = title.range(of: ": ") else { return (title, nil) }
+        return (String(title[..<r.lowerBound]), String(title[r.upperBound...]))
+    }
+
     public var body: some View {
-        HStack(alignment: .firstTextBaseline, spacing: 6) {
-            Text(title).font(.system(size: Token.Space.small + 1, weight: .semibold)).foregroundStyle(palette.muted)
-            if let count { Text("\(count)").font(.system(size: Token.Space.small + 1, weight: .medium)).foregroundStyle(palette.subtle).monospacedDigit() }
-            if let words, !words.isEmpty { Text(words).font(.system(size: Token.Space.small)).foregroundStyle(palette.subtle).lineLimit(1) }
-            Spacer(minLength: 0)
-            if let action { TextAction(action.label, tap: action.tap) }
+        let (name, meaning) = cut
+        VStack(alignment: .leading, spacing: 2) {
+            line(name)
+            if let meaning {
+                Text(meaning).font(.system(size: Token.Space.small)).foregroundStyle(palette.muted).fixedSize(horizontal: false, vertical: true)
+            }
         }
         .padding(.bottom, 2)
     }
+
+    func line(_ title: String) -> some View {
+        HStack(alignment: .firstTextBaseline, spacing: 6) {
+            Text(title).font(.system(size: Token.Space.small + 1.5, weight: .semibold)).foregroundStyle(palette.text.opacity(0.88)).lineLimit(1)
+            if let count { Text("\(count)").font(.system(size: Token.Space.small + 1.5, weight: .medium)).foregroundStyle(palette.muted).monospacedDigit() }
+            if let words, !words.isEmpty { Text(words).font(.system(size: Token.Space.small)).foregroundStyle(palette.muted).lineLimit(1) }
+            Spacer(minLength: 0)
+            if let action { TextAction(action.label, tap: action.tap) }
+        }
+    }
 }
 
-// value: a grouped card of glass led by its head.
+// value: a card of glass led by its head.
 public struct GroupCard<Content: View>: View {
     let head: CardHead
     let spacing: CGFloat
@@ -389,7 +362,7 @@ public struct GroupCard<Content: View>: View {
     }
 
     public var body: some View {
-        GlassCard(tint: tint, padding: 12, spacing: 4) {
+        GlassCard(tint: tint, padding: Token.Glass.padding, spacing: 6) {
             head
             VStack(alignment: .leading, spacing: spacing) { content }
         }
@@ -414,9 +387,9 @@ public struct TextAction: View {
 
     public var body: some View {
         Button(action: tap) {
-            HStack(spacing: 5) {
-                if let symbol { Image(systemName: symbol).font(.system(size: Token.Space.small + 1, weight: .medium)) }
-                Text(label).font(.system(size: Token.Space.text, weight: .medium)).lineLimit(1)
+            HStack(spacing: 4) {
+                if let symbol { Image(systemName: symbol).font(.system(size: Token.Space.small, weight: .medium)) }
+                Text(label).font(.system(size: Token.Space.small + 1, weight: .medium)).lineLimit(1).fixedSize()
             }
             .foregroundStyle(danger ? palette.bad : palette.accent)
             .contentShape(Rectangle())
@@ -425,43 +398,39 @@ public struct TextAction: View {
     }
 }
 
-// value: an app's or a machine's icon as the references draw one: a
-// rounded square, its glyph white on the state's colour, grey when off.
+// value: a machine's or a port's icon as the references draw one: a
+// small rounded square, neutral and dark, its glyph white; dimmed when
+// off. Colour is the state dot's, never the icon's.
 public struct IconTile: View {
     let symbol: String
-    let tint: Color?
+    let dim: Bool
     let size: CGFloat
     let pulse: Bool
     @Environment(\.stationPalette) private var palette
     @Environment(\.stationStill) private var still
 
-    public init(_ symbol: String, tint: Color?, size: CGFloat = Token.Tile.icon, pulse: Bool = false) {
+    public init(_ symbol: String, dim: Bool = false, size: CGFloat = Token.Tile.icon, pulse: Bool = false) {
         self.symbol = symbol
-        self.tint = tint
+        self.dim = dim
         self.size = size
         self.pulse = pulse
     }
 
     public var body: some View {
-        let shape = RoundedRectangle(cornerRadius: size * 0.27, style: .continuous)
+        let shape = RoundedRectangle(cornerRadius: size * 0.28, style: .continuous)
         Image(systemName: symbol)
-            .font(.system(size: size * 0.48, weight: .semibold))
-            .foregroundStyle(tint == nil ? palette.muted : palette.onTint)
+            .font(.system(size: size * 0.5, weight: .semibold))
+            .foregroundStyle(palette.onTint.opacity(dim ? 0.45 : 0.95))
             .contentTransition(.symbolEffect(.replace))
             .symbolEffect(.pulse, isActive: pulse && !still)
             .frame(width: size, height: size)
-            .background {
-                if let tint {
-                    shape.fill(LinearGradient(colors: [tint.opacity(0.92), tint], startPoint: .top, endPoint: .bottom))
-                } else {
-                    shape.fill(palette.faint)
-                }
-            }
+            .background(shape.fill(palette.chip))
             .overlay(shape.strokeBorder(palette.hover, lineWidth: 0.5))
     }
 }
 
-// value: a round glass button that holds only a symbol: copy, QR, open.
+// value: a small round button that holds only a symbol: stop, open; a
+// faint disc, never glass.
 public struct RoundButton: View {
     let symbol: String
     let picked: Bool
@@ -476,19 +445,43 @@ public struct RoundButton: View {
 
     public var body: some View {
         Button(action: tap) {
-            Image(systemName: symbol).font(.system(size: Token.Space.small + 1, weight: .medium))
+            Image(systemName: symbol).font(.system(size: Token.Space.small - 1, weight: .semibold))
                 .foregroundStyle(picked ? palette.onTint : palette.text)
-                .frame(width: Token.Tile.circle, height: Token.Tile.circle)
-                .background { if picked { Circle().fill(palette.accent) } }
-                .stationGlassCapsule()
+                .frame(width: Token.Tile.smallCircle, height: Token.Tile.smallCircle)
+                .background(Circle().fill(picked ? palette.accent : palette.hover))
                 .contentShape(Circle())
         }
         .buttonStyle(.plain)
     }
 }
 
-// value: a link as a field: the address monospaced in a sunken well, its
-// copy and QR buttons beside it.
+// value: a bare symbol that is a button, as the references' header and
+// link field draw them: no disc, no glass.
+public struct PlainIcon: View {
+    let symbol: String
+    let picked: Bool
+    let tap: () -> Void
+    @Environment(\.stationPalette) private var palette
+
+    public init(_ symbol: String, picked: Bool = false, tap: @escaping () -> Void) {
+        self.symbol = symbol
+        self.picked = picked
+        self.tap = tap
+    }
+
+    public var body: some View {
+        Button(action: tap) {
+            Image(systemName: symbol).font(.system(size: Token.Space.text - 1, weight: .medium))
+                .foregroundStyle(picked ? palette.accent : palette.muted)
+                .frame(width: 20, height: 22)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+    }
+}
+
+// value: a link as the references' field: the address monospaced in a
+// flat inset, its copy, QR and open as bare symbols beside it.
 public struct LinkField: View {
     let text: String
     let qr: Bool
@@ -506,14 +499,14 @@ public struct LinkField: View {
     }
 
     public var body: some View {
-        HStack(spacing: 6) {
+        HStack(spacing: 4) {
             Text(text).font(.system(size: Token.Space.small, design: .monospaced)).foregroundStyle(palette.text).lineLimit(1).truncationMode(.middle)
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.horizontal, 9).padding(.vertical, 7)
+                .padding(.horizontal, 9).padding(.vertical, 6)
                 .stationWell()
-            RoundButton(Token.Symbol.copy, tap: copy)
-            if let toggleQR { RoundButton(Token.Symbol.qr, picked: qr, tap: toggleQR) }
-            if let open { RoundButton(Token.Symbol.open, tap: open) }
+            PlainIcon(Token.Symbol.copy, tap: copy)
+            if let toggleQR { PlainIcon(Token.Symbol.qr, picked: qr, tap: toggleQR) }
+            if let open { PlainIcon(Token.Symbol.open, tap: open) }
         }
     }
 }
@@ -537,12 +530,48 @@ public struct StateSwitch: View {
 
     public var body: some View {
         HStack(spacing: 8) {
-            Text(word).font(.system(size: Token.Space.text, weight: .semibold)).foregroundStyle(ink).lineLimit(1)
+            Text(word).font(.system(size: Token.Space.text, weight: .medium)).foregroundStyle(ink).lineLimit(1)
             if busy {
                 PendingDot()
             } else if let tap {
                 Button(action: tap) { Switch(on: on) }.buttonStyle(.plain)
             }
+        }
+    }
+}
+
+// value: the thin line of the references' "Live" tree that ties a child
+// row to its parent: down the parent icon's middle, an elbow into the
+// child's, ending there on the last child.
+public struct Branch: View {
+    public enum Kind { case pass, elbow, last }
+    let kind: Kind
+    let x: CGFloat
+    let reach: CGFloat
+    @Environment(\.stationPalette) private var palette
+
+    public init(_ kind: Kind, x: CGFloat, reach: CGFloat) {
+        self.kind = kind
+        self.x = x
+        self.reach = reach
+    }
+
+    public var body: some View {
+        GeometryReader { geo in
+            let mid = geo.size.height / 2
+            Path { p in
+                p.move(to: CGPoint(x: x, y: 0))
+                p.addLine(to: CGPoint(x: x, y: kind == .last ? mid - 5 : geo.size.height))
+                if kind != .pass {
+                    if kind == .last {
+                        p.addQuadCurve(to: CGPoint(x: x + 5, y: mid), control: CGPoint(x: x, y: mid))
+                    } else {
+                        p.move(to: CGPoint(x: x, y: mid))
+                    }
+                    p.addLine(to: CGPoint(x: reach, y: mid))
+                }
+            }
+            .stroke(palette.faint, lineWidth: 1)
         }
     }
 }

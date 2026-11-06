@@ -21,13 +21,13 @@ public struct PortsPage: View {
         let summary = page.summary()
         VStack(alignment: .leading, spacing: Token.Space.gap + 2) {
             PushedHeader(back: summary?.label ?? page.context?.machine ?? "", title: "Ports", subtitle: Format.show(summary?.cells?.first ?? Value()),
-                         symbol: Token.Symbol.port, tint: palette.accent, id: Navigation.ports, action: handlers.back)
+                         symbol: Token.Symbol.port, id: Navigation.ports, action: handlers.back)
             if let red = page.section("needs-you") { needsYou(red) }
             if let public_ = page.section("public") {
-                GroupCard(public_.title ?? "", count: public_.rows.count, spacing: 6) { ForEach(Array(public_.rows.enumerated()), id: \.offset) { _, r in plainRow(public_, r, symbol: Token.Symbol.globe) } }
+                GroupCard(public_.title ?? "", count: public_.rows.count, spacing: 2) { ForEach(Array(public_.rows.enumerated()), id: \.offset) { _, r in plainRow(public_, r, symbol: Token.Symbol.globe) } }
             }
             if let private_ = page.section("private") {
-                GroupCard(private_.title ?? "", count: private_.rows.count, spacing: 8) { ForEach(Array(private_.rows.enumerated()), id: \.offset) { i, r in privateRow(private_, r).overlay(alignment: .top) { if i > 0 { Rule().offset(y: -4) } } } }
+                GroupCard(private_.title ?? "", count: private_.rows.count, spacing: 2) { ForEach(Array(private_.rows.enumerated()), id: \.offset) { _, r in privateRow(private_, r) } }
             }
             if let ranges = page.section("ranges") {
                 ForEach(Array(ranges.notes.enumerated()), id: \.offset) { _, n in note(n) }
@@ -40,54 +40,36 @@ public struct PortsPage: View {
         Text(text).font(.system(size: Token.Space.small)).foregroundStyle(palette.muted).padding(.horizontal, 4).fixedSize(horizontal: false, vertical: true)
     }
 
+    // value: what is reachable outside Tailscale undeclared, as the
+    // references' card: "Needs you" and its count, Review a text button,
+    // each port a flat row whose red dot is the only colour.
     func needsYou(_ s: Section) -> some View {
         let rows = s.rows
         let ports = rows.map { s.cell($0, "port").map { Format.show($0) } ?? "" }
-        return GlassCard(tint: palette.bad) {
-            HStack(alignment: .top, spacing: Token.Space.gap + 2) {
-                IconCircle(Token.Symbol.warn, tint: palette.bad)
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("\(rows.count) \(rows.count == 1 ? "port" : "ports") reachable outside Tailscale").font(.system(size: Token.Space.text, weight: .semibold)).foregroundStyle(palette.text)
-                    Text("Not declared public\(Token.Glyph.sep)\(ports.joined(separator: ", "))").font(.system(size: Token.Space.small)).foregroundStyle(palette.muted)
-                }
-                Spacer(minLength: 0)
-                if let review = rows.first.flatMap({ page.actions(for: $0.id ?? "").first { $0.run?.terminal == true } }) {
-                    Pill(review.label ?? "") { act.tap(review) }
-                }
-            }
-            ForEach(Array(rows.enumerated()), id: \.offset) { _, r in
-                line(title: "\(r.short ?? r.label ?? "")\(Token.Glyph.sep)\(ports[rows.firstIndex(of: r) ?? 0])",
+        let review = rows.first.flatMap { page.actions(for: $0.id ?? "").first { $0.run?.terminal == true } }
+        return GroupCard(s.title ?? "Needs you", count: rows.count, action: review.map { a in (a.label ?? "", { act.tap(a) }) }, spacing: 2) {
+            ForEach(Array(rows.enumerated()), id: \.offset) { i, r in
+                line(title: "\(r.short ?? r.label ?? "")\(Token.Glyph.sep)\(ports[i])",
                      detail: [s.cell(r, "class"), s.cell(r, "what")].compactMap { $0.map { Format.show($0) } }.joined(separator: Token.Glyph.sep), mark: .broken)
             }
         }
     }
 
     func line(title: String, detail: String, mark: Mark?, symbol: String? = nil, trailing: String? = nil) -> some View {
-        let tint: Color? = {
-            switch symbol {
-            case Token.Symbol.globe: return palette.warn
-            case Token.Symbol.tailnet: return palette.teal
-            default:
-                switch mark {
-                case .broken: return palette.bad
-                case .attention: return palette.warn
-                case .ok: return palette.accent
-                default: return nil
-                }
-            }
-        }()
-        return HStack(alignment: .center, spacing: Token.Space.gap + 2) {
-            IconTile(symbol ?? Token.Symbol.port, tint: tint)
+        HStack(alignment: .center, spacing: Token.Space.gap + 2) {
+            IconTile(symbol ?? Token.Symbol.port)
             VStack(alignment: .leading, spacing: 1) {
                 Text(title).font(.system(size: Token.Space.text, weight: .semibold)).foregroundStyle(palette.text).lineLimit(1)
                 Text(detail).font(.system(size: Token.Space.small)).foregroundStyle(palette.muted).lineLimit(2)
             }
             Spacer(minLength: 0)
+            if mark == .broken { StateDot(mark: mark) }
             if let trailing {
-                Image(systemName: trailing).font(.system(size: Token.Space.small, weight: .semibold)).foregroundStyle(palette.subtle)
+                Image(systemName: trailing).font(.system(size: Token.Space.small - 1, weight: .semibold)).foregroundStyle(palette.subtle)
             }
         }
-        .frame(minHeight: Token.Tile.rowHeight - 6)
+        .frame(minHeight: Token.Tile.line)
+        .padding(.vertical, 3)
         .contentShape(Rectangle())
     }
 
@@ -141,19 +123,18 @@ public struct PortsPage: View {
         return VStack(alignment: .center, spacing: Token.Space.gap) {
             QRView(url.absoluteString)
                 .frame(width: Token.Space.qr, height: Token.Space.qr)
-                .padding(12)
-                .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(palette.qrLight))
-            Text(url.absoluteString).font(.system(size: Token.Space.small, design: .monospaced)).foregroundStyle(palette.text).lineLimit(2).multilineTextAlignment(.center)
-                .frame(maxWidth: .infinity).padding(.horizontal, 9).padding(.vertical, 7)
-                .stationWell()
+                .padding(10)
+                .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(palette.qrLight))
             Text("Scan with your phone. Works on your Tailscale devices.").font(.system(size: Token.Space.small)).foregroundStyle(palette.muted).multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
-            HStack(spacing: Token.Glass.spacing) {
-                ForEach(Array(Self.link(url, handlers: handlers).enumerated()), id: \.offset) { i, l in
-                    Pill(l.label, role: i == 0 ? .primary : .plain, wide: true, action: l.tap)
+            LinkField(url.absoluteString, qr: true, copy: { handlers.copy(url.absoluteString) }, toggleQR: nil, open: nil)
+            HStack(spacing: Token.Space.gap + 6) {
+                ForEach(Array(Self.link(url, handlers: handlers).enumerated()), id: \.offset) { _, l in
+                    TextAction(l.label, tap: l.tap)
                 }
+                Spacer(minLength: 0)
+                if let stop { TextAction(stop.label ?? "", danger: true) { act.tap(stop) } }
             }
-            if let stop { Pill(stop.label ?? "", role: .danger, wide: true) { act.tap(stop) } }
             if let stop { act.sheet(stop) }
         }
         .frame(maxWidth: .infinity)
@@ -164,13 +145,18 @@ public struct PortsPage: View {
         let declare = page.action("declare-public")
         let share = page.action("share-port")
         return VStack(alignment: .leading, spacing: Token.Space.gap) {
-            if let declare {
-                note(Self.routes(declare))
-                if act.open(declare) { act.sheet(declare) } else { HStack { Pill(act.label(declare)) { act.tap(declare) }; Spacer() } }
+            if let declare { note(Self.routes(declare)) }
+            if let declare, act.open(declare) { act.sheet(declare) }
+            if let share, act.open(share) { act.sheet(share) }
+            VStack(alignment: .leading, spacing: 0) {
+                if let declare, !act.open(declare) {
+                    Button { act.tap(declare) } label: { MenuText(symbol: Token.Symbol.globe, title: act.label(declare), key: nil, danger: false) }.buttonStyle(.plain)
+                }
+                if let share, !act.open(share) {
+                    Button { act.tap(share) } label: { MenuText(symbol: Token.Symbol.plus, title: act.label(share), key: nil, danger: false) }.buttonStyle(.plain)
+                }
             }
-            if let share {
-                if act.open(share) { act.sheet(share) } else { HStack { Pill(act.label(share), role: .primary) { act.tap(share) }; Spacer() } }
-            }
+            .padding(.horizontal, 6)
         }
     }
 }

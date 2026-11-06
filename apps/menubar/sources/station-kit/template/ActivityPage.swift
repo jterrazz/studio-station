@@ -32,7 +32,7 @@ public struct ActivityPage: View {
         let banner = page.section("machine")?.rows.first
         VStack(alignment: .leading, spacing: Token.Space.gap + 2) {
             PushedHeader(back: banner?.label ?? page.context?.machine ?? "", title: "Activity", subtitle: Format.show(banner?.cells?.first ?? Value()),
-                         symbol: Token.Symbol.cpu, tint: palette.accent, id: Navigation.activity, action: handlers.back)
+                         symbol: Token.Symbol.cpu, id: Navigation.activity, action: handlers.back)
             Segments(options: Self.picker(page, handlers: handlers).map { ($0.words, $0.picked, $0.tap) })
             if let graphs = page.section("graphs") {
                 let rows = graphs.rows
@@ -49,8 +49,8 @@ public struct ActivityPage: View {
             }
             if let top = page.section("processes") {
                 GroupCard(top.title ?? "") {
-                    ForEach(Array(top.rows.prefix(5).enumerated()), id: \.offset) { i, r in
-                        process(top, r).overlay(alignment: .top) { if i > 0 { Rule() } }
+                    ForEach(Array(top.rows.prefix(5).enumerated()), id: \.offset) { _, r in
+                        process(top, r)
                     }
                 }
             }
@@ -63,21 +63,7 @@ public struct ActivityPage: View {
     func wide(_ r: Row) -> some View {
         let points = r.cells?.dropFirst().first?.points ?? []
         let start = Self.picked(page).map { "\($0) ago" } ?? ""
-        return GlassCard(padding: 12, spacing: 6) {
-            HStack(alignment: .firstTextBaseline) {
-                Text(r.label ?? "").font(.system(size: Token.Space.small + 1, weight: .semibold)).foregroundStyle(palette.muted)
-                Spacer(minLength: Token.Space.gap)
-                Text(r.cells?.first.map { Format.show($0) } ?? "").font(.system(size: Token.Space.text, weight: .semibold)).foregroundStyle(palette.text).lineLimit(1).monospacedDigit()
-                    .contentTransition(.numericText())
-            }
-            Bars(Self.buckets(points, 24), height: 64, accented: 3)
-            HStack {
-                Text(start)
-                Spacer()
-                Text("Now")
-            }
-            .font(.system(size: Token.Space.small)).foregroundStyle(palette.muted)
-        }
+        return ChartCard(title: r.label ?? "", words: r.cells?.first.map { Format.show($0) }, points: Self.buckets(points, 24), start: start, height: 64)
     }
 
     // value: a series cut into `n` buckets, each its mean, oldest first.
@@ -96,9 +82,9 @@ public struct ActivityPage: View {
         let ratio = r.cells?.dropFirst().first.flatMap { $0.kind == "ratio" ? $0 : nil }
         return VStack(alignment: .leading, spacing: 3) {
             HStack(alignment: .firstTextBaseline) {
-                Text(r.label ?? "").font(.system(size: Token.Space.small + 1, weight: .semibold)).foregroundStyle(palette.muted)
+                Text(r.label ?? "").font(.system(size: Token.Space.small + 1, weight: .medium)).foregroundStyle(palette.muted)
                 Spacer(minLength: Token.Space.gap)
-                Text(words).font(.system(size: Token.Space.small + 1, weight: .semibold)).foregroundStyle(palette.text).lineLimit(1).monospacedDigit()
+                Text(words).font(.system(size: Token.Space.small + 1, weight: .medium)).foregroundStyle(palette.text).lineLimit(1).monospacedDigit()
                     .contentTransition(.numericText())
             }
             if points.count > 1 {

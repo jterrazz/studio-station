@@ -39,13 +39,18 @@ public enum Token {
         public static let value: CGFloat = 17
         public static let sparkHeight: CGFloat = 24
         public static let circle: CGFloat = 26
-        public static let icon: CGFloat = 28
-        public static let figure: CGFloat = 22
+        public static let icon: CGFloat = 22
+        public static let figure: CGFloat = 20
+        public static let meter: CGFloat = 14
+        public static let meterBars = 10
+        public static let meterWidth: CGFloat = 30
+        public static let chart: CGFloat = 54
+        public static let line: CGFloat = 32
         public static let bars: CGFloat = 16
         public static let smallCircle: CGFloat = 22
         public static let rowHeight: CGFloat = 40
         public static let hover: CGFloat = 8
-        public static let dot: CGFloat = 7
+        public static let dot: CGFloat = 6
         public static let sheet: CGFloat = 14
     }
 
@@ -84,6 +89,7 @@ public enum Token {
         public static let text: CGFloat = 13
         public static let small: CGFloat = 11
         public static let title: CGFloat = 19
+        public static let head: CGFloat = 15
         public static let graphHeight: CGFloat = 40
     }
 
@@ -94,20 +100,20 @@ public enum Token {
     // and a specular rim lit from the top left.
     public enum Glass {
         public static let spacing: CGFloat = 8
-        public static let radius: CGFloat = 16
-        public static let window: CGFloat = 24
+        public static let radius: CGFloat = 14
+        public static let window: CGFloat = 22
         public static let padding: CGFloat = 12
         public static let tint = 0.32
 
-        public static func body(_ scheme: ColorScheme) -> Color { scheme == .dark ? Color.white.opacity(0.07) : Color.white.opacity(0.4) }
+        public static func body(_ scheme: ColorScheme) -> Color { scheme == .dark ? Color.white.opacity(0.06) : Color.white.opacity(0.42) }
         public static func sheen(_ scheme: ColorScheme) -> [Color] {
-            [Color.white.opacity(scheme == .dark ? 0.045 : 0.16), Color.white.opacity(0)]
+            [Color.white.opacity(scheme == .dark ? 0.02 : 0.08), Color.white.opacity(0)]
         }
         public static func rim(_ scheme: ColorScheme) -> [Color] {
-            scheme == .dark ? [Color.white.opacity(0.16), Color.white.opacity(0.07)] : [Color.white.opacity(0.95), Color.black.opacity(0.05)]
+            scheme == .dark ? [Color.white.opacity(0.09), Color.white.opacity(0.03)] : [Color.white.opacity(0.7), Color.black.opacity(0.04)]
         }
-        public static func pane(_ scheme: ColorScheme) -> Color { scheme == .dark ? Token.hex(0x22252B).opacity(0.56) : Token.hex(0xF4F5F7).opacity(0.6) }
-        public static func edge(_ scheme: ColorScheme) -> Color { scheme == .dark ? Color.white.opacity(0.16) : Color.black.opacity(0.1) }
+        public static func pane(_ scheme: ColorScheme) -> Color { scheme == .dark ? Token.hex(0x1C1F24).opacity(0.8) : Token.hex(0xEEF0F3).opacity(0.72) }
+        public static func edge(_ scheme: ColorScheme) -> Color { scheme == .dark ? Color.white.opacity(0.13) : Color.black.opacity(0.1) }
         public static func shade(_ scheme: ColorScheme) -> Color { Color.black.opacity(scheme == .dark ? 0.5 : 0.22) }
         public static func well(_ scheme: ColorScheme) -> Color { scheme == .dark ? Color.black.opacity(0.22) : Color.black.opacity(0.05) }
         public static func sunken(_ scheme: ColorScheme) -> [Color] {
@@ -117,6 +123,7 @@ public enum Token {
             scheme == .dark ? [Color.black.opacity(0.25), Color.white.opacity(0.1)] : [Color.black.opacity(0.08), Color.white.opacity(0.85)]
         }
         public static let ink = Color.white
+        public static func inset(_ scheme: ColorScheme) -> Color { scheme == .dark ? Color.black.opacity(0.24) : Color.black.opacity(0.06) }
 
         // value: the fixed wallpaper an offscreen snapshot draws the panel
         // over, so its glass reads in the PNG (the vision's desk).
@@ -183,6 +190,10 @@ public enum Token {
         public static let trash = "trash"
         public static let copyLink = "doc.on.doc"
         public static let key = "key.fill"
+        public static let settings = "gearshape"
+        public static let activity = "chart.bar.xaxis"
+        public static let restart = "arrow.clockwise"
+        public static let unlock = "lock.open"
 
         // value: the state circle a known line of a machine's page wears.
         public static func line(_ id: String) -> String? {
@@ -215,7 +226,7 @@ public enum Token {
     // ink and its two secondary steps, the state colours, white on a
     // filled state circle.
     public struct Palette: Sendable {
-        public let text, muted, subtle, faint, hover, raised, well, accent, good, warn, bad, teal, indigo, grey, onTint, qrDark, qrLight: Color
+        public let text, muted, subtle, faint, hover, raised, well, chip, accent, good, warn, bad, teal, indigo, grey, onTint, qrDark, qrLight: Color
 
         public func of(_ mark: Mark) -> Color {
             switch mark {
@@ -239,7 +250,7 @@ public enum Token {
         return Palette(
             text: pair(0x1D1D1F, 0xF5F5F7), muted: ink2.opacity(dark ? 0.62 : 0.68), subtle: ink2.opacity(dark ? 0.38 : 0.42),
             faint: ink2.opacity(dark ? 0.16 : 0.16), hover: (dark ? Color.white : Color.black).opacity(dark ? 0.1 : 0.06),
-            raised: Color.white.opacity(dark ? 0.2 : 0.92), well: Glass.well(scheme),
+            raised: Color.white.opacity(dark ? 0.2 : 0.92), well: Glass.well(scheme), chip: dark ? hex(0x0E1013).opacity(0.85) : hex(0x2C2F35),
             accent: pair(0x0A7AFF, 0x2B8CFF), good: pair(0x2FB350, 0x32C75A), warn: pair(0xF29D0B, 0xFFAD1F), bad: pair(0xEC3B30, 0xFF4F45),
             teal: pair(0x14A6B8, 0x2BB8C9), indigo: pair(0x5B5CE6, 0x6E6FF0), grey: hex(0x8E8E93), onTint: hex(0xFFFFFF),
             qrDark: hex(0x000000), qrLight: hex(0xFFFFFF))

@@ -9,6 +9,7 @@ public struct TypedField: View {
     @Binding var text: String
     @Environment(\.stationPalette) private var palette
     @Environment(\.stationStill) private var still
+    @Environment(\.stationInCard) private var inCard
 
     public init(_ placeholder: String, text: Binding<String>, symbol: String? = nil, key: String? = nil) {
         self.placeholder = placeholder
@@ -28,9 +29,9 @@ public struct TypedField: View {
             }
         }
         .font(.system(size: Token.Space.text))
-        .padding(.horizontal, Token.Tile.padding + 1)
-        .padding(.vertical, 8)
-        .stationWell(radius: Token.Tile.pill + 2)
+        .padding(.horizontal, inCard ? 9 : Token.Glass.padding)
+        .padding(.vertical, inCard ? 6 : 10)
+        .modifier(FieldGround(inCard: inCard))
     }
 
     @ViewBuilder
@@ -45,6 +46,31 @@ public struct TypedField: View {
             } else {
                 TextField(placeholder, text: $text).textFieldStyle(.plain)
             }
+        }
+    }
+}
+
+// value: where a field sits: on the panel, a card of its own, as the
+// references' "Filter by name or port"; in a card, a flat inset.
+struct FieldGround: ViewModifier {
+    let inCard: Bool
+
+    func body(content: Content) -> some View {
+        if inCard { content.stationWell() } else { content.stationGlass(radius: Token.Glass.radius) }
+    }
+}
+
+// value: where a sheet sits: on the panel, a card of its own; in a card,
+// the rest of it under a hairline.
+struct SheetGround: ViewModifier {
+    @Environment(\.stationInCard) private var inCard
+    @Environment(\.stationPalette) private var palette
+
+    func body(content: Content) -> some View {
+        if inCard {
+            content.padding(.top, 10).overlay(alignment: .top) { Rectangle().fill(palette.faint).frame(height: 0.5) }
+        } else {
+            content.padding(Token.Glass.padding).stationGlass(radius: Token.Glass.radius)
         }
     }
 }
@@ -90,7 +116,7 @@ public struct ConfirmSheet: View {
         VStack(alignment: .leading, spacing: 6) {
             Text(confirm.question ?? "").font(.system(size: Token.Space.text + 1, weight: .semibold)).foregroundStyle(palette.text)
             ForEach(Array((confirm.lines ?? []).enumerated()), id: \.offset) { _, line in
-                ValueText(line, muted: true)
+                ValueText(line, muted: true).fixedSize(horizontal: false, vertical: true)
             }
             if let name = confirm.type {
                 TypedField(name, text: $typed)
@@ -104,8 +130,7 @@ public struct ConfirmSheet: View {
                     .keyboardShortcut(.defaultAction)
             }
         }
-        .padding(Token.Tile.padding + 2)
-        .stationGlass(radius: Token.Tile.sheet)
+        .modifier(SheetGround())
     }
 }
 
@@ -155,8 +180,7 @@ public struct FormSheet: View {
                 SheetButton(run, role: .accent) { onAnswer(true) }.disabled(!complete).opacity(complete ? 1 : 0.4).keyboardShortcut(.defaultAction)
             }
         }
-        .padding(Token.Tile.padding + 2)
-        .stationGlass(radius: Token.Tile.sheet)
+        .modifier(SheetGround())
     }
 }
 
@@ -178,8 +202,8 @@ public struct SheetButton: View {
     }
 }
 
-// value: a segmented picker as the vision draws one: its options in a
-// faint well, the chosen one raised.
+// value: a picker as the references draw one: its options as words side
+// by side, the chosen one on a faint fill, no well around them.
 public struct Segments: View {
     let options: [(label: String, on: Bool, tap: () -> Void)]
     @Environment(\.stationPalette) private var palette
@@ -187,25 +211,19 @@ public struct Segments: View {
     public init(options: [(label: String, on: Bool, tap: () -> Void)]) { self.options = options }
 
     public var body: some View {
-        HStack(spacing: 2) {
+        HStack(spacing: 4) {
             ForEach(Array(options.enumerated()), id: \.offset) { _, o in
                 Button(action: o.tap) {
                     Text(o.label)
                         .font(.system(size: Token.Space.small + 1, weight: o.on ? .semibold : .medium))
-                        .foregroundStyle(palette.text)
+                        .foregroundStyle(o.on ? palette.text : palette.muted)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 4)
-                        .background {
-                            if o.on {
-                                RoundedRectangle(cornerRadius: Token.Tile.hover, style: .continuous).fill(palette.raised).shadow(color: palette.faint, radius: 2, y: 1)
-                            }
-                        }
+                        .background(RoundedRectangle(cornerRadius: Token.Tile.hover - 2, style: .continuous).fill(o.on ? palette.hover : .clear))
                         .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
             }
         }
-        .padding(2)
-        .stationWell(radius: Token.Tile.pill)
     }
 }
