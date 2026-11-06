@@ -7,6 +7,7 @@ import (
 	pagejson "github.com/jterrazz/studio-station/src/ui/render/json"
 	"github.com/jterrazz/studio-station/src/ui/render/pipe"
 	"github.com/jterrazz/studio-station/src/ui/render/tty"
+	"github.com/jterrazz/studio-station/src/ui/render/tui"
 )
 
 type Want struct {
@@ -21,7 +22,14 @@ type Want struct {
 	Envelope *Envelope
 }
 
-func Terminal(in io.Reader, out io.Writer) *tty.Terminal { return tty.NewTerminal(in, out) }
+func Terminal(in io.Reader, out io.Writer, dumb bool) *tty.Terminal {
+	// invariant: a dumb terminal answers a form line by line, as huh asks
+	// it there; any other runs it as the frame the owner answers on.
+	if dumb {
+		return tty.NewTerminal(in, out, nil)
+	}
+	return tty.NewTerminal(in, out, tui.Answer)
+}
 
 func (w *Writer) Page(p page.Page, contract any, want Want) error {
 	w.settle()

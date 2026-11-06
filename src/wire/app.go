@@ -72,7 +72,7 @@ func Run(args, env []string, stdin, stdout, stderr *os.File) int {
 	thisMac := resolve(local.New(env, childIn, stdout, stderr), darwin.NewDoor(env), vars, world)
 	kenv := kit.Env{
 		Out:         writer,
-		Prompt:      output.Terminal(stdin, stderr),
+		Prompt:      output.Terminal(stdin, stderr, vars["TERM"] == "dumb"),
 		Interactive: inTTY && errTTY,
 		Screen:      inTTY && outTTY,
 		On:          &kit.On{ThisMachine: thisMac.thisMac(), Known: thisMac.known},

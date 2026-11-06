@@ -15,9 +15,16 @@ import (
 type Terminal struct {
 	in  io.Reader
 	out io.Writer
+	// value: how a form runs on this terminal; nil is huh's own run, the
+	// line-by-line one a dumb terminal takes.
+	answer Answer
 }
 
-func NewTerminal(in io.Reader, out io.Writer) *Terminal { return &Terminal{in: in, out: out} }
+type Answer func(form *huh.Form, in io.Reader, out io.Writer) error
+
+func NewTerminal(in io.Reader, out io.Writer, answer Answer) *Terminal {
+	return &Terminal{in: in, out: out, answer: answer}
+}
 
 func (t *Terminal) Confirm(c page.Confirm) (bool, error) {
 	// invariant: a Danger question defaults to No and Esc declines it, so a
@@ -35,7 +42,7 @@ func (t *Terminal) Confirm(c page.Confirm) (bool, error) {
 		keys.Quit = key.NewBinding(key.WithKeys("ctrl+c", "esc"))
 		form = form.WithKeyMap(keys)
 	}
-	err := form.Run()
+	err := t.run(form)
 	switch {
 	case errors.Is(err, huh.ErrUserAborted) && c.Danger:
 		return false, nil
@@ -53,12 +60,11 @@ func (t *Terminal) Form(f page.Form) (map[string]string, error) {
 	if f.Title != "" {
 		group = group.Title(f.Title)
 	}
-	err := huh.NewForm(group).
+	err := t.run(huh.NewForm(group).
 		WithTheme(huh.ThemeFunc(organism.FormStyles)).
 		WithInput(t.in).
 		WithOutput(t.out).
-		WithShowHelp(false).
-		Run()
+		WithShowHelp(false))
 	if errors.Is(err, huh.ErrUserAborted) {
 		return nil, context.Canceled
 	}
@@ -66,4 +72,11 @@ func (t *Terminal) Form(f page.Form) (map[string]string, error) {
 		return nil, err
 	}
 	return read(), nil
+}
+
+func (t *Terminal) run(form *huh.Form) error {
+	if t.answer == nil {
+		return form.Run()
+	}
+	return t.answer(form, t.in, t.out)
 }
