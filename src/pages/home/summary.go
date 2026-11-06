@@ -6,6 +6,8 @@ import (
 	"strings"
 	"time"
 
+	coresection "github.com/jterrazz/studio-station/src/core/section"
+
 	"github.com/jterrazz/studio-station/src/catalog"
 	"github.com/jterrazz/studio-station/src/overview"
 	"github.com/jterrazz/studio-station/src/page"
@@ -190,8 +192,8 @@ func lineValue(l overview.Line) page.Value {
 		return page.Pending()
 	case l.Unread != "":
 		return page.Text(l.Unread)
-	case l.Section == "ssh" && len(l.Parts) == 1:
-		return page.Text("ssh " + l.Parts[0].Word)
+	case l.Section == coresection.SSH && len(l.Parts) == 1:
+		return page.Text(catalog.SSHCommand("", l.Parts[0].Word))
 	}
 	parts := make([]page.Value, 0, len(l.Parts))
 	for _, p := range l.Parts {
@@ -277,7 +279,7 @@ func sectionTitle(id string) string {
 	switch id {
 	case "":
 		return ""
-	case "ssh":
+	case string(coresection.SSH):
 		return "SSH"
 	}
 	return strings.ToUpper(id[:1]) + id[1:]

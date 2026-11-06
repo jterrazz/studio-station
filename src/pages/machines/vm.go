@@ -5,6 +5,8 @@ import (
 	"strings"
 	"time"
 
+	coresection "github.com/jterrazz/studio-station/src/core/section"
+
 	"github.com/jterrazz/studio-station/src/catalog"
 	"github.com/jterrazz/studio-station/src/core/finding"
 
@@ -87,7 +89,7 @@ func Steps(vm model.VM) []page.Row {
 	steps := []page.Row{
 		step("running", model.StepRunning, health.Running, health.Running, ""),
 		step("address", model.StepAddress, health.Address, health.Running, vm.IP),
-		step("ssh", model.StepSSH, health.SSH, health.Running, ""),
+		step(string(coresection.SSH), model.StepSSH, health.SSH, health.Running, ""),
 	}
 	if vm.Lifetime == model.AlwaysOn && vm.Check != "" {
 		steps = append(steps, checkStep(vm, health.Running))
@@ -127,7 +129,7 @@ func serverRows(vm model.VM, sshRead bool) []page.Item {
 		rows = append(rows, page.Row{ID: "device", Label: "Own " + catalog.TailnetProduct + " device", Mark: page.OK, Cells: []page.Value{page.Text(vm.Device)}})
 	}
 	if !sshRead {
-		rows = append(rows, page.Row{ID: "ssh", Label: "SSH", Mark: page.OK, Cells: []page.Value{page.List(page.Command("ssh "+vm.Name), page.Text("for debugging"))}})
+		rows = append(rows, page.Row{ID: string(coresection.SSH), Label: "SSH", Mark: page.OK, Cells: []page.Value{page.List(page.Command(catalog.SSHCommand("", vm.Name)), page.Text("for debugging"))}})
 	}
 	items := make([]page.Item, 0, len(rows))
 	for i := range rows {
@@ -141,7 +143,7 @@ func readsSSH(s *overview.Summary) bool {
 		return false
 	}
 	for _, l := range s.Lines {
-		if l.Section == "ssh" && l.Unread == "" {
+		if l.Section == coresection.SSH && l.Unread == "" {
 			return true
 		}
 	}
@@ -328,7 +330,7 @@ func SSHPage(o VMOverview, target model.SSHTarget, here page.Context) page.Page 
 		return items
 	}
 	columns := []page.Column{{Key: "name", Kind: page.KindText, Keep: 100}, {Key: "detail", Kind: page.KindList, Keep: 50}}
-	return page.Seal(page.Page{ID: "ssh", Command: "machines ssh " + vm.Name, Context: here, Sections: []page.Section{
+	return page.Seal(page.Page{ID: page.ID(coresection.SSH), Command: "machines ssh " + vm.Name, Context: here, Sections: []page.Section{
 		{ID: "door", Title: "SSH", Caption: []page.Value{page.Text(vm.Name)}, Uncounted: true, Columns: columns, Items: append(rows(door, editor), page.Item{Note: &page.Note{Text: "No password: your key. Files travel through the same name; no folder of a Mac is shared."}})},
 		{ID: "reached", Title: "How it is reached", Uncounted: true, Columns: columns, Items: rows(reached...)},
 		{ID: "inside", Title: "Inside", Uncounted: true, Items: []page.Item{{Note: &page.Note{Text: "Station opens it for debugging only; your tooling owns what runs inside."}}}},

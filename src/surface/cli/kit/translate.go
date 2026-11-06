@@ -72,3 +72,7 @@ func AdminApply(setting, mac string, here bool) string {
 	// terminal, in the words' table.
 	return words.AdminApply(setting, mac, here)
 }
+
+const MachinesSSHUse = words.MachinesSSHUse
+
+func SSHConfigNotRefreshed(cause string) string { return words.SSHConfigNotRefreshed(cause) }

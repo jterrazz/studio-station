@@ -22,7 +22,7 @@ type SSHInput struct{ Name string }
 
 func SSHCommand(d SSHDeps, env kit.Env) *cobra.Command {
 	return kit.Command(kit.Leaf[SSHInput]{
-		Use:     "ssh <machine>",
+		Use:     kit.MachinesSSHUse,
 		Short:   "Print the ssh command that reaches a machine",
 		Example: "  station machines ssh infra\n  $(station machines ssh infra) uptime",
 		Args:    cobra.ExactArgs(1),

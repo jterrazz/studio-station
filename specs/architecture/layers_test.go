@@ -831,20 +831,6 @@ func judge(t *testing.T, name string) {
 func TestRows(t *testing.T)             { judge(t, "Rows") }
 func TestRowsPresentation(t *testing.T) { judge(t, "RowsPresentation") }
 
-func withoutPackage(w *world, gone func(pkg string) bool) *world {
-	out := &world{root: w.root, packages: map[string]bool{}, cgo: w.cgo}
-	for pkg := range w.packages {
-		if !gone(pkg) {
-			out.packages[pkg] = true
-		}
-	}
-	for _, f := range w.files {
-		if !gone(f.pkg) {
-			out.files = append(out.files, f)
-		}
-	}
-	return out
-}
 func TestImports(t *testing.T)    { judge(t, "Imports") }
 func TestSymbols(t *testing.T)    { judge(t, "Symbols") }
 func TestSystemtest(t *testing.T) { judge(t, "Systemtest") }

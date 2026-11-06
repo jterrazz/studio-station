@@ -11,3 +11,7 @@ func ReachedThrough(vm, mac string) string {
 }
 
 func RunOnItself(machine string) string { return "run it on " + machine + " itself: ssh " + machine }
+
+const MachinesSSHUse = "ssh <machine>"
+
+func SSHConfigNotRefreshed(cause string) string { return "ssh config not refreshed: " + cause }

@@ -72,38 +72,8 @@ func (m machine) expander() disk.Expander {
 	return disk.Expander{Home: m.host.Env.Home(), Roots: m.paths.Roots, Root: m.systemRoot()}
 }
 
-// invariant: Go's env file is where `go env GOENV` says: $GOENV when set and
-// absolute ("off" writes nothing), else os.UserConfigDir()/go/env, which is
-// ~/Library/Application Support on darwin and the XDG config root on linux.
 func (m machine) toolFiles() map[catalog.ToolFile]string {
-	home := m.host.Env.Home()
-	goenv := filepath.Join(home, "Library", "Application Support", "go", "env")
-	if m.kind == catalog.Linux {
-		goenv = filepath.Join(m.paths.Roots.Config, "go", "env")
-	}
-	switch v := m.vars["GOENV"]; {
-	case v == "off":
-		goenv = ""
-	case filepath.IsAbs(v):
-		goenv = v
-	}
-	bunfig := filepath.Join(home, ".bunfig.toml")
-	if filepath.IsAbs(m.vars["XDG_CONFIG_HOME"]) {
-		bunfig = filepath.Join(m.vars["XDG_CONFIG_HOME"], ".bunfig.toml")
-	}
-	mise := filepath.Join(m.paths.Roots.Config, "mise", "config.toml")
-	if dir := m.vars["MISE_CONFIG_DIR"]; filepath.IsAbs(dir) {
-		mise = filepath.Join(dir, "config.toml")
-	}
-	if file := m.vars["MISE_GLOBAL_CONFIG_FILE"]; filepath.IsAbs(file) {
-		mise = file
-	}
-	return map[catalog.ToolFile]string{
-		catalog.FileGoEnv:  goenv,
-		catalog.FileNpmrc:  filepath.Join(home, ".npmrc"),
-		catalog.FileBunfig: bunfig,
-		catalog.FileMise:   mise,
-	}
+	return catalog.ToolFilePaths(m.host.Env.Home(), m.paths.Roots.Config, m.kind, m.vars)
 }
 
 type inventory struct{ tools *appscalls.Service }

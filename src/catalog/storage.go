@@ -1,6 +1,9 @@
 package catalog
 
-import "strings"
+import (
+	"path/filepath"
+	"strings"
+)
 
 type Level string
 
@@ -694,4 +697,35 @@ func (f ToolFile) KeyLabel(key string) string {
 	case FileGoEnv, FileBunfig:
 	}
 	return key
+}
+
+func ToolFilePaths(home, config string, kind MachineKind, vars map[string]string) map[ToolFile]string {
+	// value: where each tool keeps the file station relocates in: Go's env file
+	// where `go env GOENV` says ($GOENV when absolute, "off" writes nothing, else
+	// the user config dir: ~/Library/Application Support on darwin, the XDG
+	// config root on linux), bun's ~/.bunfig.toml ($XDG_CONFIG_HOME first),
+	// mise's config.toml ($MISE_GLOBAL_CONFIG_FILE, then $MISE_CONFIG_DIR, then
+	// the config root).
+	goenv := filepath.Join(home, "Library", "Application Support", "go", "env")
+	if kind == Linux {
+		goenv = filepath.Join(config, "go", "env")
+	}
+	switch v := vars["GOENV"]; {
+	case v == "off":
+		goenv = ""
+	case filepath.IsAbs(v):
+		goenv = v
+	}
+	bunfig := filepath.Join(home, ".bunfig.toml")
+	if filepath.IsAbs(vars["XDG_CONFIG_HOME"]) {
+		bunfig = filepath.Join(vars["XDG_CONFIG_HOME"], ".bunfig.toml")
+	}
+	mise := filepath.Join(config, "mise", "config.toml")
+	if dir := vars["MISE_CONFIG_DIR"]; filepath.IsAbs(dir) {
+		mise = filepath.Join(dir, "config.toml")
+	}
+	if file := vars["MISE_GLOBAL_CONFIG_FILE"]; filepath.IsAbs(file) {
+		mise = file
+	}
+	return map[ToolFile]string{FileGoEnv: goenv, FileNpmrc: filepath.Join(home, ".npmrc"), FileBunfig: bunfig, FileMise: mise}
 }

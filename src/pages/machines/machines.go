@@ -111,7 +111,7 @@ func hostRow(h model.HostView, hereVersion string) page.Row {
 		word, fix := "engine stopped", "station engine start"
 		switch {
 		case !h.Here:
-			fix = "ssh " + h.Name + " station engine start"
+			fix = catalog.SSHCommand("", h.Name) + " station engine start"
 		case !h.Daemon.Installed:
 			row.Reason, word, fix = page.Missing, "engine not installed", "station setup"
 		}
@@ -218,7 +218,7 @@ func StopServerForm(name string) page.Form {
 func Added(a model.Added, here page.Context) page.Page {
 	// value: the Mac added, as ssh and its station answered; a station of
 	// another version is one more row, with what brings them to one.
-	rows := []page.Row{done(a.Label, catalog.StateOK, "added", "ssh answers", "station "+a.Version)}
+	rows := []page.Row{done(a.Label, catalog.StateOK, "added", strings.ToLower(model.StepSSH), "station "+a.Version)}
 	if a.Update != "" {
 		rows = append(rows, done(a.Label, catalog.StateDegraded, "runs "+a.Version, a.Update))
 	}
@@ -344,7 +344,7 @@ func Created(c model.Created, here page.Context) page.Page {
 		{Key: "detail", Kind: page.KindList, Keep: 20},
 	}
 	p := pages.Outcome("machines create", here, columns, rows, "VMs")
-	p.Hints = []page.Hint{*page.Cmd("ssh " + vm.Name)}
+	p.Hints = []page.Hint{*page.Cmd(catalog.SSHCommand("", vm.Name))}
 	return p
 }
 
@@ -382,7 +382,7 @@ func serverCreated(c model.Created, rows []page.Row, here page.Context) page.Pag
 		{Key: "detail", Kind: page.KindList, Keep: 20},
 	}
 	p := pages.Outcome("machines create", here, columns, rows, "VMs")
-	p.Hints = []page.Hint{*page.Cmd("ssh " + vm.Name), *page.Cmd("station machines " + vm.Name)}
+	p.Hints = []page.Hint{*page.Cmd(catalog.SSHCommand("", vm.Name)), *page.Cmd("station machines " + vm.Name)}
 	return p
 }
 

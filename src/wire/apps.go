@@ -88,20 +88,13 @@ func toolsService(env kit.Env, m machine) *appscalls.Service {
 
 func installers(m machine) (contract.Installers, contract.Bundler) {
 	run := m.host.Run
-	shims := filepath.Join(m.or("MISE_DATA_DIR", filepath.Join(m.host.Env.Home(), ".local", "share", "mise")), "shims")
-	// invariant: a bundle runs with mise's shims first once mise is installed,
-	// so a formula's post-install finds the runtimes it pins.
-	bundle := brew.New(run, func() []string {
-		if _, ok := run.LookPath("mise"); ok {
-			return []string{"PATH=" + shims + ":" + m.vars["PATH"]}
-		}
-		return nil
-	})
+	runtimes := mise.New(run)
+	bundle := brew.New(run, func() []string { return runtimes.ShimsFirst(m.host.Env.Home(), m.vars) })
 	registry := contract.Installers{}
 	for _, i := range []contract.Installer{
 		bundle.Formulae(), bundle.Casks(),
 		mas.New(run), npm.New(run, bundle), uv.New(run, bundle),
-		bun.New(run), mise.New(run),
+		bun.New(run), runtimes,
 		skills.New(skills.Options{
 			Run: run, FS: m.host.FS, Net: m.host.Net, Home: m.host.Env.Home(),
 			APIURL: m.or("STATION_GITHUB_API_URL", "https://api.github.com"),
