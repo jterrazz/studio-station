@@ -12,7 +12,7 @@ import (
 
 	"github.com/jterrazz/studio-station/src/catalog"
 	"github.com/jterrazz/studio-station/src/domain/machines"
-	"github.com/jterrazz/studio-station/src/domain/settings"
+	"github.com/jterrazz/studio-station/src/setup"
 	"github.com/jterrazz/studio-station/src/system/systemtest"
 )
 
@@ -119,7 +119,7 @@ func newHarness(t *testing.T, records ...machines.VMRecord) harness {
 	h := systemtest.Host(run, files, systemtest.Env{}, systemtest.NewNet(), clock)
 	m := &fakeMachines{records: records}
 	hv := newHypervisor()
-	paths := settings.Paths{Config: "/c", State: "/s"}
+	paths := setup.Paths{Config: "/c", State: "/s"}
 	d := New(h, hv, nil, m, &fakeTailnet{}, memStores(), Options{State: paths.State, Here: catalog.Host})
 	return harness{d: d, hv: hv, run: run, fs: files, clock: clock, m: m}
 }

@@ -1,4 +1,4 @@
-package settings
+package setup
 
 import (
 	"encoding/json"
@@ -20,14 +20,14 @@ type v1Document struct {
 	} `json:"machines"`
 }
 
-func ConvertV1(v1 []byte, user string) (Settings, error) {
+func ConvertV1(v1 []byte, user string) (V1Preferences, error) {
 	// invariant: the v1 tailnet mode and auth key are dropped: the Tailscale app
 	// logs in itself, and station keeps no tailnet secret.
 	var old v1Document
 	if err := json.Unmarshal(v1, &old); err != nil {
-		return Settings{}, &store.UnreadableError{Path: "config.json", Cause: err}
+		return V1Preferences{}, &store.UnreadableError{Path: "config.json", Cause: err}
 	}
-	var s Settings
+	var s V1Preferences
 	s.Here = old.Self
 	s.VMUser = user
 	s.UserEmail = old.UserEmail

@@ -18,11 +18,11 @@ import (
 	probe "github.com/jterrazz/studio-station/src/core/call/lanes"
 	"github.com/jterrazz/studio-station/src/core/fail"
 	coremachine "github.com/jterrazz/studio-station/src/core/machine"
-	"github.com/jterrazz/studio-station/src/domain/settings"
 	"github.com/jterrazz/studio-station/src/engine"
 	"github.com/jterrazz/studio-station/src/output"
 	"github.com/jterrazz/studio-station/src/page"
 	"github.com/jterrazz/studio-station/src/platform/local"
+	"github.com/jterrazz/studio-station/src/setup"
 	"github.com/jterrazz/studio-station/src/surface/cli"
 	"github.com/jterrazz/studio-station/src/surface/cli/kit"
 	shellcmd "github.com/jterrazz/studio-station/src/surface/cli/shell"
@@ -258,7 +258,7 @@ type machine struct {
 	profile   coremachine.Profile
 	vars      map[string]string
 	kind      catalog.MachineKind
-	paths     settings.Paths
+	paths     setup.Paths
 	stores    *stores
 	where     page.Context
 }
@@ -275,13 +275,13 @@ func resolve(raw system.Host, door local.Power, vars map[string]string, world *w
 		}
 		return filepath.Join(home, fallback)
 	}
-	roots := settings.Roots{
+	roots := setup.Roots{
 		Config: root("XDG_CONFIG_HOME", ".config"),
 		Data:   root("XDG_DATA_HOME", filepath.Join(".local", "share")),
 		State:  root("XDG_STATE_HOME", filepath.Join(".local", "state")),
 		Cache:  root("XDG_CACHE_HOME", ".cache"),
 	}
-	paths := settings.Paths{
+	paths := setup.Paths{
 		Config: filepath.Join(roots.Config, "station"),
 		Data:   filepath.Join(roots.Data, "station"),
 		State:  filepath.Join(roots.State, "station"),

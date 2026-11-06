@@ -10,7 +10,6 @@ import (
 	corejsonfile "github.com/jterrazz/studio-station/src/core/adapter/jsonfile"
 	corecontract "github.com/jterrazz/studio-station/src/core/contract"
 	"github.com/jterrazz/studio-station/src/core/store"
-	"github.com/jterrazz/studio-station/src/domain/settings"
 	imagesjsonfile "github.com/jterrazz/studio-station/src/images/adapter/jsonfile"
 	imagescontract "github.com/jterrazz/studio-station/src/images/contract"
 	machinesjsonfile "github.com/jterrazz/studio-station/src/machines/adapter/jsonfile"
@@ -19,6 +18,7 @@ import (
 	portscontract "github.com/jterrazz/studio-station/src/ports/contract"
 	settingsjsonfile "github.com/jterrazz/studio-station/src/settings/adapter/jsonfile"
 	settingscontract "github.com/jterrazz/studio-station/src/settings/contract"
+	"github.com/jterrazz/studio-station/src/setup"
 	setupcontract "github.com/jterrazz/studio-station/src/setup/contract"
 	"github.com/jterrazz/studio-station/src/system"
 )
@@ -84,7 +84,7 @@ type stores struct {
 	applied      appliedStore
 }
 
-func newStores(files system.FS, p settings.Paths) *stores {
+func newStores(files system.FS, p setup.Paths) *stores {
 	return &stores{
 		prefs:        corejsonfile.NewPreferences(files, p.Config, preferenceGroups()).Renaming(machinescontract.RetiredGroupMacs, machinescontract.GroupMacs),
 		machines:     machinesjsonfile.New(files, filepath.Join(p.State, "vms")),

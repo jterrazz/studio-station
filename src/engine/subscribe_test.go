@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/jterrazz/studio-station/src/catalog"
-	"github.com/jterrazz/studio-station/src/domain/settings"
+	"github.com/jterrazz/studio-station/src/setup"
 	"github.com/jterrazz/studio-station/src/system/systemtest"
 )
 
@@ -89,7 +89,7 @@ func streamDaemon(t *testing.T, clock *manualClock, feeds ...chan any) *Daemon {
 	files := systemtest.NewFS()
 	h := systemtest.Host(systemtest.NewRunner(t), files, systemtest.Env{}, systemtest.NewNet(), nil)
 	h.Clock = clock
-	paths := settings.Paths{Config: "/c", State: "/s"}
+	paths := setup.Paths{Config: "/c", State: "/s"}
 	var n atomic.Int32
 	return New(h, newHypervisor(), nil, &fakeMachines{}, &fakeTailnet{}, memStores(), Options{State: paths.State, Here: catalog.Host,
 		Feeds: map[string]Feed{PageMenubar: func(ctx context.Context, _ FeedInput) <-chan any {

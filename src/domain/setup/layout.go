@@ -11,7 +11,6 @@ import (
 	setupmodel "github.com/jterrazz/studio-station/src/setup"
 
 	"github.com/jterrazz/studio-station/src/catalog"
-	"github.com/jterrazz/studio-station/src/domain/settings"
 	"github.com/jterrazz/studio-station/src/system"
 )
 
@@ -49,7 +48,7 @@ func (s *Service) migrateSettings() error {
 	if err != nil {
 		return err
 	}
-	converted, err := settings.ConvertV1(data, s.h.Env.User())
+	converted, err := setupmodel.ConvertV1(data, s.h.Env.User())
 	if err != nil {
 		return err
 	}
@@ -72,7 +71,7 @@ func (s *Service) migrateSettings() error {
 
 // invariant: same is false when the preferences hold a group a v1
 // config.json never converts to (the share list, the services' policy).
-func (s *Service) current() (v settings.Settings, same bool, err error) {
+func (s *Service) current() (v setupmodel.V1Preferences, same bool, err error) {
 	if v.Here, err = s.p.Name.Get(); err != nil {
 		return v, false, err
 	}
@@ -98,7 +97,7 @@ func (s *Service) current() (v settings.Settings, same bool, err error) {
 	return v, len(list) == 0 && policy == nil, nil
 }
 
-func (s *Service) write(v settings.Settings) error {
+func (s *Service) write(v setupmodel.V1Preferences) error {
 	if err := s.p.Name.Set(v.Here); err != nil {
 		return err
 	}

@@ -1,8 +1,7 @@
-package settings
+package setup
 
 import (
 	"github.com/jterrazz/studio-station/src/machines"
-	"github.com/jterrazz/studio-station/src/ports"
 )
 
 type Roots struct{ Config, Data, State, Cache string }
@@ -14,9 +13,7 @@ type Paths struct {
 
 type Host = machines.Host
 
-type Services = ports.PortsGroup
-
-type Settings struct {
+type V1Preferences struct {
 	// value: station's preferences as a v1 config.json converts to them, one
 	// field per group.
 	Here      string

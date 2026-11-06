@@ -4,12 +4,12 @@ import (
 	"path"
 	"strings"
 
-	"github.com/jterrazz/studio-station/src/domain/settings"
+	"github.com/jterrazz/studio-station/src/setup"
 )
 
 type Expander struct {
 	Home  string
-	Roots settings.Roots
+	Roots setup.Roots
 	Root  string
 }
 

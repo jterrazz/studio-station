@@ -17,7 +17,6 @@ import (
 	setupcontract "github.com/jterrazz/studio-station/src/setup/contract"
 
 	"github.com/jterrazz/studio-station/src/catalog"
-	"github.com/jterrazz/studio-station/src/domain/settings"
 	"github.com/jterrazz/studio-station/src/domain/shell"
 	"github.com/jterrazz/studio-station/src/domain/storage"
 	"github.com/jterrazz/studio-station/src/system"
@@ -137,7 +136,7 @@ func (s *Service) currentHere() string {
 	if err != nil {
 		return ""
 	}
-	converted, err := settings.ConvertV1(data, s.h.Env.User())
+	converted, err := setup.ConvertV1(data, s.h.Env.User())
 	if err != nil {
 		return ""
 	}

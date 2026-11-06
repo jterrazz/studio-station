@@ -1,10 +1,10 @@
-package settings_test
+package setup_test
 
 import (
 	"reflect"
 	"testing"
 
-	"github.com/jterrazz/studio-station/src/domain/settings"
+	"github.com/jterrazz/studio-station/src/setup"
 )
 
 func TestConvertV1KeepsTheRegistryAndDropsRolesAndTheSecret(t *testing.T) {
@@ -17,13 +17,13 @@ func TestConvertV1KeepsTheRegistryAndDropsRolesAndTheSecret(t *testing.T) {
     "mac-mini": {"role": "server", "ssh": "jterrazz.agent@mac-mini", "identity": "~/.ssh/id_ed25519"}
   }
 }`
-	got, err := settings.ConvertV1([]byte(v1), "jterrazz")
+	got, err := setup.ConvertV1([]byte(v1), "jterrazz")
 	if err != nil {
 		t.Fatal(err)
 	}
-	want := settings.Settings{
+	want := setup.V1Preferences{
 		Here: "macbook",
-		Hosts: map[string]settings.Host{
+		Hosts: map[string]setup.Host{
 			"macbook":  {},
 			"mac-mini": {User: "jterrazz.agent", Key: "~/.ssh/id_ed25519"},
 		},
@@ -36,7 +36,7 @@ func TestConvertV1KeepsTheRegistryAndDropsRolesAndTheSecret(t *testing.T) {
 }
 
 func TestConvertV1NamesHereFromTheHostname(t *testing.T) {
-	got, err := settings.ConvertV1([]byte(`{"remote": {"hostname": "mac-mini"}}`), "agent")
+	got, err := setup.ConvertV1([]byte(`{"remote": {"hostname": "mac-mini"}}`), "agent")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -46,7 +46,7 @@ func TestConvertV1NamesHereFromTheHostname(t *testing.T) {
 }
 
 func TestConvertV1RefusesWhatIsNotJSON(t *testing.T) {
-	if _, err := settings.ConvertV1([]byte("{"), "u"); err == nil {
+	if _, err := setup.ConvertV1([]byte("{"), "u"); err == nil {
 		t.Fatal("a broken config.json converted")
 	}
 }
