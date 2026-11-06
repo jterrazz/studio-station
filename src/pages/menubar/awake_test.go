@@ -95,7 +95,7 @@ func TestKeepAwakeSaysTheEndWithoutAwake(t *testing.T) {
 	r := awake.Report{Now: now, Engine: awake.EngineRunning, Mac: "this", ThisMac: true, Reading: awake.Reading{Source: "ac"}, Caps: machine.Capabilities{Engine: true, Lid: true}, Session: s}
 	p := Awake(pageawake.AllMachines{Now: now, Zone: time.UTC, Reports: []awake.Report{r}}, page.Context{Machine: "this"})
 	row := p.Sections[0].Items[0].Row
-	var words []string
+	words := make([]string, 0, len(row.Cells[0].Items))
 	for _, v := range row.Cells[0].Items {
 		words = append(words, v.Text)
 	}
