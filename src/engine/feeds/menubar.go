@@ -67,15 +67,41 @@ func (o Menubar) Feed() engine.Feed {
 func (f *menubar) run(ctx context.Context, in engine.FeedInput) {
 	defer close(f.out)
 	f.update(ctx, func(r *pagemenubar.Reading) { r.Awake = f.o.Report(in.Awake()) })
+	loops := []func(context.Context, engine.FeedInput){f.sample, f.todo, f.remote, f.local}
+	each := make([]chan struct{}, len(loops))
+	for i := range each {
+		each[i] = make(chan struct{}, 1)
+	}
+	go fanOut(ctx, in.Refresh, each)
 	var wg sync.WaitGroup
-	for _, loop := range []func(context.Context, engine.FeedInput){f.sample, f.todo, f.remote, f.local} {
+	for i, loop := range loops {
+		own := in
+		own.Refresh = each[i]
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			loop(ctx, in)
+			loop(ctx, own)
 		}()
 	}
 	wg.Wait()
+}
+
+// invariant: a refresh of Home wakes every read of it, so what a call
+// changed (a VM created, an update applied) is on the page once it returns.
+func fanOut(ctx context.Context, from <-chan struct{}, to []chan struct{}) {
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-from:
+			for _, c := range to {
+				select {
+				case c <- struct{}{}:
+				default:
+				}
+			}
+		}
+	}
 }
 
 func (f *menubar) update(ctx context.Context, change func(*pagemenubar.Reading)) {
@@ -123,17 +149,7 @@ func (f *menubar) todo(ctx context.Context, in engine.FeedInput) {
 				f.update(ctx, func(r *pagemenubar.Reading) { r.Home = &summary })
 			}
 		}
-		wait, cancel := context.WithCancel(ctx)
-		go func() {
-			select {
-			case <-in.Refresh:
-			case <-wait.Done():
-			}
-			cancel()
-		}()
-		_ = f.o.Clock.Sleep(wait, todoEvery)
-		cancel()
-		if ctx.Err() != nil {
+		if rest(ctx, f.o.Clock, todoEvery, engine.FeedInput{Refresh: in.Refresh}) != nil {
 			return
 		}
 		fresh = true
@@ -146,7 +162,7 @@ func (f *menubar) read(ctx context.Context, thisMac bool) (allMachines machines.
 	return listed.All, shared.AllMachines, allMachinesErr, portsErr
 }
 
-func (f *menubar) remote(ctx context.Context, _ engine.FeedInput) {
+func (f *menubar) remote(ctx context.Context, in engine.FeedInput) {
 	for {
 		fl, sv, ferr, serr := f.read(ctx, false)
 		macs, away := f.awake(ctx, fl), f.away(ctx, fl)
@@ -160,7 +176,7 @@ func (f *menubar) remote(ctx context.Context, _ engine.FeedInput) {
 				r.Ports = &sv
 			}
 		})
-		if f.o.Clock.Sleep(ctx, remoteEvery) != nil {
+		if rest(ctx, f.o.Clock, remoteEvery, engine.FeedInput{Refresh: in.Refresh}) != nil {
 			return
 		}
 	}
@@ -205,6 +221,7 @@ func (f *menubar) local(ctx context.Context, in engine.FeedInput) {
 		case <-ctx.Done():
 			return
 		case <-in.Changed:
+		case <-in.Refresh:
 		}
 		fl, sv, ferr, serr := f.read(ctx, true)
 		f.update(ctx, func(r *pagemenubar.Reading) {

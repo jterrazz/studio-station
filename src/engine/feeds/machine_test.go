@@ -404,6 +404,32 @@ func TestAWorkspaceCreatedFromTheMenuBarAppearsInHomeWhenTheEngineMoves(t *testi
 	}
 }
 
+func TestAWorkspaceCreatedFromTheMenuBarAppearsInHomeOnceTheCallReturns(t *testing.T) {
+	for _, on := range []string{thisMac, mini} {
+		t.Run(on, func(t *testing.T) {
+			w := &world{infra: []machines.VM{infraAt(machines.Running, 0)}, asked: map[string][]string{}, activity: map[string]uint64{}}
+			refresh := make(chan struct{}, 1)
+			ctx, cancel := context.WithCancel(context.Background())
+			t.Cleanup(cancel)
+			o := feeds.Menubar{Calls: w, Clock: newSteps(), Report: func(awake.View) *awake.Report { return nil }}
+			in := engine.FeedInput{Refresh: refresh}
+			in.Awake = nothing(in.Awake)
+			pages := o.Feed()(ctx, in)
+			until(t, pages, "every Mac", func(p page.Page) bool { return row(p, "machines", mini) != nil })
+			created := machines.VM{Name: "linux-2", Mac: on, Lifetime: machines.Permanent, State: machines.Running, Guest: "connected"}
+			w.mu.Lock()
+			if on == thisMac {
+				w.here = []machines.VM{created}
+			} else {
+				w.beside = []machines.VM{created}
+			}
+			w.mu.Unlock()
+			refresh <- struct{}{}
+			until(t, pages, "linux-2 in Home", func(p page.Page) bool { return row(p, "machines", "linux-2") != nil })
+		})
+	}
+}
+
 func TestUpdateAllLeavesHomesNeedsYouOnceTheCallReturns(t *testing.T) {
 	w := &world{infra: []machines.VM{infraAt(machines.Running, 0)}, updates: true, asked: map[string][]string{}, activity: map[string]uint64{}}
 	refresh := make(chan struct{}, 1)
