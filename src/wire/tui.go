@@ -24,6 +24,7 @@ func tuiOpener(env kit.Env, m machine, noColor bool) func(context.Context) error
 			return err
 		}
 		b := binary{m: m}
+		defer b.reads.end()
 		var opens string
 		if env.On != nil {
 			opens = env.On.Used
@@ -41,9 +42,55 @@ func tuiOpener(env kit.Env, m machine, noColor bool) func(context.Context) error
 type binary struct {
 	m     machine
 	turns sync.RWMutex
+	reads reads
+}
+
+// invariant: a page read is its screen's, so it ends with the TUI: the exit
+// stops the reads still running and waits for them, and no child outlives
+// the screen to touch what its terminal's next command reads.
+type reads struct {
+	mu      sync.Mutex
+	running sync.WaitGroup
+	ended   bool
+	over    context.Context
+	stop    context.CancelFunc
+}
+
+func (r *reads) begin(ctx context.Context) (context.Context, func(), bool) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	if r.ended {
+		return nil, nil, false
+	}
+	if r.over == nil {
+		r.over, r.stop = context.WithCancel(context.Background())
+	}
+	r.running.Add(1)
+	ctx, cancel := context.WithCancel(ctx)
+	unhook := context.AfterFunc(r.over, cancel)
+	return ctx, func() {
+		unhook()
+		cancel()
+		r.running.Done()
+	}, true
+}
+
+func (r *reads) end() {
+	r.mu.Lock()
+	r.ended = true
+	if r.stop != nil {
+		r.stop()
+	}
+	r.mu.Unlock()
+	r.running.Wait()
 }
 
 func (b *binary) pages(ctx context.Context, words []string) (page.Page, error) {
+	ctx, done, ok := b.reads.begin(ctx)
+	if !ok {
+		return page.Page{}, context.Canceled
+	}
+	defer done()
 	b.turns.RLock()
 	defer b.turns.RUnlock()
 	out, err := b.run(ctx, append(words, "--page"))
