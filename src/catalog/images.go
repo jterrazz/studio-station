@@ -41,3 +41,14 @@ var Images = []Image{
 		Kind:     MacOS,
 	},
 }
+
+func FetchedOnly(name string) bool {
+	// value: whether station only fetches the image of that name: it has no
+	// recipe to build it from.
+	for _, img := range Images {
+		if img.Name == name {
+			return img.Recipe == ""
+		}
+	}
+	return false
+}

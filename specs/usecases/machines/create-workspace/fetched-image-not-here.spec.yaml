@@ -6,3 +6,8 @@ runs:
       stderr: |
           Error: image macos is not on This Mac
           Hint: station images update macos
+    - command: 'machines create --image macos --yes'
+      exit: 2
+      stderr: |
+          Error: image macos is not on This Mac
+          Hint: station images update macos
