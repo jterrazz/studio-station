@@ -10,8 +10,8 @@ const (
 	claimVM
 )
 
-// invariant: a name is held by a VM record on any host of the fleet or by a
-// host; no tailnet node holds a VM's name since VMs left the tailnet.
+// invariant: a name is held by a model.VM record on any host of the fleet or by a
+// host; no tailnet node holds a model.VM's name since VMs left the tailnet.
 func nameFree(name string, held map[string]claim) bool { return held[name] == unclaimed }
 
 func allocateName(image string, held map[string]claim) string {

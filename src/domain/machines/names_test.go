@@ -9,7 +9,7 @@ func TestAllocateNameSkipsEveryHeldName(t *testing.T) {
 		want string
 	}{
 		{name: "the smallest free integer fills a gap", held: []string{"linux-1", "linux-3"}, want: "linux-2"},
-		{name: "a host named like a VM holds its name", held: []string{"x", "linux-1"}, want: "linux-2"},
+		{name: "a host named like a model.VM holds its name", held: []string{"x", "linux-1"}, want: "linux-2"},
 	} {
 		t.Run(c.name, func(t *testing.T) {
 			held := map[string]claim{}

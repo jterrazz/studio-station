@@ -19,7 +19,6 @@ import (
 	"github.com/jterrazz/studio-station/src/activity"
 	awakecalls "github.com/jterrazz/studio-station/src/awake/calls"
 	"github.com/jterrazz/studio-station/src/catalog"
-	"github.com/jterrazz/studio-station/src/domain/machines"
 	model "github.com/jterrazz/studio-station/src/machines"
 	"github.com/jterrazz/studio-station/src/platform/local"
 	"github.com/jterrazz/studio-station/src/ports"
@@ -37,9 +36,9 @@ const (
 )
 
 type Machines interface {
-	Records() ([]machines.VMRecord, error)
-	Save(machines.VMRecord) error
-	Remove(ctx context.Context, name string) (machines.DeleteReport, error)
+	Records() ([]model.VMRecord, error)
+	Save(model.VMRecord) error
+	Remove(ctx context.Context, name string) (model.DeleteReport, error)
 	PowerOff(ctx context.Context, name string) error
 	EngineRunning(ctx context.Context, name string) bool
 	HereName() string
@@ -512,7 +511,7 @@ func (d *Daemon) stopAll(ctx context.Context) []Stopped {
 		d.mu.Lock()
 		running := v.state == StateRunning
 		d.mu.Unlock()
-		if !running || r.Lifetime == machines.AlwaysOn {
+		if !running || r.Lifetime == model.AlwaysOn {
 			continue
 		}
 		wg.Add(1)

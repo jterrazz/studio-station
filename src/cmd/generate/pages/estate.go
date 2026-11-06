@@ -13,7 +13,8 @@ import (
 	"github.com/jterrazz/studio-station/src/background"
 	"github.com/jterrazz/studio-station/src/catalog"
 	"github.com/jterrazz/studio-station/src/disk"
-	"github.com/jterrazz/studio-station/src/domain/machines"
+
+	model "github.com/jterrazz/studio-station/src/machines"
 	"github.com/jterrazz/studio-station/src/overview"
 	"github.com/jterrazz/studio-station/src/page"
 	allpages "github.com/jterrazz/studio-station/src/pages"
@@ -296,27 +297,27 @@ func disks() []Fixture {
 		pagedisk.Read(reading(false), here(), false))
 }
 
-func fleet() machines.Fleet {
-	return machines.Fleet{Hosts: []machines.HostView{
-		{Name: "macbook", User: "jterrazz", StationVersion: "v2.0.0-250", Here: true, Reachable: true, Daemon: machines.DaemonInfo{Known: true, Running: true, Version: "v2.0.0-250"}, Node: machines.Node{Online: true, IP: "100.98.133.14"},
-			VMs: []machines.VM{
-				sized(machines.VM{Name: "linux-1", Image: "linux", Version: "3", Host: "macbook", Kind: catalog.Linux, Lifetime: machines.Throwaway, State: machines.Running, SizeGB: 20, IP: "192.168.64.5", CreatedAt: built}, 4, 4),
-				sized(machines.VM{Name: "api", Image: "linux", Version: "3", Host: "macbook", Kind: catalog.Linux, Lifetime: machines.Permanent, State: machines.Stopped, SizeGB: 40, CreatedAt: built}, 4, 8),
+func fleet() model.Fleet {
+	return model.Fleet{Hosts: []model.HostView{
+		{Name: "macbook", User: "jterrazz", StationVersion: "v2.0.0-250", Here: true, Reachable: true, Daemon: model.EngineView{Known: true, Running: true, Version: "v2.0.0-250"}, Node: model.Node{Online: true, IP: "100.98.133.14"},
+			VMs: []model.VM{
+				sized(model.VM{Name: "linux-1", Image: "linux", Version: "3", Host: "macbook", Kind: catalog.Linux, Lifetime: model.Throwaway, State: model.Running, SizeGB: 20, IP: "192.168.64.5", CreatedAt: built}, 4, 4),
+				sized(model.VM{Name: "api", Image: "linux", Version: "3", Host: "macbook", Kind: catalog.Linux, Lifetime: model.Permanent, State: model.Stopped, SizeGB: 40, CreatedAt: built}, 4, 8),
 			}},
-		{Name: "mac-mini", User: "jterrazz", StationVersion: "v2.0.0-248", Reachable: true, Daemon: machines.DaemonInfo{Known: true, Running: true, Version: "v2.0.0-248"}, Node: machines.Node{Online: true, IP: "100.98.133.20"}},
+		{Name: "mac-mini", User: "jterrazz", StationVersion: "v2.0.0-248", Reachable: true, Daemon: model.EngineView{Known: true, Running: true, Version: "v2.0.0-248"}, Node: model.Node{Online: true, IP: "100.98.133.20"}},
 	}}
 }
 
 // value: the fleet whose daemon socket refuses: the agent's plist is there,
 // so this host reads stopped (R9.D3); the mini does not answer its ssh read.
-func stoppedFleet() machines.Fleet {
+func stoppedFleet() model.Fleet {
 	f := fleet()
-	f.Hosts[0].Daemon = machines.DaemonInfo{Known: true, Installed: true}
-	f.Hosts[1] = machines.HostView{Name: "mac-mini", User: "jterrazz", Node: machines.Node{IP: "100.98.133.20"}}
+	f.Hosts[0].Daemon = model.EngineView{Known: true, Installed: true}
+	f.Hosts[1] = model.HostView{Name: "mac-mini", User: "jterrazz", Node: model.Node{IP: "100.98.133.20"}}
 	return f
 }
 
-func sized(vm machines.VM, cpus int, memoryGB int64) machines.VM {
+func sized(vm model.VM, cpus int, memoryGB int64) model.VM {
 	vm.Resources.CPUs, vm.Resources.MemoryBytes, vm.Resources.DiskBytes = cpus, memoryGB*gb, 40*gb
 	return vm
 }
@@ -324,7 +325,7 @@ func sized(vm machines.VM, cpus int, memoryGB int64) machines.VM {
 func machineLists() []Fixture {
 	return states("machines",
 		pending(pagemachines.List(fleet(), nil, here())),
-		pagemachines.List(machines.Fleet{}, nil, here()),
+		pagemachines.List(model.Fleet{}, nil, here()),
 		pagemachines.List(stoppedFleet(), nil, here()),
 		pagemachines.List(fleet(), []string{"mac-mini: station v2.0.0-248, This Mac v2.0.0-250"}, here()))
 }
@@ -333,16 +334,16 @@ func machineLists() []Fixture {
 // section: running, then stopped.
 func server() pagemachines.VMOverview {
 	f := fleet()
-	vm := sized(machines.VM{Name: "infra", Image: "linux", Version: "3", Host: "mac-mini", Kind: catalog.Linux, Lifetime: machines.AlwaysOn, State: machines.Running, SizeGB: 80, IP: "192.168.64.7", Want: "running", Check: "https://infra:6443/readyz", Device: "infra", CreatedAt: built}, 8, 24)
-	f.Hosts[1].VMs = []machines.VM{vm}
+	vm := sized(model.VM{Name: "infra", Image: "linux", Version: "3", Host: "mac-mini", Kind: catalog.Linux, Lifetime: model.AlwaysOn, State: model.Running, SizeGB: 80, IP: "192.168.64.7", Want: "running", Check: "https://infra:6443/readyz", Device: "infra", CreatedAt: built}, 8, 24)
+	f.Hosts[1].VMs = []model.VM{vm}
 	f.Hosts[1].User = "jterrazz.agent"
 	return pagemachines.VMOverview{Fleet: f, Mac: f.Hosts[1], VM: vm}
 }
 
 func sshPages() []Fixture {
 	running, stopped := server(), server()
-	stopped.VM.State, stopped.VM.IP = machines.Stopped, ""
-	target := machines.SSHTarget{User: "admin", Host: "infra", Command: "ssh admin@infra"}
+	stopped.VM.State, stopped.VM.IP = model.Stopped, ""
+	target := model.SSHTarget{User: "admin", Host: "infra", Command: "ssh admin@infra"}
 	return states("ssh",
 		pending(pagemachines.SSHPage(running, target, here())),
 		pagemachines.SSHPage(stopped, target, here()),
@@ -437,7 +438,7 @@ func estatePorts() ports.Fleet {
 func fleets() []Fixture {
 	f, list, svc, tn := fleet(), imageReports(), serviceFleet(), tailnetStatus()
 	full := pagefleet.Reading{Machines: &f, Images: &list, Services: &svc, Tailnet: &tn}
-	none := machines.Fleet{Hosts: []machines.HostView{{Name: "macbook", Here: true, Reachable: true}}}
+	none := model.Fleet{Hosts: []model.HostView{{Name: "macbook", Here: true, Reachable: true}}}
 	var noImages []images.Report
 	empty := pagefleet.Reading{Machines: &none, Images: &noImages, Tailnet: &ports.Status{State: catalog.StateAbsent}}
 	stopped, stoppedSvc := stoppedFleet(), stoppedServices()

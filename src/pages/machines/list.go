@@ -5,7 +5,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jterrazz/studio-station/src/domain/machines"
+	model "github.com/jterrazz/studio-station/src/machines"
 	"github.com/jterrazz/studio-station/src/page"
 	"github.com/jterrazz/studio-station/src/pages"
 )
@@ -22,19 +22,19 @@ func listColumns() []page.Column {
 	}
 }
 
-func List(f machines.Fleet, warnings []string, here page.Context) page.Page {
+func List(f model.Fleet, warnings []string, here page.Context) page.Page {
 	hereVersion := ""
 	for _, h := range f.Hosts {
 		if h.Here {
 			hereVersion = h.StationVersion
 		}
 	}
-	findings := machines.Needs(f)
+	findings := model.Needs(f)
 	items := make([]page.Item, 0, len(f.Hosts))
 	var hints []page.Hint
 	for _, h := range f.Hosts {
-		g := page.Group{Head: macRow(machines.Label(f, h), h, hereVersion, f.Read), Fold: page.Open}
-		for _, vm := range machines.Ordered(h.VMs) {
+		g := page.Group{Head: macRow(model.Label(f, h), h, hereVersion, f.Read), Fold: page.Open}
+		for _, vm := range model.Ordered(h.VMs) {
 			row := listVMRow(h.Name, vm)
 			g.Items = append(g.Items, page.Item{Row: &row})
 		}
@@ -46,7 +46,7 @@ func List(f machines.Fleet, warnings []string, here page.Context) page.Page {
 			g.Items = append(g.Items, page.Item{Empty: empty})
 			create := "station machines create"
 			if !h.Here {
-				create += " --on " + machines.Label(f, h)
+				create += " --on " + model.Label(f, h)
 			}
 			hints = append(hints, page.Hint{Command: create})
 		}
@@ -55,7 +55,7 @@ func List(f machines.Fleet, warnings []string, here page.Context) page.Page {
 	if len(items) == 0 {
 		items = append(items, page.Item{Empty: &page.Empty{Noun: "Macs", Hint: page.Cmd("station machines add <mac>")}})
 	}
-	title, caption := firstLine(machines.Tally(f), len(findings))
+	title, caption := firstLine(model.Tally(f), len(findings))
 	sections := []page.Section{{ID: "machines", Title: title, Caption: caption, Joined: true, Role: page.Banner, Uncounted: true, Columns: listColumns(), Items: items}}
 	if len(findings) > 0 {
 		sections = append(sections, needsYou(findings))
@@ -70,7 +70,7 @@ func List(f machines.Fleet, warnings []string, here page.Context) page.Page {
 	return page.Seal(page.Page{ID: "machines", Command: "machines", Context: here, Sections: sections, Hints: hints, Actions: Actions()})
 }
 
-func firstLine(c machines.Counts, needs int) (string, []page.Value) {
+func firstLine(c model.Counts, needs int) (string, []page.Value) {
 	parts := []page.Value{page.Text(strconv.Itoa(c.Running) + " running"), page.Text(strconv.Itoa(c.Stopped) + " stopped")}
 	switch needs {
 	case 0:
@@ -90,7 +90,7 @@ func many(n int, noun string) string {
 	return strconv.Itoa(n) + " " + noun + "s"
 }
 
-func needsYou(fs []machines.Need) page.Section {
+func needsYou(fs []model.Need) page.Section {
 	items := make([]page.Item, 0, len(fs))
 	for i, f := range fs {
 		mark, reason := page.Attention, page.Degraded
@@ -105,7 +105,7 @@ func needsYou(fs []machines.Need) page.Section {
 	return page.Section{ID: "needs-you", Title: "Needs you", Uncounted: true, Columns: columns, Items: items}
 }
 
-func fixOf(f machines.Need) page.Value {
+func fixOf(f model.Need) page.Value {
 	switch {
 	case f.Fix == "":
 		return page.None()
@@ -115,7 +115,7 @@ func fixOf(f machines.Need) page.Value {
 	return page.Text(f.Fix)
 }
 
-func macRow(label string, h machines.HostView, hereVersion string, now time.Time) page.Row {
+func macRow(label string, h model.HostView, hereVersion string, now time.Time) page.Row {
 	row := page.Row{ID: h.Name, Label: h.Name, Short: label, Mark: page.OK}
 	state, detail := page.Text("Online"), page.None()
 	switch {
@@ -130,7 +130,7 @@ func macRow(label string, h machines.HostView, hereVersion string, now time.Time
 	case h.Daemon.Known:
 		state = page.Text("Engine running")
 	}
-	if _, ok := machines.Behind(h, hereVersion); ok && h.Reachable {
+	if _, ok := model.Behind(h, hereVersion); ok && h.Reachable {
 		row.Mark, row.Reason = page.Attention, page.Mismatch
 		state = page.List(state, page.Text("runs "+h.StationVersion))
 	}
@@ -138,39 +138,39 @@ func macRow(label string, h machines.HostView, hereVersion string, now time.Time
 	return row
 }
 
-func listVMRow(mac string, vm machines.VM) page.Row {
+func listVMRow(mac string, vm model.VM) page.Row {
 	row := page.Row{ID: vm.Name, Label: vm.Name, Mark: page.OK}
 	lifetime := page.Text(vm.Lifetime.Word())
 	state, detail := page.List(page.Text("Running"), lifetime), page.None()
 	switch vm.State {
-	case machines.Running:
-	case machines.Stopped:
+	case model.Running:
+	case model.Stopped:
 		row.Mark, state = page.Absent, page.List(page.Text("Stopped"), lifetime)
 		if vm.Detail != "" {
 			detail = page.Text(vm.Detail)
 		}
-	case machines.Suspended:
+	case model.Suspended:
 		row.Mark, row.Reason, state = page.Attention, page.Stopped, page.List(page.Text("Suspended"), lifetime)
-	case machines.Stale:
+	case model.Stale:
 		row.Mark, row.Reason, state = page.Attention, page.Outlived, page.List(page.Text("Ended unexpectedly"), lifetime)
-	case machines.Broken:
+	case model.Broken:
 		row.Mark, row.Reason, state = page.Broken, page.Failing, page.List(page.Text("In a loop"), lifetime)
 		detail = page.List(page.Text(vm.Detail), page.Text("stopped"))
-	case machines.Unknown:
+	case model.UnknownState:
 		row.Mark, row.Reason, state = page.NotKnown, page.Unreachable, page.List(page.Text("Unknown"), lifetime)
 	}
 	switch {
-	case vm.Lifetime != machines.AlwaysOn:
+	case vm.Lifetime != model.AlwaysOn:
 	case vm.Restarts.Looping:
 		row.Mark, row.Reason, state = page.Broken, page.Failing, page.List(page.Text("In a loop"), lifetime)
 		detail = page.Texts(vm.Restarts.Words(time.Time{})...)
-	case vm.State == machines.Stopped && vm.Detail == machines.PoweredOffInside:
+	case vm.State == model.Stopped && vm.Detail == model.PoweredOffInside:
 		row.Mark, row.Reason = page.Broken, page.Stopped
-	case vm.State == machines.Running && vm.CheckStatus.State == machines.CheckFailing:
+	case vm.State == model.Running && vm.CheckStatus.State == model.CheckFailing:
 		row.Mark, row.Reason = page.Attention, page.Failing
 		detail = page.Text("check failing since " + vm.CheckStatus.Since.Local().Format("15:04"))
 	}
 	r := vm.Resources
-	row.Cells = []page.Value{page.Text(machines.KindWord(vm.Lifetime.Kind())), page.Text(mac), state, page.Text(strconv.Itoa(r.CPUs) + " CPU"), Memory(r.MemoryBytes), detail}
+	row.Cells = []page.Value{page.Text(model.KindWord(vm.Lifetime.Kind())), page.Text(mac), state, page.Text(strconv.Itoa(r.CPUs) + " CPU"), Memory(r.MemoryBytes), detail}
 	return row
 }

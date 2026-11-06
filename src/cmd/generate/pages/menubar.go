@@ -11,8 +11,9 @@ import (
 	"github.com/jterrazz/studio-station/src/awake"
 	"github.com/jterrazz/studio-station/src/catalog"
 	coremachine "github.com/jterrazz/studio-station/src/core/machine"
-	"github.com/jterrazz/studio-station/src/domain/machines"
+
 	"github.com/jterrazz/studio-station/src/engine"
+	model "github.com/jterrazz/studio-station/src/machines"
 	"github.com/jterrazz/studio-station/src/overview"
 	"github.com/jterrazz/studio-station/src/page"
 	pagemenubar "github.com/jterrazz/studio-station/src/pages/menubar"
@@ -58,16 +59,16 @@ const (
 // value: the two-macs world of USE-CASES §0.2 as the menu bar reads it:
 // This Mac with linux-1 (running, two ports shared) and api (stopped), the
 // mini with infra, a healthy server.
-func twoMacs() machines.Fleet {
-	linux1 := sized(machines.VM{Name: "linux-1", Image: "linux", Version: "3", Host: thisMacName, Kind: catalog.Linux, Lifetime: machines.Throwaway, State: machines.Running, SizeGB: 20, IP: "192.168.64.5", Guest: "connected", CreatedAt: built}, 4, 4)
-	api := sized(machines.VM{Name: "api", Image: "linux", Version: "3", Host: thisMacName, Kind: catalog.Linux, Lifetime: machines.Permanent, State: machines.Stopped, SizeGB: 40, CreatedAt: built}, 4, 8)
-	infra := sized(machines.VM{Name: "infra", Image: "linux", Version: "3", Host: miniName, Kind: catalog.Linux, Lifetime: machines.AlwaysOn, State: machines.Running, SizeGB: 80, IP: "192.168.64.7", Guest: "connected", Want: "running",
-		Check: "https://infra:6443/readyz", Device: "infra", CreatedAt: built, CheckStatus: machines.CheckStatus{State: machines.CheckPassing, At: powerNow.Add(-40 * time.Second)}}, 8, 24)
+func twoMacs() model.Fleet {
+	linux1 := sized(model.VM{Name: "linux-1", Image: "linux", Version: "3", Host: thisMacName, Kind: catalog.Linux, Lifetime: model.Throwaway, State: model.Running, SizeGB: 20, IP: "192.168.64.5", Guest: "connected", CreatedAt: built}, 4, 4)
+	api := sized(model.VM{Name: "api", Image: "linux", Version: "3", Host: thisMacName, Kind: catalog.Linux, Lifetime: model.Permanent, State: model.Stopped, SizeGB: 40, CreatedAt: built}, 4, 8)
+	infra := sized(model.VM{Name: "infra", Image: "linux", Version: "3", Host: miniName, Kind: catalog.Linux, Lifetime: model.AlwaysOn, State: model.Running, SizeGB: 80, IP: "192.168.64.7", Guest: "connected", Want: "running",
+		Check: "https://infra:6443/readyz", Device: "infra", CreatedAt: built, CheckStatus: model.CheckStatus{State: model.CheckPassing, At: powerNow.Add(-40 * time.Second)}}, 8, 24)
 	infra.Resources.DiskBytes = 80 * gb
-	daemon := machines.DaemonInfo{Known: true, Running: true, Version: "v3.0.0"}
-	return machines.Fleet{Hosts: []machines.HostView{
-		{Name: thisMacName, User: "jterrazz", StationVersion: "v3.0.0", Here: true, Reachable: true, Daemon: daemon, Node: machines.Node{Online: true, IP: "100.98.133.14"}, VMs: []machines.VM{linux1, api}},
-		{Name: miniName, User: "jterrazz", StationVersion: "v3.0.0", Reachable: true, Daemon: daemon, Node: machines.Node{Online: true, IP: "100.98.133.20"}, LAN: "192.168.1.20", VMs: []machines.VM{infra}},
+	daemon := model.EngineView{Known: true, Running: true, Version: "v3.0.0"}
+	return model.Fleet{Hosts: []model.HostView{
+		{Name: thisMacName, User: "jterrazz", StationVersion: "v3.0.0", Here: true, Reachable: true, Daemon: daemon, Node: model.Node{Online: true, IP: "100.98.133.14"}, VMs: []model.VM{linux1, api}},
+		{Name: miniName, User: "jterrazz", StationVersion: "v3.0.0", Reachable: true, Daemon: daemon, Node: model.Node{Online: true, IP: "100.98.133.20"}, LAN: "192.168.1.20", VMs: []model.VM{infra}},
 	}}
 }
 
@@ -119,7 +120,7 @@ func menubarReadings() (frame, quiet, full pagemenubar.Reading) {
 	calm.Lines = calm.Lines[:1]
 	calm.VMs = nil
 	f := twoMacs()
-	alone := machines.Fleet{Hosts: []machines.HostView{f.Hosts[0]}}
+	alone := model.Fleet{Hosts: []model.HostView{f.Hosts[0]}}
 	alone.Hosts[0].VMs = nil
 	frame = pagemenubar.Reading{Power: &off}
 	quiet = pagemenubar.Reading{Home: &calm, Samples: samples(), Fleet: &alone, Power: &off}
@@ -144,9 +145,9 @@ func menubarWorlds() []Fixture {
 	down := *two.Fleet
 	down.Hosts = slices.Clone(down.Hosts)
 	infra := down.Hosts[1].VMs[0]
-	infra.State, infra.Detail = machines.Stopped, "restarting"
-	infra.Restarts = machines.Restarts{Count: 5, Streak: 5, Looping: true, Wait: time.Minute}
-	down.Hosts[1].VMs = []machines.VM{infra}
+	infra.State, infra.Detail = model.Stopped, "restarting"
+	infra.Restarts = model.Restarts{Count: 5, Streak: 5, Looping: true, Wait: time.Minute}
+	down.Hosts[1].VMs = []model.VM{infra}
 	infraDown := two
 	infraDown.Fleet = &down
 	return []Fixture{
@@ -200,13 +201,13 @@ func miniPage(offline bool) pagemenubar.Machine {
 	s := overview.Summary{Head: overview.Head{Name: miniName, Kind: coremachine.Mac}, Engine: overview.EngineRunning,
 		Needs: []overview.Need{{Machine: miniName, Section: "ports", Broken: true, Subject: "5000", Text: "port 5000 is reachable outside Tailscale", Command: "station ports --on mac-mini"}},
 		Readiness: []overview.Check{
-			ready(machines.ItemRestartsAfterPowerCut, "applied"), ready(machines.ItemNeverSleeps, "applied"), ready(machines.ItemLogsIn, "applied"),
-			ready(machines.ItemDiskUnlock, "no password at boot"), ready(machines.ItemPlannedRestarts, "supported"), ready(machines.ItemEngineAtLogin, "installed"),
+			ready(model.ItemRestartsAfterPowerCut, "applied"), ready(model.ItemNeverSleeps, "applied"), ready(model.ItemLogsIn, "applied"),
+			ready(model.ItemDiskUnlock, "no password at boot"), ready(model.ItemPlannedRestarts, "supported"), ready(model.ItemEngineAtLogin, "installed"),
 		}}
 	if offline {
-		f.Hosts[1].Reachable, f.Hosts[1].Node.Online, f.Hosts[1].Daemon = false, false, machines.DaemonInfo{}
+		f.Hosts[1].Reachable, f.Hosts[1].Node.Online, f.Hosts[1].Daemon = false, false, model.EngineView{}
 		s.Engine, s.Needs = overview.EngineNone, nil
-		s.Readiness[3] = overview.Check{Name: machines.ItemDiskUnlock, State: catalog.StateDegraded, Value: "waits at pre-boot", Detail: "station machines unlock mac-mini (from the same network)"}
+		s.Readiness[3] = overview.Check{Name: model.ItemDiskUnlock, State: catalog.StateDegraded, Value: "waits at pre-boot", Detail: "station machines unlock mac-mini (from the same network)"}
 	}
 	return pagemenubar.Machine{Asks: Levels, Name: miniName, Fleet: &f, Summary: &s, Services: &svc, Now: powerNow}
 }
@@ -251,7 +252,7 @@ func EventsStream() []byte {
 	// invariant: the recorded events watch is written by the engine's own
 	// event words, one frame per event of SPEC 10.4 the engine tells, so the
 	// menu bar's notifications read what an engine sends.
-	var loop machines.Restarts
+	var loop model.Restarts
 	at := time.Date(2026, 11, 3, 14, 0, 0, 0, time.UTC)
 	for i := range 5 {
 		loop = loop.After(time.Second, at.Add(time.Duration(i)*time.Minute))

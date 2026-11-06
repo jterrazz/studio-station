@@ -7,7 +7,8 @@ import (
 	"sort"
 	"time"
 
-	"github.com/jterrazz/studio-station/src/domain/machines"
+	model "github.com/jterrazz/studio-station/src/machines"
+
 	"github.com/jterrazz/studio-station/src/ports"
 )
 
@@ -71,7 +72,7 @@ func (d *Daemon) listeningLocked() []ports.Machine {
 	out := make([]ports.Machine, 0, len(names))
 	for _, vm := range names {
 		v := d.vms[vm]
-		out = append(out, ports.VMOf(vm, d.m.HereName(), v != nil && v.rec.Network == machines.Bridged, slices.Clone(d.heard[vm])))
+		out = append(out, ports.VMOf(vm, d.m.HereName(), v != nil && v.rec.Network == model.Bridged, slices.Clone(d.heard[vm])))
 	}
 	return out
 }

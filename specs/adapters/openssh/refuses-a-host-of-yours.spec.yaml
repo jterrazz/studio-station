@@ -7,7 +7,7 @@ runs:
     - command: 'machines add mac-mini --user agent'
       exit: 1
       stderr: |
-          Error: ssh config update failed (registry rolled back): refusing to modify {{workdir}}/.ssh/config: Host mac-mini already defined at line 1 (outside any managed block)
+          Error: updating the ssh config failed (registry rolled back): refusing to modify {{workdir}}/.ssh/config: Host mac-mini already defined at line 1 (outside any managed block)
           Hint: check "{{workdir}}/.ssh/config" and run it again
       files:
           .ssh/config:

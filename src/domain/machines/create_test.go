@@ -4,6 +4,8 @@ import (
 	"errors"
 	"testing"
 
+	model "github.com/jterrazz/studio-station/src/machines"
+
 	"github.com/jterrazz/studio-station/src/catalog"
 )
 
@@ -16,13 +18,13 @@ func TestBridgedIsForMacOSImagesOnly(t *testing.T) {
 		want   string
 		bridge bool
 	}{
-		{"a VM is behind its Mac by default", linux, "", NetworkNAT, false},
-		{"a macOS VM may be bridged", macos, Bridged, Bridged, false},
-		{"a linux VM is refused bridged", linux, Bridged, "", true},
+		{"a model.VM is behind its Mac by default", linux, "", model.NetworkNAT, false},
+		{"a macOS model.VM may be bridged", macos, model.Bridged, model.Bridged, false},
+		{"a linux model.VM is refused bridged", linux, model.Bridged, "", true},
 	} {
 		t.Run(c.name, func(t *testing.T) {
 			got, err := networkFor(c.img, c.asked)
-			var bad *BadNetworkError
+			var bad *model.BadNetworkError
 			if c.bridge {
 				if !errors.As(err, &bad) || !bad.Bridge {
 					t.Fatalf("networkFor(%s, %q) = %q, %v; want the bridged refusal", c.img.Name, c.asked, got, err)

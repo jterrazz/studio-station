@@ -8,7 +8,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jterrazz/studio-station/src/domain/machines"
 	model "github.com/jterrazz/studio-station/src/machines"
 )
 
@@ -92,7 +91,7 @@ func (d *Daemon) restartLater(ctx context.Context, v *vmState, up time.Duration,
 func (d *Daemon) keep(ctx context.Context, v *vmState) {
 	d.mu.Lock()
 	defer d.mu.Unlock()
-	if v.rec.Lifetime != machines.AlwaysOn || v.run == nil || v.stopping || v.state != StateRunning {
+	if v.rec.Lifetime != model.AlwaysOn || v.run == nil || v.stopping || v.state != StateRunning {
 		return
 	}
 	now := d.h.Clock.Now()

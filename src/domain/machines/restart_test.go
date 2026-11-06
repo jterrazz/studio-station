@@ -21,7 +21,7 @@ import (
 
 type noTailnet struct{}
 
-func (noTailnet) Peers(context.Context) (map[string]machines.Node, error) {
+func (noTailnet) Peers(context.Context) (map[string]model.Node, error) {
 	return nil, nil
 }
 
@@ -67,7 +67,7 @@ func TestRestartWaitsForTheHostToGoAwayAndComeBack(t *testing.T) {
 	svc, _ := restarting(t, true, true, false, false, true)
 	var seen []string
 
-	report, err := svc.Restart(context.Background(), "x", func(e machines.RestartEvent) { seen = append(seen, e.Phase) })
+	report, err := svc.Restart(context.Background(), "x", func(e model.RestartEvent) { seen = append(seen, e.Phase) })
 
 	if err != nil {
 		t.Fatalf("Restart: %v", err)
@@ -85,7 +85,7 @@ func TestRestartDoesNotTakeAHostThatNeverWentDownForRestarted(t *testing.T) {
 
 	_, err := svc.Restart(context.Background(), "x", nil)
 
-	var timeout *machines.RestartTimeoutError
+	var timeout *model.RestartTimeoutError
 	if !errors.As(err, &timeout) || timeout.Phase != "stop" {
 		t.Fatalf("Restart error = %v, want a timeout in the stop phase", err)
 	}
@@ -99,7 +99,7 @@ func TestRestartGivesUpOnAHostThatNeverComesBack(t *testing.T) {
 
 	_, err := svc.Restart(context.Background(), "x", nil)
 
-	var timeout *machines.RestartTimeoutError
+	var timeout *model.RestartTimeoutError
 	if !errors.As(err, &timeout) || timeout.Phase != "return" {
 		t.Fatalf("Restart error = %v, want a timeout in the return phase", err)
 	}

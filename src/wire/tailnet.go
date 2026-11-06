@@ -3,7 +3,7 @@ package wire
 import (
 	"context"
 
-	"github.com/jterrazz/studio-station/src/domain/machines"
+	model "github.com/jterrazz/studio-station/src/machines"
 	"github.com/jterrazz/studio-station/src/ports"
 	"github.com/jterrazz/studio-station/src/ports/adapter/cloudflare"
 	"github.com/jterrazz/studio-station/src/ports/adapter/funnel"
@@ -62,7 +62,7 @@ func (t tailnetStatus) Status(ctx context.Context) (ports.Status, error) {
 
 type hostNodes struct{ tailnet contract.Tailnet }
 
-func (t hostNodes) Peers(ctx context.Context) (map[string]machines.Node, error) {
+func (t hostNodes) Peers(ctx context.Context) (map[string]model.Node, error) {
 	self, err := t.tailnet.Self(ctx)
 	if err != nil {
 		return nil, err
@@ -71,12 +71,12 @@ func (t hostNodes) Peers(ctx context.Context) (map[string]machines.Node, error) 
 	if self.Name != "" {
 		roster = append([]ports.Node{self.Node}, roster...)
 	}
-	nodes := make(map[string]machines.Node, len(roster))
+	nodes := make(map[string]model.Node, len(roster))
 	for _, p := range roster {
 		if held, ok := nodes[p.Name]; ok && held.Online {
 			continue
 		}
-		nodes[p.Name] = machines.Node{Online: p.Online, IP: p.IP}
+		nodes[p.Name] = model.Node{Online: p.Online, IP: p.IP}
 	}
 	return nodes, nil
 }

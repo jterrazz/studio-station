@@ -3,7 +3,6 @@ package machines
 import (
 	"context"
 	"strings"
-	"time"
 
 	model "github.com/jterrazz/studio-station/src/machines"
 	"github.com/jterrazz/studio-station/src/machines/contract"
@@ -22,7 +21,7 @@ type Options struct {
 	Version          string
 	// value: asks each other Mac for its own view of itself and hands on
 	// each answer as it comes, one at a time; a silent Mac is never handed on.
-	Ask       func(ctx context.Context, macs []string, answered func(mac string, view HostView))
+	Ask       func(ctx context.Context, macs []string, answered func(mac string, view model.HostView))
 	GuestPort int
 	Jobs      background.Jobs
 	Unlocker  contract.Unlocker
@@ -37,7 +36,7 @@ type Options struct {
 }
 
 type Nodes interface {
-	Peers(ctx context.Context) (map[string]Node, error)
+	Peers(ctx context.Context) (map[string]model.Node, error)
 }
 
 type DaemonVM struct {
@@ -52,9 +51,9 @@ type Daemon interface {
 	Ping(ctx context.Context) (version string, err error)
 	VMs(ctx context.Context) (map[string]DaemonVM, error)
 	Do(ctx context.Context, op, vm string) error
-	Reserve(ctx context.Context, vm string, port int, profile string) (Reserved, error)
-	// invariant: a command inside a VM of this Mac rides the engine's one
-	// connection to it; station reaches a VM no other way.
+	Reserve(ctx context.Context, vm string, port int, profile string) (model.Reserved, error)
+	// invariant: a command inside a model.VM of this Mac rides the engine's one
+	// connection to it; station reaches a model.VM no other way.
 	GuestExec(ctx context.Context, vm, line, stdin string) (local.Output, error)
 }
 
@@ -110,30 +109,6 @@ func New(h local.Host, e contract.Hypervisor, p Prefs, vms contract.MachineStore
 	return &Service{h: h, engine: e, p: p, recs: vms, nodes: nodes, img: img, daemon: d, rel: rel, o: o}
 }
 
-type Lifetime = model.Lifetime
-
-const (
-	Throwaway = model.Throwaway
-	Permanent = model.Permanent
-	AlwaysOn  = model.AlwaysOn
-)
-
-const (
-	WantRunning = "running"
-	WantStopped = "stopped"
-	NetworkNAT  = "nat"
-	Bridged     = "bridged"
-)
-
-type VMRecord struct {
-	Name, Image, Version string
-	Lifetime             Lifetime
-	Want, Network, Check string
-	Env                  map[string]string
-	Resources            Resources
-	CreatedAt            time.Time
-}
-
 type Machine struct {
 	Name      string
 	Kind      catalog.MachineKind
@@ -142,32 +117,8 @@ type Machine struct {
 	User, Key string
 	// value: a Mac's last address on your LAN, as it answered with it.
 	LAN      string
-	Lifetime Lifetime
+	Lifetime model.Lifetime
 }
-
-type (
-	Node        = model.Node
-	Reserved    = model.Reserved
-	Resources   = model.Resources
-	VMState     = model.VMState
-	VM          = model.VM
-	DaemonInfo  = model.EngineView
-	HostView    = model.HostView
-	Fleet       = model.Fleet
-	ListSize    = model.ListSize
-	SSHTarget   = model.SSHTarget
-	Restarts    = model.Restarts
-	CheckStatus = model.CheckStatus
-)
-
-const (
-	Running   = model.Running
-	Stopped   = model.Stopped
-	Suspended = model.Suspended
-	Stale     = model.Stale
-	Broken    = model.Broken
-	Unknown   = model.UnknownState
-)
 
 func (s *Service) vmUser(cfg prefsView) string {
 	if cfg.VMUser != "" {
@@ -178,7 +129,7 @@ func (s *Service) vmUser(cfg prefsView) string {
 
 func (s *Service) CheckHost() error {
 	if s.o.Here != catalog.Host {
-		return &OnlyOnHostError{Here: s.o.Here}
+		return &model.OnlyOnHostError{Here: s.o.Here}
 	}
 	return nil
 }
@@ -188,25 +139,3 @@ var nameChars = func(r rune) bool { return r == '-' || (r >= 'a' && r <= 'z') ||
 func validName(name string) bool {
 	return len(name) >= 1 && len(name) <= 40 && strings.IndexFunc(name, func(r rune) bool { return !nameChars(r) }) < 0
 }
-
-const (
-	StepRunning               = model.StepRunning
-	StepAddress               = model.StepAddress
-	StepSSH                   = model.StepSSH
-	StepCheck                 = model.StepCheck
-	PoweredOffInside          = model.PoweredOffInside
-	CheckWaiting              = model.CheckWaiting
-	CheckPassing              = model.CheckPassing
-	CheckFailing              = model.CheckFailing
-	ItemDiskUnlock            = model.ItemDiskUnlock
-	ItemRestartsAfterPowerCut = model.ItemRestartsAfterPowerCut
-	ItemNeverSleeps           = model.ItemNeverSleeps
-	ItemLogsIn                = model.ItemLogsIn
-	ItemPlannedRestarts       = model.ItemPlannedRestarts
-	ItemEngineAtLogin         = model.ItemEngineAtLogin
-)
-
-var (
-	HealthOf = model.HealthOf
-	Wanted   = model.Wanted
-)

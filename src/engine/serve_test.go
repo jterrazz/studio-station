@@ -12,7 +12,6 @@ import (
 	model "github.com/jterrazz/studio-station/src/machines"
 
 	"github.com/jterrazz/studio-station/src/catalog"
-	"github.com/jterrazz/studio-station/src/domain/machines"
 	"github.com/jterrazz/studio-station/src/platform/local"
 	"github.com/jterrazz/studio-station/src/ports"
 )
@@ -187,7 +186,7 @@ func TestServeIsReadEveryThirtyTicksAndOnlyServesWhileOn(t *testing.T) {
 
 func TestARunRendersTheProfileEnvironmentAndAnAdoptionKeepsIt(t *testing.T) {
 	kept := map[string]string{"EXPO_PACKAGER_PROXY_URL": "http://127.0.0.1:40000"}
-	h := newHarness(t, machines.VMRecord{Name: "api", Lifetime: machines.Permanent, Want: machines.WantRunning, Env: kept})
+	h := newHarness(t, model.VMRecord{Name: "api", Lifetime: model.Permanent, Want: model.WantRunning, Env: kept})
 	h.d.tn = &fakeTailnet{sharing: ports.SharingState{Host: "x.tail1234.ts.net", Backend: ports.Running, On: true}}
 	yes := true
 	h.d.leases = []ports.Reservation{{VM: "api", GuestPort: catalog.Profiles[0].Port, HostPort: 40000, HTTP: &yes, Pinned: true, Profile: catalog.Profiles[0].Name}}
@@ -300,7 +299,7 @@ func TestACertificateNeverIssuedIsCutAtItsBudgetAndSaysSo(t *testing.T) {
 }
 
 func TestAnEngineThatStopsLeavesItsRunningVMsPortsSharedOnTheTailnet(t *testing.T) {
-	h := newHarness(t, machines.VMRecord{Name: "api", Lifetime: machines.Permanent, Want: machines.WantRunning})
+	h := newHarness(t, model.VMRecord{Name: "api", Lifetime: model.Permanent, Want: model.WantRunning})
 	h.hv.outlived("api")
 	tn := &fakeTailnet{sharing: ports.SharingState{On: true, Host: "x.tail1234.ts.net", Backend: ports.Running}}
 	h.d.tn, h.d.h.Sockets = tn, &loopback{}

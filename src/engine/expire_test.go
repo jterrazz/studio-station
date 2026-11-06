@@ -10,7 +10,8 @@ import (
 	"time"
 
 	"github.com/jterrazz/studio-station/src/accounts"
-	"github.com/jterrazz/studio-station/src/domain/machines"
+
+	model "github.com/jterrazz/studio-station/src/machines"
 )
 
 type expired struct {
@@ -85,8 +86,8 @@ type sharing struct {
 func newSharing(t *testing.T, held map[string][]accounts.Share) sharing {
 	t.Helper()
 	h := newHarness(t,
-		machines.VMRecord{Name: "api", Lifetime: machines.Permanent, Want: machines.WantRunning},
-		machines.VMRecord{Name: "web", Lifetime: machines.Permanent, Want: machines.WantRunning},
+		model.VMRecord{Name: "api", Lifetime: model.Permanent, Want: model.WantRunning},
+		model.VMRecord{Name: "web", Lifetime: model.Permanent, Want: model.WantRunning},
 	)
 	s := sharing{harness: h, shares: &fakeShares{held: held, expires: make(chan expired, 8)}, told: &toldNotifier{}}
 	h.d.o.Lends, h.d.notifier = s.shares, s.told

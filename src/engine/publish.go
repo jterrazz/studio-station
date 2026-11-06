@@ -11,7 +11,8 @@ import (
 	"time"
 
 	"github.com/jterrazz/studio-station/src/catalog"
-	"github.com/jterrazz/studio-station/src/domain/machines"
+
+	model "github.com/jterrazz/studio-station/src/machines"
 	"github.com/jterrazz/studio-station/src/platform/local"
 	"github.com/jterrazz/studio-station/src/ports"
 )
@@ -104,7 +105,7 @@ func (d *Daemon) listen(ctx context.Context, vm string, port int, ip, process st
 	}
 	d.mu.Lock()
 	defer d.mu.Unlock()
-	if v := d.vms[vm]; v != nil && v.rec.Lifetime == machines.AlwaysOn && d.leaseIndex(vm, port) < 0 {
+	if v := d.vms[vm]; v != nil && v.rec.Lifetime == model.AlwaysOn && d.leaseIndex(vm, port) < 0 {
 		return
 	}
 	s := d.svcOf(vm, port)

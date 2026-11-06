@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 
+	model "github.com/jterrazz/studio-station/src/machines"
+
 	"github.com/jterrazz/studio-station/src/machines/contract"
 )
 
@@ -16,7 +18,7 @@ func (s *Service) Unlock(ctx context.Context, name string) error {
 		return err
 	}
 	if err := s.o.Unlocker.Unlock(ctx, m.Name, m.LAN); errors.Is(err, contract.ErrUnreachable) {
-		return &UnreachableError{Name: name}
+		return &model.UnreachableError{Name: name}
 	} else if err != nil {
 		return err
 	}

@@ -4,10 +4,12 @@ import (
 	"context"
 	"errors"
 
+	model "github.com/jterrazz/studio-station/src/machines"
+
 	"github.com/jterrazz/studio-station/src/machines/contract"
 )
 
-func (s *Service) SSHBlocks(ctx context.Context, f Fleet) error {
+func (s *Service) SSHBlocks(ctx context.Context, f model.Fleet) error {
 	// hazard: the blocks of machines the fleet no longer holds are pruned only when
 	// every host answered; an unreachable host's VMs are unknown, not gone.
 	cfg, err := s.prefs()
@@ -40,7 +42,7 @@ func configFailure(err error, rolledBack bool) error {
 	}
 	var refused *contract.SSHConfigError
 	if errors.As(err, &refused) {
-		return &SSHConfigError{Path: refused.Path, Cause: refused.Cause, RolledBack: rolledBack}
+		return &model.SSHConfigError{Path: refused.Path, Cause: refused.Cause, RolledBack: rolledBack}
 	}
-	return &SSHConfigError{Cause: err, RolledBack: rolledBack}
+	return &model.SSHConfigError{Cause: err, RolledBack: rolledBack}
 }

@@ -7,23 +7,24 @@ import (
 
 	"github.com/jterrazz/studio-station/src/catalog"
 	"github.com/jterrazz/studio-station/src/core/finding"
-	"github.com/jterrazz/studio-station/src/domain/machines"
+
+	model "github.com/jterrazz/studio-station/src/machines"
 	"github.com/jterrazz/studio-station/src/overview"
 	"github.com/jterrazz/studio-station/src/page"
 	pagehome "github.com/jterrazz/studio-station/src/pages/home"
 )
 
 type VMOverview struct {
-	Fleet machines.Fleet
-	Mac   machines.HostView
-	VM    machines.VM
+	Fleet model.Fleet
+	Mac   model.HostView
+	VM    model.VM
 }
 
 func (o VMOverview) on() string {
 	if o.Mac.Here {
 		return "This Mac"
 	}
-	return machines.Label(o.Fleet, o.Mac)
+	return model.Label(o.Fleet, o.Mac)
 }
 
 func (o VMOverview) unreachable() bool { return !o.Mac.Reachable }
@@ -62,16 +63,16 @@ func vmCaption(o VMOverview, s *overview.Summary) []page.Value {
 	if s != nil {
 		head = s.Head
 	}
-	server := vm.Lifetime == machines.AlwaysOn
-	parts := []page.Value{page.Text(machines.KindWord(vm.Lifetime.Kind()) + " on " + o.on()), page.Text(lifetimeWord(vm.Lifetime))}
+	server := vm.Lifetime == model.AlwaysOn
+	parts := []page.Value{page.Text(model.KindWord(vm.Lifetime.Kind()) + " on " + o.on()), page.Text(lifetimeWord(vm.Lifetime))}
 	switch {
 	case server:
 		mark := page.OK
-		if vm.State != machines.Running {
+		if vm.State != model.Running {
 			mark = page.Absent
 		}
 		parts = append(parts, page.Labeled(string(mark), page.Text(stateWord(vm.State))))
-	case vm.State == machines.Running && head.Up > 0:
+	case vm.State == model.Running && head.Up > 0:
 		parts = append(parts, pagehome.Up(head.Up))
 	default:
 		parts = append(parts, page.Text(stateWord(vm.State)))
@@ -79,24 +80,24 @@ func vmCaption(o VMOverview, s *overview.Summary) []page.Value {
 	return parts
 }
 
-func Steps(vm machines.VM) []page.Row {
+func Steps(vm model.VM) []page.Row {
 	// value: SPEC §7.2's health steps of a VM, in their order: running, an
 	// address, ssh answering, then a server's own check when it has one.
-	health := machines.HealthOf(vm)
+	health := model.HealthOf(vm)
 	steps := []page.Row{
-		step("running", machines.StepRunning, health.Running, health.Running, ""),
-		step("address", machines.StepAddress, health.Address, health.Running, vm.IP),
-		step("ssh", machines.StepSSH, health.SSH, health.Running, ""),
+		step("running", model.StepRunning, health.Running, health.Running, ""),
+		step("address", model.StepAddress, health.Address, health.Running, vm.IP),
+		step("ssh", model.StepSSH, health.SSH, health.Running, ""),
 	}
-	if vm.Lifetime == machines.AlwaysOn && vm.Check != "" {
+	if vm.Lifetime == model.AlwaysOn && vm.Check != "" {
 		steps = append(steps, checkStep(vm, health.Running))
 	}
 	return steps
 }
 
-func healthItems(vm machines.VM, sshRead bool, now time.Time) []page.Item {
+func healthItems(vm model.VM, sshRead bool, now time.Time) []page.Item {
 	steps := Steps(vm)
-	if vm.Lifetime == machines.AlwaysOn {
+	if vm.Lifetime == model.AlwaysOn {
 		restarts := page.Row{ID: "restarts", Label: "Restarts", Mark: page.OK, Cells: []page.Value{page.Texts(vm.Restarts.Words(now)...)}}
 		if vm.Restarts.Looping {
 			restarts.Mark, restarts.Reason = page.Broken, page.Failing
@@ -110,7 +111,7 @@ func healthItems(vm machines.VM, sshRead bool, now time.Time) []page.Item {
 	r := vm.Resources
 	size := page.Row{ID: "size", Label: "Size", Mark: page.OK, Cells: []page.Value{page.List(page.Text(strconv.Itoa(r.CPUs)+" CPU"), Memory(r.MemoryBytes), DiskSize(r.DiskBytes))}}
 	items = append(items, page.Item{Row: &size})
-	if vm.Lifetime == machines.AlwaysOn {
+	if vm.Lifetime == model.AlwaysOn {
 		items = append(items, serverRows(vm, sshRead)...)
 	}
 	return items
@@ -120,7 +121,7 @@ func healthItems(vm machines.VM, sshRead bool, now time.Time) []page.Item {
 // tooling installed one, which station never installs nor blocks, and the
 // ssh that is its one door, for debugging (SPEC §7.7), here only when the
 // server's own SSH line was not read inside it.
-func serverRows(vm machines.VM, sshRead bool) []page.Item {
+func serverRows(vm model.VM, sshRead bool) []page.Item {
 	var rows []page.Row
 	if vm.Device != "" {
 		rows = append(rows, page.Row{ID: "device", Label: "Own " + catalog.TailnetProduct + " device", Mark: page.OK, Cells: []page.Value{page.Text(vm.Device)}})
@@ -153,15 +154,15 @@ func vmColumns() []page.Column {
 
 // value: SPEC §7.2's fourth step: a check that never passed since boot
 // waits (not a failure), one that passed then fails says since when.
-func checkStep(vm machines.VM, running bool) page.Row {
-	row := page.Row{ID: "check", Label: machines.StepCheck, Mark: page.OK, Cells: []page.Value{page.Text(vm.Check)}}
+func checkStep(vm model.VM, running bool) page.Row {
+	row := page.Row{ID: "check", Label: model.StepCheck, Mark: page.OK, Cells: []page.Value{page.Text(vm.Check)}}
 	switch {
 	case !running:
 		row.Mark, row.Reason, row.Cells[0] = page.Absent, page.Stopped, page.None()
-	case vm.CheckStatus.State == machines.CheckFailing:
+	case vm.CheckStatus.State == model.CheckFailing:
 		row.Label, row.Mark, row.Reason = "Check failing", page.Attention, page.Failing
 		row.Cells[0] = page.List(page.Text("since "+vm.CheckStatus.Since.Local().Format("15:04")), page.Text(vm.Check))
-	case vm.CheckStatus.State != machines.CheckPassing:
+	case vm.CheckStatus.State != model.CheckPassing:
 		row.Label, row.Mark, row.Reason = "Check waiting", page.Attention, page.Waiting
 	}
 	return row
@@ -184,19 +185,19 @@ func step(id, label string, passed, running bool, detail string) page.Row {
 	return row
 }
 
-func lifetimeWord(l machines.Lifetime) string {
-	if l == machines.AlwaysOn {
+func lifetimeWord(l model.Lifetime) string {
+	if l == model.AlwaysOn {
 		return l.Word()
 	}
 	return titled(string(l))
 }
 
-func Lifetime(l machines.Lifetime) page.Value {
+func Lifetime(l model.Lifetime) page.Value {
 	// value: a VM's lifetime as a page says it (`Always on`, `Throwaway`).
 	return page.Text(titled(lifetimeWord(l)))
 }
 
-func State(s machines.VMState) page.Value { return page.Text(stateWord(s)) }
+func State(s model.VMState) page.Value { return page.Text(stateWord(s)) }
 
 func titled(word string) string {
 	if word == "" {
@@ -205,19 +206,19 @@ func titled(word string) string {
 	return strings.ToUpper(word[:1]) + word[1:]
 }
 
-func stateWord(s machines.VMState) string {
+func stateWord(s model.VMState) string {
 	switch s {
-	case machines.Running:
+	case model.Running:
 		return "Running"
-	case machines.Stopped:
+	case model.Stopped:
 		return "Stopped"
-	case machines.Suspended:
+	case model.Suspended:
 		return "Suspended"
-	case machines.Stale:
+	case model.Stale:
 		return "Ended unexpectedly"
-	case machines.Broken:
+	case model.Broken:
 		return "In a loop"
-	case machines.Unknown:
+	case model.UnknownState:
 	}
 	return "Unknown"
 }
@@ -263,8 +264,8 @@ type VMOverviewJSON struct {
 	Health   VMHealthJSON  `json:"health"`
 	Restarts int           `json:"restarts"`
 	// value: the seconds a server waited before its last restart.
-	RestartedAfter int               `json:"restarted_after_s,omitempty"`
-	Size           machines.ListSize `json:"size"`
+	RestartedAfter int            `json:"restarted_after_s,omitempty"`
+	Size           model.ListSize `json:"size"`
 	// value: a server's own tailnet device; empty for none.
 	Device string `json:"device,omitempty"`
 	Detail string `json:"detail,omitempty"`
@@ -275,7 +276,7 @@ type VMOverviewJSON struct {
 }
 
 func VMContract(o VMOverview, s *overview.Summary, schema string) VMOverviewJSON {
-	vm, h := o.VM, machines.HealthOf(o.VM)
+	vm, h := o.VM, model.HealthOf(o.VM)
 	inside := pagehome.SummaryJSON{Machine: pagehome.SummaryMachineJSON{Kind: "workspace"}, Findings: []finding.JSON{}, Sections: []pagehome.SummarySectionJSON{}}
 	if s != nil {
 		inside = pagehome.SummaryContract(*s, schema)
@@ -283,25 +284,25 @@ func VMContract(o VMOverview, s *overview.Summary, schema string) VMOverviewJSON
 	return VMOverviewJSON{
 		Schema: schema, Machine: VMMachineJSON{Name: vm.Name, Kind: string(vm.Lifetime.Kind()), On: o.Mac.Name, Reachable: o.Mac.Reachable},
 		Findings: inside.Findings, Sections: inside.Sections,
-		Lifetime: string(vm.Lifetime), State: string(vm.State), Wanted: machines.Wanted(vm),
+		Lifetime: string(vm.Lifetime), State: string(vm.State), Wanted: model.Wanted(vm),
 		Health: VMHealthJSON{Running: h.Running, Address: h.Address, SSH: h.SSH, Check: checkJSON(vm)}, Restarts: vm.Restarts.Count, RestartedAfter: int(vm.Restarts.Wait.Seconds()),
-		Size:   machines.ListSize{CPUs: vm.Resources.CPUs, MemoryBytes: vm.Resources.MemoryBytes, DiskBytes: vm.Resources.DiskBytes},
+		Size:   model.ListSize{CPUs: vm.Resources.CPUs, MemoryBytes: vm.Resources.MemoryBytes, DiskBytes: vm.Resources.DiskBytes},
 		Device: vm.Device, Detail: vm.Detail,
 	}
 }
 
-func checkJSON(vm machines.VM) *VMCheckJSON {
-	if vm.Lifetime != machines.AlwaysOn || vm.Check == "" {
+func checkJSON(vm model.VM) *VMCheckJSON {
+	if vm.Lifetime != model.AlwaysOn || vm.Check == "" {
 		return nil
 	}
-	c := &VMCheckJSON{URL: vm.Check, OK: vm.State == machines.Running && vm.CheckStatus.State == machines.CheckPassing}
-	if vm.CheckStatus.State == machines.CheckFailing {
+	c := &VMCheckJSON{URL: vm.Check, OK: vm.State == model.Running && vm.CheckStatus.State == model.CheckPassing}
+	if vm.CheckStatus.State == model.CheckFailing {
 		c.Since = vm.CheckStatus.Since.UTC().Format(time.RFC3339)
 	}
 	return c
 }
 
-func SSHPage(o VMOverview, target machines.SSHTarget, here page.Context) page.Page {
+func SSHPage(o VMOverview, target model.SSHTarget, here page.Context) page.Page {
 	// invariant: a server's SSH section (SPEC §3.2, §7.7): its one door, the
 	// path that reaches it from This Mac, and what station leaves to the
 	// owner's tooling; station opens it for debugging only.
@@ -315,7 +316,7 @@ func SSHPage(o VMOverview, target machines.SSHTarget, here page.Context) page.Pa
 	if mac.Here {
 		reached = reached[1:]
 	}
-	if vm.State != machines.Running {
+	if vm.State != model.Running {
 		door.Mark, door.Reason = page.Absent, page.Stopped
 		door.Cells = []page.Value{page.Text(vm.Name + " is stopped: station machines start " + vm.Name)}
 	}

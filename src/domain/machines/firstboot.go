@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/jterrazz/studio-station/src/catalog"
+	model "github.com/jterrazz/studio-station/src/machines"
 )
 
 const (
@@ -16,11 +17,11 @@ const (
 	sshWait       = 30 * time.Second
 )
 
-func renderFirstboot(script, name string, l Lifetime) string {
+func renderFirstboot(script, name string, l model.Lifetime) string {
 	return strings.NewReplacer("{{name}}", name, "{{lifetime}}", string(l)).Replace(script)
 }
 
-func (s *Service) firstBoot(ctx context.Context, img catalog.Image, name string, l Lifetime) error {
+func (s *Service) firstBoot(ctx context.Context, img catalog.Image, name string, l model.Lifetime) error {
 	script, err := catalog.Recipes.ReadFile(img.Firstboot)
 	if err != nil {
 		return err

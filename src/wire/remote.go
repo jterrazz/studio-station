@@ -17,7 +17,8 @@ import (
 	"github.com/jterrazz/studio-station/src/core/confirm"
 	"github.com/jterrazz/studio-station/src/core/fail"
 	coremachine "github.com/jterrazz/studio-station/src/core/machine"
-	"github.com/jterrazz/studio-station/src/domain/machines"
+
+	model "github.com/jterrazz/studio-station/src/machines"
 	machinescalls "github.com/jterrazz/studio-station/src/machines/calls"
 	"github.com/jterrazz/studio-station/src/platform/local"
 	portscalls "github.com/jterrazz/studio-station/src/ports/calls"
@@ -88,7 +89,7 @@ func (m machine) holder(ctx context.Context, vm string) (string, error) {
 			return false, err
 		}
 		for _, host := range out.Fleet.Hosts {
-			if slices.ContainsFunc(host.VMs, func(v machines.VM) bool { return v.Name == vm }) {
+			if slices.ContainsFunc(host.VMs, func(v model.VM) bool { return v.Name == vm }) {
 				return true, nil
 			}
 		}
@@ -109,7 +110,7 @@ func (m machine) holder(ctx context.Context, vm string) (string, error) {
 			return "", err
 		}
 	}
-	return "", &machines.UnknownMachineError{Name: vm}
+	return "", &model.UnknownMachineError{Name: vm}
 }
 
 type guestRelay struct{ d hostDaemon }
@@ -119,16 +120,16 @@ func (g guestRelay) GuestExec(ctx context.Context, vm, line, stdin string) (stdo
 	return out.Stdout, out.ExitCode, err
 }
 
-func (m machine) askFleet(ctx context.Context, macs []string, answered func(string, machines.HostView)) {
+func (m machine) askFleet(ctx context.Context, macs []string, answered func(string, model.HostView)) {
 	r := m.far.router
-	for got := range each.Do(ctx, macs, func(ctx context.Context, mac string) (machines.HostView, error) {
+	for got := range each.Do(ctx, macs, func(ctx context.Context, mac string) (model.HostView, error) {
 		hello, err := r.Hello(ctx, mac)
 		if err != nil {
-			return machines.HostView{}, err
+			return model.HostView{}, err
 		}
 		out, err := call.Read(ctx, r, coremachine.Ref{Name: mac}, machinescalls.List, machinescalls.ListIn{Here: true}, nil)
 		if err != nil || len(out.Fleet.Hosts) == 0 {
-			return machines.HostView{}, orNone(err)
+			return model.HostView{}, orNone(err)
 		}
 		view := out.Fleet.Hosts[0]
 		view.StationVersion = hello.Version

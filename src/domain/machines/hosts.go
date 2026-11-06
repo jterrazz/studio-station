@@ -14,12 +14,6 @@ import (
 	"github.com/jterrazz/studio-station/src/machines/contract"
 )
 
-type (
-	Added    = model.Added
-	Unlocked = model.Unlocked
-	Back     = model.Back
-)
-
 func (s *Service) Lookup(_ context.Context, name string) (Machine, error) { return s.lookup(name) }
 
 func (s *Service) lookup(name string) (Machine, error) {
@@ -46,7 +40,7 @@ func (s *Service) lookup(name string) (Machine, error) {
 			return Machine{Name: full, Kind: catalog.Host, Here: full == cfg.Here, User: h.User, Key: h.Key, LAN: h.LAN}, nil
 		}
 	}
-	return Machine{}, &UnknownMachineError{Name: name}
+	return Machine{}, &model.UnknownMachineError{Name: name}
 }
 
 func (s *Service) Remote(name string) (Machine, error) {
@@ -54,7 +48,7 @@ func (s *Service) Remote(name string) (Machine, error) {
 	// registered or not.
 	if cfg, err := s.prefs(); err == nil {
 		if here := s.here(cfg); name == here || (s.o.User != "" && s.o.User+"-"+name == here) {
-			return Machine{}, &HereMachineError{Name: name}
+			return Machine{}, &model.HereMachineError{Name: name}
 		}
 	}
 	m, err := s.lookup(name)
@@ -62,14 +56,14 @@ func (s *Service) Remote(name string) (Machine, error) {
 		return Machine{}, err
 	}
 	if m.Here {
-		return Machine{}, &HereMachineError{Name: name}
+		return Machine{}, &model.HereMachineError{Name: name}
 	}
 	return m, nil
 }
 
 func (s *Service) RemoteHost(name, verb string) (Machine, error) {
 	m, err := s.Remote(name)
-	var here *HereMachineError
+	var here *model.HereMachineError
 	if errors.As(err, &here) {
 		here.Verb = verb
 	}
@@ -77,14 +71,14 @@ func (s *Service) RemoteHost(name, verb string) (Machine, error) {
 		return Machine{}, err
 	}
 	if m.Kind != catalog.Host {
-		return Machine{}, &NotAHostError{Name: name, Verb: verb}
+		return Machine{}, &model.NotAHostError{Name: name, Verb: verb}
 	}
 	return m, nil
 }
 
 func (s *Service) Init(name string) error {
 	if !validName(name) {
-		return &BadNameError{Name: name}
+		return &model.BadNameError{Name: name}
 	}
 	cfg, err := s.prefs()
 	if err != nil {
@@ -114,14 +108,14 @@ func (s *Service) AddHost(ctx context.Context, name string, h model.Host) error 
 		return err
 	}
 	if !validName(name) {
-		return &BadNameError{Name: name}
+		return &model.BadNameError{Name: name}
 	}
 	cfg, err := s.prefs()
 	if err != nil {
 		return err
 	}
 	if _, ok := cfg.Hosts[name]; ok {
-		return &NameTakenError{Name: name}
+		return &model.NameTakenError{Name: name}
 	}
 	records, err := s.records()
 	if err != nil {
@@ -129,7 +123,7 @@ func (s *Service) AddHost(ctx context.Context, name string, h model.Host) error 
 	}
 	for _, r := range records {
 		if r.Name == name {
-			return &NameTakenError{Name: name, VM: true}
+			return &model.NameTakenError{Name: name, VM: true}
 		}
 	}
 	before := cfg.Hosts
@@ -209,7 +203,7 @@ func (s *Service) Names() []string {
 	return names
 }
 
-func (s *Service) Remember(_ context.Context, f Fleet) error {
+func (s *Service) Remember(_ context.Context, f model.Fleet) error {
 	cfg, err := s.prefs()
 	if err != nil {
 		return err

@@ -9,8 +9,9 @@ import (
 	"github.com/jterrazz/studio-station/src/activity"
 	"github.com/jterrazz/studio-station/src/awake"
 	"github.com/jterrazz/studio-station/src/core/machine"
-	"github.com/jterrazz/studio-station/src/domain/machines"
+
 	"github.com/jterrazz/studio-station/src/engine"
+	model "github.com/jterrazz/studio-station/src/machines"
 	"github.com/jterrazz/studio-station/src/overview"
 	"github.com/jterrazz/studio-station/src/page"
 	pageengine "github.com/jterrazz/studio-station/src/pages/engine"
@@ -42,7 +43,7 @@ type Reading struct {
 	// value: a nil part is still being read and draws pending.
 	Home     *overview.Summary
 	Samples  []activity.Reading
-	Fleet    *machines.Fleet
+	Fleet    *model.Fleet
 	Services *ports.Fleet
 	Power    *awake.Report
 	// value: every other Mac's Awake, as its engine reports it.
@@ -76,7 +77,7 @@ func badge(r Reading, needs page.Section) *page.Badge {
 	}
 	if r.Fleet != nil {
 		for _, h := range r.Fleet.Hosts {
-			b.Down = b.Down || slices.ContainsFunc(h.VMs, machines.Down)
+			b.Down = b.Down || slices.ContainsFunc(h.VMs, model.Down)
 		}
 	}
 	return &b
@@ -201,8 +202,8 @@ func updateAll(needs page.Section, home *overview.Summary) *page.Action {
 }
 
 // value: the line under a Mac in Home: its Awake.
-func homeLine(r Reading) func(h machines.HostView) page.Value {
-	return func(h machines.HostView) page.Value {
+func homeLine(r Reading) func(h model.HostView) page.Value {
+	return func(h model.HostView) page.Value {
 		if h.Here {
 			if r.Power != nil {
 				if w := awakeWords(*r.Power); w != "" {
@@ -330,8 +331,8 @@ func stopAll(r Reading) page.Action {
 			}
 			for _, vm := range h.VMs {
 				switch {
-				case vm.State != machines.Running:
-				case vm.Lifetime == machines.AlwaysOn:
+				case vm.State != model.Running:
+				case vm.Lifetime == model.AlwaysOn:
 					w.Servers = append(w.Servers, vm.Name)
 				default:
 					w.VMs = append(w.VMs, engine.Stopped{Name: vm.Name, Lifetime: string(vm.Lifetime), Result: engine.ResultStopped})

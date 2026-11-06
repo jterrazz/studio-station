@@ -5,6 +5,8 @@ import (
 	"path"
 	"strings"
 
+	model "github.com/jterrazz/studio-station/src/machines"
+
 	background "github.com/jterrazz/studio-station/src/background/contract"
 	"github.com/jterrazz/studio-station/src/machines/contract"
 )
@@ -37,7 +39,7 @@ func (s *Service) oldJob(name string) background.Ref {
 	return background.Ref{Domain: s.session(), Label: agentPrefix + name, File: s.oldAgent(name)}
 }
 
-// invariant: a VM still under a round-3 per-VM agent has that agent booted out
+// invariant: a model.VM still under a round-3 per-model.VM agent has that agent booted out
 // and its plist removed by the verb that stops or deletes it, so the setup
 // migration's hint can always be followed.
 func (s *Service) retireAgent(ctx context.Context, name string) {
@@ -48,16 +50,10 @@ func (s *Service) retireAgent(ctx context.Context, name string) {
 	_ = s.o.Jobs.Remove(ctx, s.oldJob(name))
 }
 
-type RunningUnderAgentError struct{ Names []string }
-
-func (e *RunningUnderAgentError) Error() string {
-	return strings.Join(e.Names, ", ") + " still runs under its round-3 agent"
-}
-
 type AgentMigration struct{ Retired []string }
 
 func (s *Service) MigrateAgents(ctx context.Context) (AgentMigration, error) {
-	// invariant: a migration never cuts a running VM: one VM running under an old
+	// invariant: a migration never cuts a running VM: one model.VM running under an old
 	// agent refuses the whole step before any bootout.
 	dir := path.Join(s.h.Env.Home(), "Library", "LaunchAgents")
 	entries, readErr := s.h.FS.ReadDir(dir)
@@ -81,19 +77,19 @@ func (s *Service) MigrateAgents(ctx context.Context) (AgentMigration, error) {
 		}
 	}
 	if len(running) > 0 {
-		return AgentMigration{}, &RunningUnderAgentError{Names: running}
+		return AgentMigration{}, &model.RunningUnderAgentError{Names: running}
 	}
 	overrides := s.o.Jobs.Overrides(ctx, s.session())
 	records, _ := s.records()
 	for _, n := range names {
 		_ = s.o.Jobs.Remove(ctx, s.oldJob(n))
 		for _, r := range records {
-			if r.Name != n || r.Lifetime != Permanent {
+			if r.Name != n || r.Lifetime != model.Permanent {
 				continue
 			}
-			r.Want = WantRunning
+			r.Want = model.WantRunning
 			if enabled, listed := overrides[agentPrefix+n]; listed && !enabled {
-				r.Want = WantStopped
+				r.Want = model.WantStopped
 			}
 			_ = s.writeRecord(r)
 		}

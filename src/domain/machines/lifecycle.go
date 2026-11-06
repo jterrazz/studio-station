@@ -2,42 +2,37 @@ package machines
 
 import (
 	"context"
+
 	model "github.com/jterrazz/studio-station/src/machines"
 	"github.com/jterrazz/studio-station/src/machines/contract"
 
 	"github.com/jterrazz/studio-station/src/catalog"
 )
 
-type NotAVMError struct{ Name, Verb string }
-
-func (e *NotAVMError) Error() string { return e.Name + " is a Mac" }
-
-type DeleteReport = model.DeleteReport
-
-func (s *Service) VM(name, verb string) (VMRecord, error) {
+func (s *Service) VM(name, verb string) (model.VMRecord, error) {
 	if err := s.CheckHost(); err != nil {
-		return VMRecord{}, err
+		return model.VMRecord{}, err
 	}
 	m, err := s.lookup(name)
 	if err != nil {
-		return VMRecord{}, err
+		return model.VMRecord{}, err
 	}
 	if m.Kind == catalog.Host {
-		return VMRecord{}, &NotAVMError{Name: name, Verb: verb}
+		return model.VMRecord{}, &model.NotAVMError{Name: name, Verb: verb}
 	}
 	records, err := s.records()
 	if err != nil {
-		return VMRecord{}, err
+		return model.VMRecord{}, err
 	}
 	for _, r := range records {
 		if r.Name == name {
 			return r, nil
 		}
 	}
-	return VMRecord{}, &UnknownMachineError{Name: name}
+	return model.VMRecord{}, &model.UnknownMachineError{Name: name}
 }
 
-func (s *Service) LifetimeOf(name string) Lifetime {
+func (s *Service) LifetimeOf(name string) model.Lifetime {
 	rec, err := s.VM(name, "")
 	if err != nil {
 		return ""
@@ -84,7 +79,7 @@ func (s *Service) StopDirect(ctx context.Context, name string) error {
 	if err != nil {
 		return err
 	}
-	rec.Want = WantStopped
+	rec.Want = model.WantStopped
 	if err := s.writeRecord(rec); err != nil {
 		return err
 	}
@@ -95,49 +90,49 @@ func (s *Service) StopDirect(ctx context.Context, name string) error {
 	return nil
 }
 
-func (s *Service) restartVM(ctx context.Context, name string, say func(phase, detail string)) (RestartReport, error) {
+func (s *Service) restartVM(ctx context.Context, name string, say func(phase, detail string)) (model.RestartReport, error) {
 	if _, err := s.VM(name, "restart"); err != nil {
-		return RestartReport{}, err
+		return model.RestartReport{}, err
 	}
 	if err := s.EngineUp(ctx); err != nil {
-		return RestartReport{}, err
+		return model.RestartReport{}, err
 	}
 	started := s.h.Clock.Now()
 	say("restarting", "poweroff, then start")
 	if err := s.daemon.Do(ctx, "restart", name); err != nil {
-		return RestartReport{}, err
+		return model.RestartReport{}, err
 	}
 	say("back", "the engine runs it again")
 	addr, err := s.engine.Address(ctx, name, ipWait)
 	if err != nil {
-		return RestartReport{}, &UnhealthyError{Name: name, Step: model.StepAddress, Detail: "none after 60 s"}
+		return model.RestartReport{}, &model.UnhealthyError{Name: name, Step: model.StepAddress, Detail: "none after 60 s"}
 	}
 	sshCtx, cancel := context.WithTimeout(ctx, sshWait)
 	defer cancel()
 	if out, err := s.daemon.GuestExec(sshCtx, name, "true", ""); err != nil || out.ExitCode != 0 {
-		return RestartReport{}, &UnhealthyError{Name: name, Step: model.StepSSH, Detail: "none after 30 s"}
+		return model.RestartReport{}, &model.UnhealthyError{Name: name, Step: model.StepSSH, Detail: "none after 30 s"}
 	}
-	return RestartReport{Name: name, VM: true, IP: addr.String(), Waited: s.h.Clock.Now().Sub(started)}, nil
+	return model.RestartReport{Name: name, VM: true, IP: addr.String(), Waited: s.h.Clock.Now().Sub(started)}, nil
 }
 
-func (s *Service) Delete(ctx context.Context, name string) (DeleteReport, error) {
+func (s *Service) Delete(ctx context.Context, name string) (model.DeleteReport, error) {
 	if _, err := s.VM(name, "delete"); err != nil {
-		return DeleteReport{}, err
+		return model.DeleteReport{}, err
 	}
 	if err := s.EngineUp(ctx); err != nil {
-		return DeleteReport{}, err
+		return model.DeleteReport{}, err
 	}
 	if err := s.daemon.Do(ctx, "delete", name); err != nil {
-		return DeleteReport{}, err
+		return model.DeleteReport{}, err
 	}
-	return DeleteReport{Name: name}, nil
+	return model.DeleteReport{Name: name}, nil
 }
 
-func (s *Service) Remove(ctx context.Context, name string) (DeleteReport, error) {
+func (s *Service) Remove(ctx context.Context, name string) (model.DeleteReport, error) {
 	// invariant: Remove is the whole delete, run by the engine: the run stops,
-	// the disk, record, files and block go, and the VM's leases and their serve
+	// the disk, record, files and block go, and the model.VM's leases and their serve
 	// entries are released.
-	report := DeleteReport{Name: name}
+	report := model.DeleteReport{Name: name}
 	s.retireAgent(ctx, name)
 	if s.engineState(ctx, name) == contract.DiskRunning {
 		if err := s.engine.Shutdown(ctx, name, hardStopWait); err != nil {

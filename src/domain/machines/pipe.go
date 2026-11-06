@@ -3,49 +3,29 @@ package machines
 import (
 	"context"
 	"errors"
-	"github.com/jterrazz/studio-station/src/machines/contract"
 	"io"
 	"strconv"
 	"time"
+
+	model "github.com/jterrazz/studio-station/src/machines"
+	"github.com/jterrazz/studio-station/src/machines/contract"
 )
 
 const pipeIPWait = 5 * time.Second
 
-type NotHereError struct{ Name, Host string }
-
-func (e *NotHereError) Error() string { return e.Name + " runs on " + e.Host + ", not here" }
-
-type StoppedError struct {
-	Name     string
-	Lifetime Lifetime
-}
-
-func (e *StoppedError) Error() string {
-	return e.Name + " is stopped"
-}
-
-type SSHDClosedError struct {
-	Name, Addr string
-	Cause      error
-}
-
-func (e *SSHDClosedError) Error() string { return e.Name + "'s sshd does not answer on " + e.Addr }
-
-func (e *SSHDClosedError) Unwrap() error { return e.Cause }
-
-func (s *Service) CheckPipe(ctx context.Context, name string) (VMRecord, error) {
+func (s *Service) CheckPipe(ctx context.Context, name string) (model.VMRecord, error) {
 	if err := s.CheckHost(); err != nil {
-		return VMRecord{}, err
+		return model.VMRecord{}, err
 	}
 	m, err := s.lookup(name)
-	var unknown *UnknownMachineError
+	var unknown *model.UnknownMachineError
 	if errors.As(err, &unknown) {
 		if host, ok := s.hostOf(ctx, name); ok {
-			return VMRecord{}, &NotHereError{Name: name, Host: host}
+			return model.VMRecord{}, &model.NotHereError{Name: name, Host: host}
 		}
 	}
 	if err != nil {
-		return VMRecord{}, err
+		return model.VMRecord{}, err
 	}
 	return s.VM(m.Name, "pipe")
 }
@@ -66,18 +46,18 @@ func (s *Service) hostOf(ctx context.Context, name string) (string, bool) {
 }
 
 func (s *Service) Pipe(ctx context.Context, name string, in io.Reader, out io.Writer) error {
-	// invariant: the VM's NAT ip is read at each pipe, never written into a block:
+	// invariant: the model.VM's NAT ip is read at each pipe, never written into a block:
 	// the hypervisor's DHCP lease may change across runs; the pipe needs no daemon.
 	rec, err := s.CheckPipe(ctx, name)
 	if err != nil {
 		return err
 	}
 	if s.engineState(ctx, name) != contract.DiskRunning {
-		return &StoppedError{Name: name, Lifetime: rec.Lifetime}
+		return &model.StoppedError{Name: name, Lifetime: rec.Lifetime}
 	}
 	addr, err := s.engine.Address(ctx, name, pipeIPWait)
 	if err != nil {
-		return &SSHDClosedError{Name: name, Addr: name, Cause: err}
+		return &model.SSHDClosedError{Name: name, Addr: name, Cause: err}
 	}
 	ip := addr.String()
 	port := s.o.GuestPort
@@ -85,7 +65,7 @@ func (s *Service) Pipe(ctx context.Context, name string, in io.Reader, out io.Wr
 		port = 22
 	}
 	if err := s.h.Sockets.Pipe(ctx, ip, port, in, out); err != nil {
-		return &SSHDClosedError{Name: name, Addr: ip + ":" + strconv.Itoa(port), Cause: err}
+		return &model.SSHDClosedError{Name: name, Addr: ip + ":" + strconv.Itoa(port), Cause: err}
 	}
 	return nil
 }

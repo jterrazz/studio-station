@@ -18,7 +18,6 @@ import (
 	model "github.com/jterrazz/studio-station/src/machines"
 
 	"github.com/jterrazz/studio-station/src/catalog"
-	"github.com/jterrazz/studio-station/src/domain/machines"
 	"github.com/jterrazz/studio-station/src/ports"
 )
 
@@ -38,7 +37,7 @@ const (
 const GuestSession = "/usr/local/bin/station guest"
 
 type vmState struct {
-	rec      machines.VMRecord
+	rec      model.VMRecord
 	run      Run
 	end      *model.RunEnd
 	state    string
@@ -94,7 +93,7 @@ func (d *Daemon) adopt(ctx context.Context) {
 			v.state = StateRunning
 			continue
 		}
-		switch model.Converge(r.Lifetime, r.Want == machines.WantRunning, false) {
+		switch model.Converge(r.Lifetime, r.Want == model.WantRunning, false) {
 		case model.Boot:
 			_ = d.start(ctx, v)
 		case model.EndedWithItsMac:
@@ -142,7 +141,7 @@ func (d *Daemon) start(ctx context.Context, v *vmState) error {
 	}
 	d.refreshSelf(ctx)
 	d.renderEnv(v)
-	run, err := d.hv.Boot(ctx, name, model.Network{Bridged: v.rec.Network == machines.Bridged})
+	run, err := d.hv.Boot(ctx, name, model.Network{Bridged: v.rec.Network == model.Bridged})
 	if err != nil {
 		return err
 	}
@@ -208,12 +207,12 @@ func (d *Daemon) ended(ctx context.Context, v *vmState) {
 	case model.ActRestart:
 		d.restartLater(ctx, v, up, now)
 	case model.ActPoweredOff:
-		v.rec.Want = machines.WantStopped
+		v.rec.Want = model.WantStopped
 		_ = d.m.Save(v.rec)
 		d.setState(v, StateStopped, model.PoweredOffInside)
 		d.tell(ctx, name, PoweredOff(name))
 	case model.ActRerun:
-		if v.rec.Lifetime == machines.AlwaysOn {
+		if v.rec.Lifetime == model.AlwaysOn {
 			d.mu.Lock()
 			v.restarts = v.restarts.Rebooted(now)
 			d.mu.Unlock()
@@ -225,7 +224,7 @@ func (d *Daemon) ended(ctx context.Context, v *vmState) {
 		_, _ = d.m.Remove(ctx, name)
 		d.forget(name)
 	case model.ActStopped:
-		v.rec.Want = machines.WantStopped
+		v.rec.Want = model.WantStopped
 		_ = d.m.Save(v.rec)
 		d.setState(v, StateStopped, "")
 	case model.ActBroken:
@@ -308,7 +307,7 @@ func (d *Daemon) opStart(ctx context.Context, vm string) error {
 	if err := d.opRun(ctx, vm); err != nil {
 		return err
 	}
-	v.rec.Want = machines.WantRunning
+	v.rec.Want = model.WantRunning
 	return d.m.Save(v.rec)
 }
 
@@ -328,7 +327,7 @@ func (d *Daemon) opStop(ctx context.Context, vm string, want bool) error {
 func (d *Daemon) halt(ctx context.Context, v *vmState, want bool) error {
 	vm := v.rec.Name
 	if want {
-		v.rec.Want = machines.WantStopped
+		v.rec.Want = model.WantStopped
 		if err := d.m.Save(v.rec); err != nil {
 			return err
 		}
@@ -708,11 +707,11 @@ func (d *Daemon) renderEnv(v *vmState) {
 	p := d.policy()
 	d.mu.Lock()
 	e := d.exposureLocked()
-	var reserved []machines.Reserved
+	var reserved []model.Reserved
 	for _, pr := range catalog.Profiles {
 		if l, i := ports.Find(d.leases, v.rec.Name, pr.Port); i >= 0 {
 			view := ports.ViewOf(l, e, p.HTTPS, ports.PhaseWaiting)
-			reserved = append(reserved, machines.Reserved{GuestPort: l.GuestPort, HostPort: l.HostPort, Profile: pr.Name, URL: view.URLs.Public, PublicHost: e.PublicHost})
+			reserved = append(reserved, model.Reserved{GuestPort: l.GuestPort, HostPort: l.HostPort, Profile: pr.Name, URL: view.URLs.Public, PublicHost: e.PublicHost})
 		}
 	}
 	rec := v.rec
@@ -720,7 +719,7 @@ func (d *Daemon) renderEnv(v *vmState) {
 	if len(reserved) == 0 {
 		return
 	}
-	env := machines.ProfileEnv(reserved)
+	env := model.ProfileEnv(reserved)
 	if maps.Equal(env, rec.Env) {
 		return
 	}

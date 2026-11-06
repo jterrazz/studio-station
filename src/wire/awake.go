@@ -13,7 +13,8 @@ import (
 	"github.com/jterrazz/studio-station/src/catalog"
 	"github.com/jterrazz/studio-station/src/core/call"
 	coremachine "github.com/jterrazz/studio-station/src/core/machine"
-	"github.com/jterrazz/studio-station/src/domain/machines"
+
+	model "github.com/jterrazz/studio-station/src/machines"
 	pageawake "github.com/jterrazz/studio-station/src/pages/awake"
 	"github.com/jterrazz/studio-station/src/remote/each"
 	awakecmd "github.com/jterrazz/studio-station/src/surface/cli/awake"
@@ -37,7 +38,7 @@ func (m machine) servers() []string {
 	}
 	var out []string
 	for _, r := range records {
-		if r.Lifetime == machines.AlwaysOn {
+		if r.Lifetime == model.AlwaysOn {
 			out = append(out, r.Name)
 		}
 	}

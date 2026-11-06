@@ -5,7 +5,8 @@ import (
 	"sort"
 
 	"github.com/jterrazz/studio-station/src/activity"
-	"github.com/jterrazz/studio-station/src/domain/machines"
+
+	model "github.com/jterrazz/studio-station/src/machines"
 )
 
 const (
@@ -25,7 +26,7 @@ func (d *Daemon) History() *activity.History {
 
 type Running struct {
 	Name     string
-	Lifetime machines.Lifetime
+	Lifetime model.Lifetime
 	// value: the process that holds its guest on this Mac, 0 while none does.
 	PID int
 	// value: station's guest answers inside it.

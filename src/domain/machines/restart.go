@@ -3,39 +3,32 @@ package machines
 import (
 	"context"
 	"errors"
-	model "github.com/jterrazz/studio-station/src/machines"
 	"strings"
 	"time"
+
+	model "github.com/jterrazz/studio-station/src/machines"
 
 	"github.com/jterrazz/studio-station/src/catalog"
 	"github.com/jterrazz/studio-station/src/machines/contract"
 )
 
 const (
-	phaseStop   = "stop"
-	phaseReturn = "return"
-
 	pollEvery    = 2 * time.Second
 	stopBudget   = 60 * time.Second
 	returnBudget = 180 * time.Second
 )
 
-type (
-	RestartEvent  = model.RestartEvent
-	RestartReport = model.RestartReport
-)
-
-func (s *Service) Restart(ctx context.Context, name string, progress func(RestartEvent)) (RestartReport, error) {
+func (s *Service) Restart(ctx context.Context, name string, progress func(model.RestartEvent)) (model.RestartReport, error) {
 	if err := s.CheckHost(); err != nil {
-		return RestartReport{}, err
+		return model.RestartReport{}, err
 	}
 	m, err := s.Remote(name)
 	if err != nil {
-		return RestartReport{}, err
+		return model.RestartReport{}, err
 	}
 	say := func(phase, detail string) {
 		if progress != nil {
-			progress(RestartEvent{Phase: phase, Detail: detail})
+			progress(model.RestartEvent{Phase: phase, Detail: detail})
 		}
 	}
 	if m.Kind != catalog.Host {
@@ -46,21 +39,21 @@ func (s *Service) Restart(ctx context.Context, name string, progress func(Restar
 	say("restarting", "a planned restart that unlocks itself")
 	var refused *contract.RestartRefusedError
 	if err := s.o.Unlocker.PlannedRestart(ctx, m.Name); errors.As(err, &refused) {
-		return RestartReport{}, &RestartRefusedError{Name: name, Detail: refused.Detail}
+		return model.RestartReport{}, &model.RestartRefusedError{Name: name, Detail: refused.Detail}
 	} else if err != nil {
-		return RestartReport{}, err
+		return model.RestartReport{}, err
 	}
 
 	if err := s.await(ctx, m.Name, false, stopBudget); err != nil {
-		return RestartReport{}, wrap(err, name, phaseStop)
+		return model.RestartReport{}, wrap(err, name, model.PhaseStop)
 	}
 	say("down", "the Mac is rebooting")
 	if err := s.await(ctx, m.Name, true, returnBudget); err != nil {
-		return RestartReport{}, wrap(err, name, phaseReturn)
+		return model.RestartReport{}, wrap(err, name, model.PhaseReturn)
 	}
 	waited := s.h.Clock.Now().Sub(started)
 	say("back", "ssh answers again")
-	return RestartReport{Name: name, Waited: waited}, nil
+	return model.RestartReport{Name: name, Waited: waited}, nil
 }
 
 type budgetError struct{}
@@ -69,7 +62,7 @@ func (budgetError) Error() string { return "budget spent" }
 
 func wrap(err error, name, phase string) error {
 	if errors.Is(err, budgetError{}) {
-		return &RestartTimeoutError{Name: name, Phase: phase}
+		return &model.RestartTimeoutError{Name: name, Phase: phase}
 	}
 	return err
 }

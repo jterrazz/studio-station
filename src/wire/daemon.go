@@ -22,11 +22,13 @@ import (
 
 	"github.com/jterrazz/studio-station/src/background/contract"
 	"github.com/jterrazz/studio-station/src/catalog"
+
 	"github.com/jterrazz/studio-station/src/domain/machines"
 	"github.com/jterrazz/studio-station/src/engine"
 	enginelog "github.com/jterrazz/studio-station/src/engine/adapter/log"
 	"github.com/jterrazz/studio-station/src/engine/feeds"
 	"github.com/jterrazz/studio-station/src/engine/process"
+	model "github.com/jterrazz/studio-station/src/machines"
 	"github.com/jterrazz/studio-station/src/machines/adapter/dial"
 	machinescontract "github.com/jterrazz/studio-station/src/machines/contract"
 	pageawake "github.com/jterrazz/studio-station/src/pages/awake"
@@ -175,13 +177,13 @@ func downAs(err, sentinel error) error {
 
 func (d hostDaemon) Ping(ctx context.Context) (string, error) {
 	p, err := d.c.Hello(ctx)
-	return p.Version, downAs(err, machines.ErrDaemonDown)
+	return p.Version, downAs(err, model.ErrDaemonDown)
 }
 
 func (d hostDaemon) VMs(ctx context.Context) (map[string]machines.DaemonVM, error) {
 	views, err := d.c.VMs(ctx)
 	if err != nil {
-		return nil, downAs(err, machines.ErrDaemonDown)
+		return nil, downAs(err, model.ErrDaemonDown)
 	}
 	out := make(map[string]machines.DaemonVM, len(views))
 	for _, v := range views {
@@ -193,21 +195,21 @@ func (d hostDaemon) VMs(ctx context.Context) (map[string]machines.DaemonVM, erro
 func (d hostDaemon) GuestExec(ctx context.Context, vm, line, stdin string) (local.Output, error) {
 	var ran process.ExecOut
 	if err := d.c.do(ctx, process.GuestExec, process.ExecIn{VM: vm, Line: line, Stdin: stdin}, &ran); err != nil {
-		return local.Output{}, downAs(err, machines.ErrDaemonDown)
+		return local.Output{}, downAs(err, model.ErrDaemonDown)
 	}
 	return local.Output{Stdout: ran.Stdout, Stderr: ran.Stderr, ExitCode: ran.Code}, nil
 }
 
 func (d hostDaemon) Do(ctx context.Context, op, vm string) error {
-	return downAs(d.c.do(ctx, process.VM(op), process.VMIn{VM: vm}, nil), machines.ErrDaemonDown)
+	return downAs(d.c.do(ctx, process.VM(op), process.VMIn{VM: vm}, nil), model.ErrDaemonDown)
 }
 
-func (d hostDaemon) Reserve(ctx context.Context, vm string, port int, profile string) (machines.Reserved, error) {
+func (d hostDaemon) Reserve(ctx context.Context, vm string, port int, profile string) (model.Reserved, error) {
 	var v ports.ServiceView
 	if err := d.c.do(ctx, process.Reserve, process.ReserveIn{VM: vm, GuestPort: port, Pinned: true, Profile: profile}, &v); err != nil {
-		return machines.Reserved{}, downAs(err, machines.ErrDaemonDown)
+		return model.Reserved{}, downAs(err, model.ErrDaemonDown)
 	}
-	return machines.Reserved{
+	return model.Reserved{
 		GuestPort: v.GuestPort, HostPort: v.HostPort, Profile: profile, URL: v.URLs.Public, PublicHost: hostOf(v.URLs.Public),
 		Off: localOnlyBecause(v.Detail),
 	}, nil

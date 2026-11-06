@@ -18,7 +18,7 @@ import (
 	"github.com/jterrazz/studio-station/src/platform/local/localtest"
 )
 
-func fleetAsking(t *testing.T, ask func(ctx context.Context, macs []string, answered func(string, machines.HostView))) *machines.Service {
+func fleetAsking(t *testing.T, ask func(ctx context.Context, macs []string, answered func(string, model.HostView))) *machines.Service {
 	t.Helper()
 	h := local.Host{Run: localtest.NewRunner(t), FS: localtest.NewFS(), Env: localtest.Env{HomeDir: "/home"}, Net: localtest.NewNet(), Clock: &localtest.Clock{At: time.Unix(0, 0)}}
 	prefs := corefake.NewPreferences()
@@ -32,7 +32,7 @@ func fleetAsking(t *testing.T, ask func(ctx context.Context, macs []string, answ
 	return machines.New(h, nil, p, machinesfake.NewStore(), noTailnet{}, nil, nil, nil, machines.Options{Here: catalog.Host, Ask: ask})
 }
 
-func names(f machines.Fleet) []string {
+func names(f model.Fleet) []string {
 	out := make([]string, 0, len(f.Hosts))
 	for _, h := range f.Hosts {
 		out = append(out, h.Name)
@@ -41,11 +41,11 @@ func names(f machines.Fleet) []string {
 }
 
 func TestTheFleetFillsARowAsEachMacAnswersAndASilentOneEndsUnreachable(t *testing.T) {
-	svc := fleetAsking(t, func(_ context.Context, _ []string, answered func(string, machines.HostView)) {
-		answered("studio", machines.HostView{Name: "studio"})
+	svc := fleetAsking(t, func(_ context.Context, _ []string, answered func(string, model.HostView)) {
+		answered("studio", model.HostView{Name: "studio"})
 	})
 	var seen [][]string
-	fleet, err := svc.FleetAsItFills(t.Context(), false, func(f machines.Fleet) { seen = append(seen, names(f)) })
+	fleet, err := svc.FleetAsItFills(t.Context(), false, func(f model.Fleet) { seen = append(seen, names(f)) })
 	if err != nil {
 		t.Fatal(err)
 	}

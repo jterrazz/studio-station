@@ -11,26 +11,25 @@ import (
 	model "github.com/jterrazz/studio-station/src/machines"
 
 	"github.com/jterrazz/studio-station/src/catalog"
-	"github.com/jterrazz/studio-station/src/domain/machines"
 	"github.com/jterrazz/studio-station/src/platform/local/localtest"
 	"github.com/jterrazz/studio-station/src/setup"
 )
 
 type fakeMachines struct {
 	stuck   map[string]bool
-	records []machines.VMRecord
-	saved   []machines.VMRecord
+	records []model.VMRecord
+	saved   []model.VMRecord
 }
 
-func (f *fakeMachines) Records() ([]machines.VMRecord, error) { return f.records, nil }
+func (f *fakeMachines) Records() ([]model.VMRecord, error) { return f.records, nil }
 
-func (f *fakeMachines) Save(r machines.VMRecord) error {
+func (f *fakeMachines) Save(r model.VMRecord) error {
 	f.saved = append(f.saved, r)
 	return nil
 }
 
-func (f *fakeMachines) Remove(context.Context, string) (machines.DeleteReport, error) {
-	return machines.DeleteReport{}, nil
+func (f *fakeMachines) Remove(context.Context, string) (model.DeleteReport, error) {
+	return model.DeleteReport{}, nil
 }
 
 func (f *fakeMachines) PowerOff(context.Context, string) error            { return nil }
@@ -112,7 +111,7 @@ type harness struct {
 	m     *fakeMachines
 }
 
-func newHarness(t *testing.T, records ...machines.VMRecord) harness {
+func newHarness(t *testing.T, records ...model.VMRecord) harness {
 	t.Helper()
 	run, files := localtest.NewRunner(t), localtest.NewFS()
 	clock := &localtest.Clock{At: time.Date(2026, 11, 1, 10, 0, 0, 0, time.UTC)}
@@ -144,9 +143,9 @@ func cancelled(t *testing.T) context.Context {
 
 func TestAtStartADeadRunLeavesEveryWorkspaceStoppedAndRunsNone(t *testing.T) {
 	h := newHarness(t,
-		machines.VMRecord{Name: "t", Lifetime: machines.Throwaway},
-		machines.VMRecord{Name: "api", Lifetime: machines.Permanent, Want: machines.WantRunning},
-		machines.VMRecord{Name: "off", Lifetime: machines.Permanent, Want: machines.WantStopped},
+		model.VMRecord{Name: "t", Lifetime: model.Throwaway},
+		model.VMRecord{Name: "api", Lifetime: model.Permanent, Want: model.WantRunning},
+		model.VMRecord{Name: "off", Lifetime: model.Permanent, Want: model.WantStopped},
 	)
 	h.d.adopt(cancelled(t))
 	for _, vm := range []string{"t", "api", "off"} {
@@ -160,7 +159,7 @@ func TestAtStartADeadRunLeavesEveryWorkspaceStoppedAndRunsNone(t *testing.T) {
 }
 
 func TestAtStartALiveRunIsAdoptedNeverRunAgain(t *testing.T) {
-	h := newHarness(t, machines.VMRecord{Name: "api", Lifetime: machines.Permanent, Want: machines.WantRunning})
+	h := newHarness(t, model.VMRecord{Name: "api", Lifetime: model.Permanent, Want: model.WantRunning})
 	h.hv.outlived("api")
 	h.d.adopt(cancelled(t))
 	if got := h.state("api"); got != StateRunning || h.runs() != 0 {
@@ -169,7 +168,7 @@ func TestAtStartALiveRunIsAdoptedNeverRunAgain(t *testing.T) {
 }
 
 func TestAThirdRebootWithinAMinuteStopsTheVMAsALoop(t *testing.T) {
-	h := newHarness(t, machines.VMRecord{Name: "t", Lifetime: machines.Throwaway})
+	h := newHarness(t, model.VMRecord{Name: "t", Lifetime: model.Throwaway})
 	ctx := cancelled(t)
 	v, _ := h.d.find("t")
 	_ = h.d.start(ctx, v)
@@ -187,7 +186,7 @@ func TestAThirdRebootWithinAMinuteStopsTheVMAsALoop(t *testing.T) {
 }
 
 func TestARunWhoseGuestNeverConnectsAnswersGuestTimeoutAfterAMinute(t *testing.T) {
-	h := newHarness(t, machines.VMRecord{Name: "api", Lifetime: machines.Permanent, Want: machines.WantRunning})
+	h := newHarness(t, model.VMRecord{Name: "api", Lifetime: model.Permanent, Want: model.WantRunning})
 	h.hv.outlived("api")
 	v, _ := h.d.find("api")
 	v.run, _ = h.hv.Adopt(t.Context(), "api")
@@ -205,8 +204,8 @@ func TestARunWhoseGuestNeverConnectsAnswersGuestTimeoutAfterAMinute(t *testing.T
 
 func TestStopAllAnswersFailedForALastingVMTheEngineStillRuns(t *testing.T) {
 	h := newHarness(t,
-		machines.VMRecord{Name: "api", Lifetime: machines.Permanent, Want: machines.WantRunning},
-		machines.VMRecord{Name: "web", Lifetime: machines.Permanent, Want: machines.WantRunning},
+		model.VMRecord{Name: "api", Lifetime: model.Permanent, Want: model.WantRunning},
+		model.VMRecord{Name: "web", Lifetime: model.Permanent, Want: model.WantRunning},
 	)
 	h.m.stuck = map[string]bool{"api": true}
 	for _, name := range []string{"api", "web"} {

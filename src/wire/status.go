@@ -19,8 +19,9 @@ import (
 	"github.com/jterrazz/studio-station/src/catalog"
 	coremachine "github.com/jterrazz/studio-station/src/core/machine"
 	diskcalls "github.com/jterrazz/studio-station/src/disk/calls"
-	"github.com/jterrazz/studio-station/src/domain/machines"
+
 	"github.com/jterrazz/studio-station/src/engine"
+	model "github.com/jterrazz/studio-station/src/machines"
 	"github.com/jterrazz/studio-station/src/overview"
 	overviewcalls "github.com/jterrazz/studio-station/src/overview/calls"
 	"github.com/jterrazz/studio-station/src/platform/darwin"
@@ -43,7 +44,7 @@ func overviewCommand(env kit.Env, m machine) *cobra.Command {
 // value: the one Overview `overview --on <vm>` and `machines <vm>` both
 // print (MA-06): a VM is read from All machines.
 func (m machine) overviewDeps(status bool) overviewcmd.Deps {
-	return overviewcmd.Deps{Here: m.where, Status: status, Fleet: func(ctx context.Context) (machines.Fleet, error) {
+	return overviewcmd.Deps{Here: m.where, Status: status, Fleet: func(ctx context.Context) (model.Fleet, error) {
 		return m.machines(false).Fleet(ctx, false)
 	}}
 }

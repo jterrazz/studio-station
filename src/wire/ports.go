@@ -17,7 +17,8 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/jterrazz/studio-station/src/catalog"
-	"github.com/jterrazz/studio-station/src/domain/machines"
+
+	model "github.com/jterrazz/studio-station/src/machines"
 	"github.com/jterrazz/studio-station/src/surface/cli/kit"
 	portscmd "github.com/jterrazz/studio-station/src/surface/cli/ports"
 	portsdeclare "github.com/jterrazz/studio-station/src/surface/cli/ports/declare"
@@ -49,7 +50,7 @@ func (m machine) services(_ kit.Env) *portscalls.Service {
 				}
 			}
 		}
-		var unknown *machines.UnknownMachineError
+		var unknown *model.UnknownMachineError
 		if _, err := fleet.Lookup(ctx, vm); err != nil && !errors.As(err, &unknown) {
 			return "", false, err
 		}

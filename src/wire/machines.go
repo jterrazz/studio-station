@@ -135,12 +135,12 @@ func machinesCommand(env kit.Env, m machine) *cobra.Command {
 		machinesadd.Command(machinesadd.Deps{Here: m.where}, env),
 		machinesforget.Command(machinesforget.Deps{Names: service.Names, Here: m.where}, env),
 		machinescreate.Command(machinescreate.Deps{
-			Resources: machines.ParseResources, Check: createCheck(service),
-			NotBuilt: func(image string) error { return &machines.NoImageError{Image: image} },
+			Resources: model.ParseResources, Check: createCheck(service),
+			NotBuilt: func(image string) error { return &model.NoImageError{Image: image} },
 			Admit: func() error {
 				return call.Gate(call.Meta{Name: machinescalls.CreateWorkspace.Name, Applies: machinescalls.CreateWorkspace.Applies}, m.profile)
 			},
-			Fleet: func(ctx context.Context) (machines.Fleet, error) { return service.Fleet(ctx, false) },
+			Fleet: func(ctx context.Context) (model.Fleet, error) { return service.Fleet(ctx, false) },
 			Here:  m.where, Ask: createAsker(env),
 		}, env),
 		machinesstart.Command(machinesstart.Deps{Names: service.Names, Here: m.where}, env),
@@ -150,7 +150,7 @@ func machinesCommand(env kit.Env, m machine) *cobra.Command {
 			return err == nil && r.Kind == catalog.Host && !env.Far()
 		}, Pausing: m.pausing(env), Here: m.where}, env),
 		machinesdelete.Command(machinesdelete.Deps{Names: service.Names, Here: m.where}, env),
-		machinesedit.Command(machinesedit.Deps{Names: service.Names, Resources: machines.ParseResources, Here: m.where}, env),
+		machinesedit.Command(machinesedit.Deps{Names: service.Names, Resources: model.ParseResources, Here: m.where}, env),
 		machinesprobe.Command(machinesprobe.Deps{Names: service.Names, Overview: overview}, env),
 		machinesunlock.Command(machinesunlock.Deps{Names: service.Names, Here: m.where}, env),
 		machinescmd.SSHCommand(machinescmd.SSHDeps{Names: service.Names, Here: m.where}, env),
@@ -164,7 +164,7 @@ func (m machine) pausing(env kit.Env) func(mac string) []string {
 		vms, _ := machineCalls{Service: m.machines(env.Interactive), m: m}.VMsOf(context.Background(), mac)
 		var names []string
 		for _, vm := range model.Ordered(vms) {
-			if vm.State == machines.Running {
+			if vm.State == model.Running {
 				names = append(names, vm.Name)
 			}
 		}
@@ -172,10 +172,10 @@ func (m machine) pausing(env kit.Env) func(mac string) []string {
 	}
 }
 
-func createCheck(s *machines.Service) func(ctx context.Context, r machines.CreateRequest) (bool, error) {
-	return func(ctx context.Context, r machines.CreateRequest) (bool, error) {
+func createCheck(s *machines.Service) func(ctx context.Context, r model.CreateRequest) (bool, error) {
+	return func(ctx context.Context, r model.CreateRequest) (bool, error) {
 		_, err := s.CheckCreate(ctx, r)
-		var unbuilt *machines.NoImageError
+		var unbuilt *model.NoImageError
 		if errors.As(err, &unbuilt) {
 			return true, err
 		}
@@ -233,14 +233,14 @@ func (c machineCalls) Running(ctx context.Context, name string) (bool, error) {
 	for _, h := range fleet.Hosts {
 		for _, vm := range h.VMs {
 			if vm.Name == name {
-				return vm.State == machines.Running, nil
+				return vm.State == model.Running, nil
 			}
 		}
 	}
-	return false, &machines.UnknownMachineError{Name: name}
+	return false, &model.UnknownMachineError{Name: name}
 }
 
-func (c machineCalls) Restart(ctx context.Context, name string) (machines.RestartReport, error) {
+func (c machineCalls) Restart(ctx context.Context, name string) (model.RestartReport, error) {
 	return c.Service.Restart(ctx, name, nil)
 }
 
@@ -251,12 +251,12 @@ func (c machineCalls) CheckRemoteHost(name, verb string) (string, error) {
 
 func (c machineCalls) Unlock(ctx context.Context, name string, interactive bool) error {
 	if !interactive {
-		return &machines.NeedsTerminalError{Verb: "machines unlock"}
+		return &model.NeedsTerminalError{Verb: "machines unlock"}
 	}
 	return c.Service.Unlock(ctx, name)
 }
 
-func (c machineCalls) VMsOf(ctx context.Context, name string) ([]machines.VM, error) {
+func (c machineCalls) VMsOf(ctx context.Context, name string) ([]model.VM, error) {
 	out, err := call.Read(ctx, c.m.far.router, coremachine.Ref{Name: name}, machinescalls.List, machinescalls.ListIn{Here: true}, nil)
 	if err != nil || len(out.Fleet.Hosts) == 0 {
 		return nil, err
@@ -282,7 +282,7 @@ func (i fleetImages) Latest(ctx context.Context, image string) (disk, version st
 	r, err := i.service.Latest(ctx, image)
 	var unbuilt *images.NotBuiltError
 	if errors.As(err, &unbuilt) {
-		return "", "", &machines.NoImageError{Image: image}
+		return "", "", &model.NoImageError{Image: image}
 	}
 	if err != nil {
 		return "", "", err

@@ -3,7 +3,7 @@ package kit
 import (
 	"errors"
 
-	"github.com/jterrazz/studio-station/src/domain/machines"
+	model "github.com/jterrazz/studio-station/src/machines"
 
 	"github.com/jterrazz/studio-station/src/core/fail"
 	"github.com/jterrazz/studio-station/src/setup"
@@ -28,7 +28,7 @@ func setupFailure(err error) (*fail.Error, bool) {
 		return usage(setup.ErrNameOnVM.Error(), "run station setup without --name"), true
 	case errors.As(err, &step):
 		hint := "fix it, then run station setup again: it resumes"
-		var underAgent *machines.RunningUnderAgentError
+		var underAgent *model.RunningUnderAgentError
 		switch {
 		case errors.As(err, &underAgent):
 			hint = "stop the permanent VMs and delete the throwaway ones (station machines), then station setup"

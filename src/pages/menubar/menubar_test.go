@@ -4,7 +4,7 @@ import (
 	"slices"
 	"testing"
 
-	"github.com/jterrazz/studio-station/src/domain/machines"
+	model "github.com/jterrazz/studio-station/src/machines"
 	"github.com/jterrazz/studio-station/src/overview"
 	"github.com/jterrazz/studio-station/src/page"
 )
@@ -13,12 +13,12 @@ import (
 // says a server running there is skipped and keeps the engine running; a
 // server on another Mac is not its business.
 func TestStopEverythingOnThisMacSaysItsServerIsSkipped(t *testing.T) {
-	fleet := &machines.Fleet{Hosts: []machines.HostView{
-		{Name: "jterrazz-macbook-pro", Here: true, VMs: []machines.VM{
-			{Name: "infra", Lifetime: machines.AlwaysOn, State: machines.Running},
-			{Name: "linux-1", Lifetime: machines.Throwaway, State: machines.Running},
+	fleet := &model.Fleet{Hosts: []model.HostView{
+		{Name: "jterrazz-macbook-pro", Here: true, VMs: []model.VM{
+			{Name: "infra", Lifetime: model.AlwaysOn, State: model.Running},
+			{Name: "linux-1", Lifetime: model.Throwaway, State: model.Running},
 		}},
-		{Name: "jterrazz-mac-mini", VMs: []machines.VM{{Name: "db", Lifetime: machines.AlwaysOn, State: machines.Running}}},
+		{Name: "jterrazz-mac-mini", VMs: []model.VM{{Name: "db", Lifetime: model.AlwaysOn, State: model.Running}}},
 	}}
 	confirm := stopAll(Reading{Fleet: fleet}).Confirm
 	if confirm.Question != "Stop everything on This Mac?" {
@@ -57,10 +57,10 @@ func TestUpdateAllLeavesNeedsYouAndTheBadgeDropsByOne(t *testing.T) {
 // invariant: MA-14: Home draws each Mac's servers, then its workspaces,
 // whatever order its engine lists them in.
 func TestHomeDrawsAMacsServersThenItsWorkspaces(t *testing.T) {
-	fleet := &machines.Fleet{Hosts: []machines.HostView{
-		{Name: "jterrazz-mac-mini", Here: true, Reachable: true, VMs: []machines.VM{
-			{Name: "build", Lifetime: machines.Throwaway, State: machines.Running},
-			{Name: "infra", Lifetime: machines.AlwaysOn, State: machines.Running},
+	fleet := &model.Fleet{Hosts: []model.HostView{
+		{Name: "jterrazz-mac-mini", Here: true, Reachable: true, VMs: []model.VM{
+			{Name: "build", Lifetime: model.Throwaway, State: model.Running},
+			{Name: "infra", Lifetime: model.AlwaysOn, State: model.Running},
 		}},
 	}}
 	p := Page(Reading{Fleet: fleet}, page.Context{})

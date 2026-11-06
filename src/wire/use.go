@@ -11,7 +11,7 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/jterrazz/studio-station/src/domain/machines"
+	model "github.com/jterrazz/studio-station/src/machines"
 	"github.com/jterrazz/studio-station/src/platform/local"
 	"github.com/jterrazz/studio-station/src/surface/cli/kit"
 	usecmd "github.com/jterrazz/studio-station/src/surface/cli/use"
@@ -120,7 +120,7 @@ func (m machine) known(ctx context.Context, name string) (bool, error) {
 		return true, nil
 	}
 	_, err := m.holder(ctx, name)
-	var unknown *machines.UnknownMachineError
+	var unknown *model.UnknownMachineError
 	if errors.As(err, &unknown) {
 		return false, nil
 	}

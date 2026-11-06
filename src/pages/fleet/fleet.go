@@ -2,8 +2,9 @@ package fleet
 
 import (
 	"github.com/jterrazz/studio-station/src/catalog"
-	"github.com/jterrazz/studio-station/src/domain/machines"
+
 	"github.com/jterrazz/studio-station/src/images"
+	model "github.com/jterrazz/studio-station/src/machines"
 	"github.com/jterrazz/studio-station/src/page"
 	"github.com/jterrazz/studio-station/src/pages"
 	pageimages "github.com/jterrazz/studio-station/src/pages/images"
@@ -20,7 +21,7 @@ const (
 )
 
 type Reading struct {
-	Machines *machines.Fleet
+	Machines *model.Fleet
 	Images   *[]images.Report
 	Services *ports.Fleet
 	Tailnet  *ports.Status

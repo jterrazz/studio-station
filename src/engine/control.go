@@ -11,7 +11,8 @@ import (
 	awakecontract "github.com/jterrazz/studio-station/src/awake/contract"
 
 	"github.com/jterrazz/studio-station/src/catalog"
-	"github.com/jterrazz/studio-station/src/domain/machines"
+
+	model "github.com/jterrazz/studio-station/src/machines"
 	"github.com/jterrazz/studio-station/src/platform/local"
 )
 
@@ -24,7 +25,7 @@ const (
 )
 
 type ControlMachines interface {
-	Records() ([]machines.VMRecord, error)
+	Records() ([]model.VMRecord, error)
 	StopDirect(ctx context.Context, name string) error
 }
 
@@ -157,7 +158,7 @@ func (c *Control) Plan(ctx context.Context) (Work, error) {
 	for _, r := range records {
 		switch {
 		case !running[r.Name]:
-		case r.Lifetime == machines.AlwaysOn:
+		case r.Lifetime == model.AlwaysOn:
 			w.Servers = append(w.Servers, r.Name)
 		default:
 			w.VMs = append(w.VMs, Stopped{Name: r.Name, Lifetime: string(r.Lifetime), Result: ResultStopped})
