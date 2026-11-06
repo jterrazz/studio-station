@@ -19,13 +19,13 @@ import (
 )
 
 const (
-	KeysBegin    = "# >>> station hosts >>>"
-	KeysEnd      = "# <<< station hosts <<<"
-	scanEvery    = time.Second
-	snapshotEach = 60
-	dockerEach   = 5
-	relayBudget  = 30 * time.Second
-	readBudget   = 10 * time.Second
+	KeysBegin      = "# >>> station hosts >>>"
+	KeysEnd        = "# <<< station hosts <<<"
+	scanEvery      = time.Second
+	snapshotEach   = 60
+	containersEach = 5
+	relayBudget    = 30 * time.Second
+	readBudget     = 10 * time.Second
 )
 
 type Options struct {
@@ -38,10 +38,16 @@ type Options struct {
 	Accounts func(ctx context.Context, keys []string) any
 	// value: what listens in this VM, read by the adapter of its kind.
 	Listeners Listeners
+	// value: the ports this VM's containers publish; nil reads none.
+	Containers Containers
 }
 
 type Listeners interface {
 	Read(ctx context.Context) ([]ports.Listener, error)
+}
+
+type Containers interface {
+	Read(ctx context.Context) ([]ports.Announced, error)
 }
 
 type Service struct {
@@ -50,10 +56,6 @@ type Service struct {
 }
 
 func New(h local.Host, o Options) *Service { return &Service{h: h, o: o} }
-
-type HostOnlyRefusedError struct{}
-
-func (*HostOnlyRefusedError) Error() string { return "station guest runs only inside a VM" }
 
 type Hello struct {
 	Host       string            `json:"host"`
@@ -76,13 +78,6 @@ type message struct {
 	Hello
 }
 
-func (s *Service) Check() error {
-	if s.o.Kind == catalog.Host {
-		return &HostOnlyRefusedError{}
-	}
-	return nil
-}
-
 func (s *Service) SocketPath() string { return path.Join(s.o.State, "guest.sock") }
 
 type session struct {
@@ -91,8 +86,8 @@ type session struct {
 	mu      sync.Mutex
 	hello   Hello
 	ready   bool
-	last    []Listener
-	docker  []Listener
+	last    []ports.Announced
+	held    []ports.Announced
 	pending map[string]chan message
 	seq     int
 }
@@ -110,9 +105,6 @@ func (g *session) send(v any) {
 func (s *Service) Run(ctx context.Context, in io.Reader, out io.Writer) error {
 	// invariant: the guest never opens a connection to its host: its stdin and
 	// stdout ARE the host's channel, and a stdin that ends ends the guest.
-	if err := s.Check(); err != nil {
-		return err
-	}
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 	g := &session{s: s, out: out, pending: map[string]chan message{}}
@@ -162,7 +154,7 @@ func (g *session) handle(ctx context.Context, m message) {
 		if !g.ready {
 			g.ready = true
 			g.send(map[string]any{"v": 1, "type": "ready", "guest_version": g.s.o.Version, "kind": string(g.s.o.Kind)})
-			g.last = g.s.scan(ctx, g.hello, &g.docker, true)
+			g.last = g.s.scan(ctx, g.hello, &g.held, true)
 			g.send(map[string]any{"v": 1, "type": "snapshot", "ports": g.last})
 			go g.watch(ctx)
 		}
@@ -201,16 +193,16 @@ func (g *session) watch(ctx context.Context) {
 		if g.s.h.Clock.Sleep(ctx, scanEvery) != nil {
 			return
 		}
-		now := g.s.scan(ctx, g.hello, &g.docker, tick%dockerEach == 0)
+		now := g.s.scan(ctx, g.hello, &g.held, tick%containersEach == 0)
 		if tick%snapshotEach == 0 {
 			g.send(map[string]any{"v": 1, "type": "snapshot", "ports": now})
 		} else {
-			for _, e := range Diff(g.last, now) {
+			for _, e := range ports.DiffAnnounced(g.last, now) {
 				if e.Listen != nil {
 					g.send(struct {
 						V    int    `json:"v"`
 						Type string `json:"type"`
-						Listener
+						ports.Announced
 					}{1, "listen", *e.Listen})
 				} else {
 					g.send(map[string]any{"v": 1, "type": "unlisten", "port": e.Unlisten})
@@ -221,25 +213,24 @@ func (g *session) watch(ctx context.Context) {
 	}
 }
 
-// invariant: docker is asked every dockerEach scans, and its last answer is
-// merged into every scan between, so a container's port keeps its name and
-// never flaps (its socket is root's docker-proxy, or none without the proxy).
-func (s *Service) scan(ctx context.Context, h Hello, docker *[]Listener, refresh bool) []Listener {
-	var found []Listener
+// invariant: the containers are asked every containersEach scans, and their
+// last answer is merged into every scan between, so a container's port keeps
+// its name and never flaps (its socket is the container engine's proxy, or
+// none without the proxy).
+func (s *Service) scan(ctx context.Context, h Hello, held *[]ports.Announced, refresh bool) []ports.Announced {
+	var found []ports.Announced
 	if s.o.Listeners != nil {
 		if ls, err := s.o.Listeners.Read(ctx); err == nil {
-			found = Sockets(ls)
+			found = ports.Announce(ls)
 		}
 	}
-	if refresh {
-		if _, ok := s.h.Run.LookPath("docker"); !ok {
-			*docker = nil
-		} else if out, err := s.h.Run.Output(ctx, local.Cmd{Name: "docker", Args: []string{"ps", "--format", "{{json .}}"}, Timeout: 5 * time.Second}); err == nil && out.ExitCode == 0 {
-			*docker = ParseDockerPS([]byte(out.Stdout))
+	if refresh && s.o.Containers != nil {
+		if published, err := s.o.Containers.Read(ctx); err == nil {
+			*held = published
 		}
 	}
-	found = Merge(found, *docker)
-	return Filter(found, h.MinPort, h.Ignored)
+	found = ports.MergeAnnounced(found, *held)
+	return ports.FilterAnnounced(found, h.MinPort, h.Ignored)
 }
 
 func (s *Service) writeFiles(h Hello) error {
@@ -301,14 +292,8 @@ func (s *Service) writeHost(h Hello) error {
 	return s.h.FS.WriteFile(path.Join(s.o.State, "guest.json"), append(data, '\n'), 0o600)
 }
 
-type Placement struct {
-	Host       string `json:"host"`
-	VM         string `json:"vm"`
-	PublicHost string `json:"public_host"`
-}
-
-func (s *Service) Placement() Placement {
-	var p Placement
+func (s *Service) Placement() ports.VMPlace {
+	var p ports.VMPlace
 	data, err := s.h.FS.ReadFile(path.Join(s.o.State, "guest.json"))
 	if err == nil {
 		_ = json.Unmarshal(data, &p)

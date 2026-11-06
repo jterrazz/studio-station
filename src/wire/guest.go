@@ -2,6 +2,7 @@ package wire
 
 import (
 	"context"
+	"io"
 	"path"
 	"path/filepath"
 
@@ -9,7 +10,9 @@ import (
 
 	accountscalls "github.com/jterrazz/studio-station/src/accounts/calls"
 	"github.com/jterrazz/studio-station/src/catalog"
-	"github.com/jterrazz/studio-station/src/domain/guest"
+	model "github.com/jterrazz/studio-station/src/machines"
+	"github.com/jterrazz/studio-station/src/ports/adapter/docker"
+	"github.com/jterrazz/studio-station/src/ports/adapter/guest"
 	"github.com/jterrazz/studio-station/src/ports/adapter/lsof"
 	"github.com/jterrazz/studio-station/src/ports/adapter/procnet"
 	portscontract "github.com/jterrazz/studio-station/src/ports/contract"
@@ -23,10 +26,38 @@ func (m machine) guest() *guest.Service {
 	if root == "" {
 		root = "/"
 	}
-	return guest.New(m.host, guest.Options{State: m.paths.State, ServicesEnv: filepath.Join(m.paths.Config, "services.env"), Kind: m.kind, Version: Version(), Listeners: m.listeners(root), Accounts: func(ctx context.Context, keys []string) any {
+	return guest.New(m.host, guest.Options{State: m.paths.State, ServicesEnv: filepath.Join(m.paths.Config, "services.env"), Kind: m.kind, Version: Version(), Listeners: m.listeners(root), Containers: m.containers(), Accounts: func(ctx context.Context, keys []string) any {
 		a := accountscalls.NewReader(m.pool, m.identities(path.Join(m.paths.State, "children")), accountscalls.ReaderPorts{}, accountscalls.ReaderOptions{Here: m.kind, HereName: m.where.Machine, Now: m.host.Clock.Now, Keys: func() []string { return keys }})
 		return a.Own(ctx)
 	}})
+}
+
+// value: the ports this VM's containers publish; none in a world.
+func (m machine) containers() guest.Containers {
+	if m.world != nil {
+		return nil
+	}
+	return docker.New(m.host.Run)
+}
+
+// value: station guest, refused on a Mac.
+type guestServer struct {
+	*guest.Service
+	kind catalog.MachineKind
+}
+
+func (g guestServer) Check() error {
+	if g.kind == catalog.Host {
+		return &model.GuestOnMacError{}
+	}
+	return nil
+}
+
+func (g guestServer) Run(ctx context.Context, in io.Reader, out io.Writer) error {
+	if err := g.Check(); err != nil {
+		return err
+	}
+	return g.Service.Run(ctx, in, out)
 }
 
 // value: what listens here, read the way this system can: a Linux kernel's
@@ -42,7 +73,7 @@ func (m machine) listeners(root string) portscontract.Listeners {
 }
 
 func guestCommand(env kit.Env, m machine) *cobra.Command {
-	cmd := guestcmd.Command(guestcmd.Deps{Guest: m.guest()}, env)
+	cmd := guestcmd.Command(guestcmd.Deps{Guest: guestServer{m.guest(), m.kind}}, env)
 	cmd.AddCommand(guestserve.Command(guestserve.Deps{Serve: serveFrames(env)}, env))
 	return cmd
 }

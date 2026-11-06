@@ -12,9 +12,9 @@ import (
 	accountscalls "github.com/jterrazz/studio-station/src/accounts/calls"
 	accountscontract "github.com/jterrazz/studio-station/src/accounts/contract"
 	"github.com/jterrazz/studio-station/src/catalog"
-	"github.com/jterrazz/studio-station/src/domain/guest"
 	"github.com/jterrazz/studio-station/src/engine"
 	"github.com/jterrazz/studio-station/src/engine/process"
+	"github.com/jterrazz/studio-station/src/ports/adapter/guest"
 )
 
 func (m machine) accounts() *accountscalls.Reader {

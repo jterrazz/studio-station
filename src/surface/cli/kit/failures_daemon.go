@@ -6,15 +6,15 @@ import (
 	"github.com/jterrazz/studio-station/src/ports"
 
 	"github.com/jterrazz/studio-station/src/core/fail"
-	"github.com/jterrazz/studio-station/src/domain/guest"
 	"github.com/jterrazz/studio-station/src/engine"
+	model "github.com/jterrazz/studio-station/src/machines"
 )
 
 func daemonFailure(err error) (*fail.Error, bool) {
 	var running *engine.RunningError
 	var hostOnly *engine.HostOnlyError
 	var down *engine.DownError
-	var guestHost *guest.HostOnlyRefusedError
+	var guestHost *model.GuestOnMacError
 	if f, ok := controlFailure(err); ok {
 		return f, true
 	}

@@ -253,8 +253,8 @@ func ruleFamilyImports(w *world) []finding {
 	return out
 }
 
-func TestFamilyImports(t *testing.T)        { judge(t, "FamilyImports") }
-func TestFamilyImportsOldTree(t *testing.T) { judge(t, "FamilyImportsOldTree") }
+func TestFamilyImports(t *testing.T)                 { judge(t, "FamilyImports") }
+func TestAFamilyModelReachesNoPlatform(t *testing.T) { judge(t, "FamilyImportsPlatform") }
 func TestASurfaceReachesTheEngineOnlyThroughItsCalls(t *testing.T) {
 	judge(t, "FamilyImportsSurfaceEngine")
 }

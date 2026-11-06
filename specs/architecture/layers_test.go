@@ -740,7 +740,7 @@ func rules() []rule {
 		{"Streams", ruleStreams, "src/surface/cli/mutant/mutant_streams.go", "package mutant\n\nimport \"" + module + "/src/surface/cli/kit\"\n\nfunc mutantStreams(o kit.IO) { _, _ = o.Streams() }\n", "src/surface/cli/mutant"},
 		{"Kit", ruleKit, "src/pages/tools/mutant_kit.go", "package tools\n\nimport _ \"" + lip + "\"\n", "src/pages/tools/mutant_kit.go"},
 		{"Levels", ruleLevels, "src/ui/atom/mutant_levels.go", "package atom\n\nimport _ \"" + module + "/src/ui/render/json\"\n", "src/ui/atom/mutant_levels.go"},
-		{"LevelsDomain", ruleLevels, "src/ui/organism/mutant_levels.go", "package organism\n\nimport _ \"" + module + "/src/domain/setup\"\n", "src/ui/organism/mutant_levels.go"},
+		{"LevelsCatalog", ruleLevels, "src/ui/organism/mutant_levels.go", "package organism\n\nimport _ \"" + module + "/src/catalog\"\n", "src/ui/organism/mutant_levels.go"},
 		{"Semantic", ruleSemantic, "src/pages/tools/mutant_semantic.go", "package tools\n\nfunc Line() string { return \"\" }\n", "src/pages/tools/mutant_semantic.go"},
 		{"TUILoadingLaw", ruleTUILoading, "src/surface/tui/mutant_loading.go", "package tui\n\nimport \"context\"\n\nfunc (s shell) mutantView() string {\n\tp, _ := s.deps.Pages(context.Background(), nil)\n\treturn p.Command\n}\n", "src/surface/tui/mutant_loading.go"},
 		{"TUILoadingLawCalls", ruleTUILoading, "src/surface/tui/mutant_loading_calls.go", "package tui\n\nimport (\n\t\"context\"\n\n\t\"" + module + "/src/core/call\"\n\t\"" + module + "/src/core/machine\"\n\tenginecalls \"" + module + "/src/engine/calls\"\n)\n\nfunc (s shell) mutantCallView() bool {\n\t_, err := call.Invoke(context.Background(), nil, machine.Ref{}, enginecalls.Read, enginecalls.ReadIn{}, nil)\n\treturn err == nil\n}\n", "src/surface/tui/mutant_loading_calls.go"},
@@ -762,7 +762,7 @@ func rules() []rule {
 		{"TreeApplies", ruleTree, "src/awake/applies.go", "package awake\n", "src/awake"},
 		{"TreeAppliesElsewhere", ruleTree, "src/awake/mutant_gate.go", "package awake\n\nimport \"" + module + "/src/core/machine\"\n\nvar Applies = machine.Anywhere\n", "src/awake"},
 		{"FamilyImports", ruleFamilyImports, "src/apps/mutant_imports.go", "package apps\n\nimport _ \"os/exec\"\n", "src/apps/mutant_imports.go"},
-		{"FamilyImportsOldTree", ruleFamilyImports, "src/disk/mutant_imports_old.go", "package disk\n\nimport _ \"" + module + "/src/domain/guest\"\n", "src/disk/mutant_imports_old.go"},
+		{"FamilyImportsPlatform", ruleFamilyImports, "src/disk/mutant_imports_platform.go", "package disk\n\nimport _ \"" + module + "/src/platform/local\"\n", "src/disk/mutant_imports_platform.go"},
 		{"FamilyImportsSurfaceEngine", ruleFamilyImports, "src/surface/cli/start/mutant_engine.go", "package startcmd\n\nimport _ \"" + module + "/src/engine\"\n", "src/surface/cli/start/mutant_engine.go"},
 		{"TechnologyWords", ruleTechnologyWords, "src/apps/mutant_words.go", "package apps\n\nconst mutantMethod = \"brew\"\n", "src/apps/mutant_words.go"},
 		{"TechnologyWordsSSH", ruleTechnologyWords, "src/apps/mutant_ssh.go", "package apps\n\nvar mutantArgv = []string{\"ssh\", \"-o\", \"BatchMode=yes\", \"vm\", \"true\"}\n", "src/apps/mutant_ssh.go"},
@@ -863,13 +863,13 @@ func TestStreams(t *testing.T)    { judge(t, "Streams") }
 func TestImportsCore(t *testing.T)      { judge(t, "ImportsCore") }
 func TestImportsCoreFiles(t *testing.T) { judge(t, "ImportsCoreFiles") }
 
-func TestKit(t *testing.T)          { judge(t, "Kit") }
-func TestLevels(t *testing.T)       { judge(t, "Levels") }
-func TestLevelsDomain(t *testing.T) { judge(t, "LevelsDomain") }
-func TestSemantic(t *testing.T)     { judge(t, "Semantic") }
-func TestGlyphs(t *testing.T)       { judge(t, "Glyphs") }
-func TestPresentation(t *testing.T) { judge(t, "Presentation") }
-func TestKeys(t *testing.T)         { judge(t, "Keys") }
-func TestBuilders(t *testing.T)     { judge(t, "Builders") }
-func TestLayout(t *testing.T)       { judge(t, "Layout") }
-func TestLayoutRepeat(t *testing.T) { judge(t, "LayoutRepeat") }
+func TestKit(t *testing.T)           { judge(t, "Kit") }
+func TestLevels(t *testing.T)        { judge(t, "Levels") }
+func TestLevelsCatalog(t *testing.T) { judge(t, "LevelsCatalog") }
+func TestSemantic(t *testing.T)      { judge(t, "Semantic") }
+func TestGlyphs(t *testing.T)        { judge(t, "Glyphs") }
+func TestPresentation(t *testing.T)  { judge(t, "Presentation") }
+func TestKeys(t *testing.T)          { judge(t, "Keys") }
+func TestBuilders(t *testing.T)      { judge(t, "Builders") }
+func TestLayout(t *testing.T)        { judge(t, "Layout") }
+func TestLayoutRepeat(t *testing.T)  { judge(t, "LayoutRepeat") }

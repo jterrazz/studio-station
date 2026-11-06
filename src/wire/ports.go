@@ -9,9 +9,9 @@ import (
 	"github.com/jterrazz/studio-station/src/core/confirm"
 	"github.com/jterrazz/studio-station/src/core/fail"
 	coremachine "github.com/jterrazz/studio-station/src/core/machine"
-	"github.com/jterrazz/studio-station/src/domain/guest"
 	"github.com/jterrazz/studio-station/src/platform/local"
 	"github.com/jterrazz/studio-station/src/ports"
+	"github.com/jterrazz/studio-station/src/ports/adapter/guest"
 	portscalls "github.com/jterrazz/studio-station/src/ports/calls"
 
 	"github.com/spf13/cobra"
@@ -61,7 +61,7 @@ func (m machine) services(_ kit.Env) *portscalls.Service {
 // value: what listens on this Mac, read by lsof, the world's in a world.
 
 // value: where this VM runs, as its guest's hello placed it.
-func (m machine) placement(g *guest.Service) guest.Placement {
+func (m machine) placement(g *guest.Service) ports.VMPlace {
 	if m.world != nil {
 		if p, inside := m.world.placement(); inside {
 			return p

@@ -44,7 +44,6 @@ import (
 	"github.com/jterrazz/studio-station/src/core/fail"
 	diskfake "github.com/jterrazz/studio-station/src/disk/adapter/fake"
 	diskcontract "github.com/jterrazz/studio-station/src/disk/contract"
-	"github.com/jterrazz/studio-station/src/domain/guest"
 	"github.com/jterrazz/studio-station/src/engine"
 	enginefake "github.com/jterrazz/studio-station/src/engine/adapter/fake"
 	imagesfake "github.com/jterrazz/studio-station/src/images/adapter/fake"
@@ -877,15 +876,15 @@ func (g worldGuest) Exec(ctx context.Context, cmd contract.GuestCommand) (contra
 
 // value: a VM of the world as its guest's hello placed it: the Mac that
 // holds it and that Mac's name on the tailnet; false for a Mac.
-func (m *worldMac) placement() (guest.Placement, bool) {
+func (m *worldMac) placement() (ports.VMPlace, bool) {
 	w := m.run.w
 	w.Lock()
 	defer w.Unlock()
 	mac := w.Holder(m.name)
 	if mac == "" {
-		return guest.Placement{}, false
+		return ports.VMPlace{}, false
 	}
-	p := guest.Placement{Host: mac, VM: m.name}
+	p := ports.VMPlace{Host: mac, VM: m.name}
 	if n := w.Macs[mac].Tailnet; n != nil {
 		p.PublicHost = n.Self.Sharing.Host
 	}
