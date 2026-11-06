@@ -41,7 +41,7 @@ func Doc(fs []Finding) []JSON {
 	return out
 }
 
-func FleetDoc(fs []Finding) []JSON {
+func AllMachinesDoc(fs []Finding) []JSON {
 	// invariant: findings of many machines, ranked, each naming its machine.
 	out := make([]JSON, 0, len(fs))
 	for _, f := range Rank(fs) {

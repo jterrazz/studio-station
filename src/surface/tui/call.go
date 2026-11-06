@@ -60,9 +60,9 @@ func screenFor(n node, id section.ID) screen.Screen {
 func (s shell) screen() screen.Screen { return screenFor(s.current(), s.section()) }
 
 func (s shell) machineOf(n node) screen.Machine {
-	m := screen.Machine{Name: n.name, Label: n.label, Kind: n.kind, Mac: n.mac, Here: n.here}
+	m := screen.Machine{Name: n.name, Label: n.label, Kind: n.kind, Mac: n.mac, ThisMachine: n.thisMac}
 	if mac, ok := find(s.nodes, n.mac); ok {
-		m.MacLabel, m.MacHere = mac.label, mac.here
+		m.MacLabel, m.MacHere = mac.label, mac.thisMac
 	}
 	return m
 }

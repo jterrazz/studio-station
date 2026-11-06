@@ -28,7 +28,7 @@ func (s *Service) lookup(name string) (Machine, error) {
 		return Machine{}, err
 	}
 	if h, ok := cfg.Hosts[name]; ok {
-		return Machine{Name: name, Kind: catalog.Host, Here: name == cfg.Here, User: h.User, Key: h.Key, LAN: h.LAN}, nil
+		return Machine{Name: name, Kind: catalog.Mac, Here: name == cfg.Here, User: h.User, Key: h.Key, LAN: h.LAN}, nil
 	}
 	records, err := s.records()
 	if err != nil {
@@ -43,7 +43,7 @@ func (s *Service) lookup(name string) (Machine, error) {
 	// (mac-mini for jterrazz-mac-mini).
 	if full := s.o.User + "-" + name; s.o.User != "" {
 		if h, ok := cfg.Hosts[full]; ok {
-			return Machine{Name: full, Kind: catalog.Host, Here: full == cfg.Here, User: h.User, Key: h.Key, LAN: h.LAN}, nil
+			return Machine{Name: full, Kind: catalog.Mac, Here: full == cfg.Here, User: h.User, Key: h.Key, LAN: h.LAN}, nil
 		}
 	}
 	return Machine{}, &UnknownMachineError{Name: name}
@@ -76,7 +76,7 @@ func (s *Service) RemoteHost(name, verb string) (Machine, error) {
 	if err != nil {
 		return Machine{}, err
 	}
-	if m.Kind != catalog.Host {
+	if m.Kind != catalog.Mac {
 		return Machine{}, &NotAHostError{Name: name, Verb: verb}
 	}
 	return m, nil
@@ -96,9 +96,9 @@ func (s *Service) Init(name string) error {
 	if _, ok := cfg.Hosts[name]; !ok {
 		hosts := maps.Clone(cfg.Hosts)
 		if hosts == nil {
-			hosts = map[string]model.Host{}
+			hosts = map[string]model.MacRecord{}
 		}
-		hosts[name] = model.Host{}
+		hosts[name] = model.MacRecord{}
 		if err := s.p.Hosts.Set(hosts); err != nil {
 			return err
 		}
@@ -109,7 +109,7 @@ func (s *Service) Init(name string) error {
 	return nil
 }
 
-func (s *Service) AddHost(ctx context.Context, name string, h model.Host) error {
+func (s *Service) AddHost(ctx context.Context, name string, h model.MacRecord) error {
 	if err := s.CheckHost(); err != nil {
 		return err
 	}
@@ -135,13 +135,13 @@ func (s *Service) AddHost(ctx context.Context, name string, h model.Host) error 
 	before := cfg.Hosts
 	hosts := maps.Clone(cfg.Hosts)
 	if hosts == nil {
-		hosts = map[string]model.Host{}
+		hosts = map[string]model.MacRecord{}
 	}
 	hosts[name] = h
 	if err := s.p.Hosts.Set(hosts); err != nil {
 		return err
 	}
-	if err := s.o.SSHConfig.Put(ctx, []contract.HostBlock{{Name: name, User: h.User, Key: h.Key}}); err != nil {
+	if err := s.o.SSHConfig.Put(ctx, []contract.MachineBlock{{Name: name, User: h.User, Key: h.Key}}); err != nil {
 		_ = s.p.Hosts.Set(before)
 		return configFailure(err, true)
 	}
@@ -215,9 +215,9 @@ func (s *Service) Remember(_ context.Context, f Fleet) error {
 		return err
 	}
 	changed := false
-	for _, h := range f.Hosts {
+	for _, h := range f.Macs {
 		known, ok := cfg.Hosts[h.Name]
-		if h.Here || !h.Reachable || !ok {
+		if h.ThisMac || !h.Reachable || !ok {
 			continue
 		}
 		seen := make([]model.SeenVM, 0, len(h.VMs))

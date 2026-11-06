@@ -39,7 +39,7 @@ func RouteNames() string {
 
 func DeclaredBy(setting string) string {
 	// value: the owner's words for the setting that declared a port.
-	for _, it := range ConfigItems {
+	for _, it := range Settings {
 		if it.Name == setting && it.Declares != nil {
 			return it.Declares.Label
 		}

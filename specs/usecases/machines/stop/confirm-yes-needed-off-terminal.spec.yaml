@@ -6,7 +6,7 @@ runs:
       stderr: |
           Error: refusing to stop without --yes
           Hint: re-run with --yes
-    - command: 'machines --here'
+    - command: 'machines --this-mac'
       exit: 0
       stdout: |
           ●	jterrazz-macbook-pro	Mac	jterrazz-macbook-pro	Engine running

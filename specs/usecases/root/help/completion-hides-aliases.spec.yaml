@@ -1,24 +1,24 @@
-description: 'completion offers the commands of the help, never a hidden alias or plumbing'
+description: 'completion offers the commands of the help, in its order, never a hidden alias or plumbing'
 env: one-mac
 runs:
     - command: '__complete "" 2>/dev/null | /usr/bin/grep -v "^:" | /usr/bin/cut -f1'
       exit: 0
       stdout: |
-          accounts
+          overview
           activity
           apps
-          awake
-          background
-          disk
-          engine
-          help
-          images
-          machines
-          overview
-          ports
           settings
-          setup
+          disk
+          ports
+          accounts
+          background
+          awake
+          machines
+          images
+          engine
           use
+          setup
+          help
     - command: 'completion zsh | /usr/bin/grep -c "compdef _station station"'
       exit: 0
       stdout: |

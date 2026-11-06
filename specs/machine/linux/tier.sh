@@ -41,7 +41,7 @@ as() {
   local h=$1
   shift
   env -i HOME="$h" PATH="$h/.local/bin:/usr/bin:/bin:/usr/sbin:/sbin" TERM=dumb TZ=UTC NO_COLOR=1 \
-    TART_NO_AUTO_PRUNE=1 STATION_MACHINE_KIND=host STATION_POWER_STUB="$h/power" STATION_SYSTEM_ROOT="$h/root" "$@"
+    TART_NO_AUTO_PRUNE=1 STATION_MACHINE_KIND=mac STATION_POWER_STUB="$h/power" STATION_SYSTEM_ROOT="$h/root" "$@"
 }
 # value: as, in place of the caller: a process started in the background is then
 # the one its pid names, and the cleanup's kill reaches it.
@@ -49,7 +49,7 @@ as_exec() {
   local h=$1
   shift
   exec env -i HOME="$h" PATH="$h/.local/bin:/usr/bin:/bin:/usr/sbin:/sbin" TERM=dumb TZ=UTC NO_COLOR=1 \
-    TART_NO_AUTO_PRUNE=1 STATION_MACHINE_KIND=host STATION_POWER_STUB="$h/power" STATION_SYSTEM_ROOT="$h/root" "$@"
+    TART_NO_AUTO_PRUNE=1 STATION_MACHINE_KIND=mac STATION_POWER_STUB="$h/power" STATION_SYSTEM_ROOT="$h/root" "$@"
 }
 on_mac() { as "$mac" "$@"; }
 on_far() { as "$far" "$@"; }
@@ -211,7 +211,7 @@ port=$((22000 + RANDOM % 1000))
 cat > "$hop/session" <<EOF
 #!/bin/sh
 exec env -i HOME="$mac" PATH="$mac/.local/bin:/usr/bin:/bin:/usr/sbin:/sbin" TERM=dumb TZ=UTC NO_COLOR=1 \
-  STATION_MACHINE_KIND=host STATION_POWER_STUB="$mac/power" STATION_SYSTEM_ROOT="$mac/root" /bin/sh -c "\$SSH_ORIGINAL_COMMAND"
+  STATION_MACHINE_KIND=mac STATION_POWER_STUB="$mac/power" STATION_SYSTEM_ROOT="$mac/root" /bin/sh -c "\$SSH_ORIGINAL_COMMAND"
 EOF
 chmod +x "$hop/session"
 cat > "$hop/sshd_config" <<EOF

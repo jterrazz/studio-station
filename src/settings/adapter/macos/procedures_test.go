@@ -50,18 +50,18 @@ type noJobs struct{ backgroundcontract.Jobs }
 
 func (noJobs) Overrides(context.Context, backgroundcontract.Domain) map[string]bool { return nil }
 
-func setting(t *testing.T, name string) catalog.ConfigItem {
+func setting(t *testing.T, name string) catalog.Setting {
 	t.Helper()
-	for _, it := range catalog.ConfigItems {
+	for _, it := range catalog.Settings {
 		if it.Name == name {
 			return it
 		}
 	}
 	t.Fatalf("no setting %s", name)
-	return catalog.ConfigItem{}
+	return catalog.Setting{}
 }
 
-func applierOf(t *testing.T, run local.Runner, files MacFiles, it catalog.ConfigItem) contract.Applier {
+func applierOf(t *testing.T, run local.Runner, files MacFiles, it catalog.Setting) contract.Applier {
 	t.Helper()
 	a, ok := contract.NewAppliers(NewMac(run, files, MacOptions{Home: "/home/u", Jobs: noJobs{}}).Appliers()...).For(it)
 	if !ok {

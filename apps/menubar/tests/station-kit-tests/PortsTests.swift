@@ -19,7 +19,7 @@ final class PortsTests: XCTestCase {
         XCTAssertEqual(stop.label, "Stop sharing")
         XCTAssertEqual(stop.confirm?.question, "Stop sharing linux-1's port 5173?")
         XCTAssertEqual(stop.run?.call, "ports.stop-sharing")
-        XCTAssertEqual(Client.input([:], fixed: stop.run?.in) as NSDictionary, ["VM": "linux-1", "Port": "5173", "Host": "macbook", "Confirm": "yes"] as NSDictionary)
+        XCTAssertEqual(Client.input([:], fixed: stop.run?.in) as NSDictionary, ["VM": "linux-1", "Port": "5173", "Mac": "macbook", "Confirm": "yes"] as NSDictionary)
         var copied: [String] = []
         var opened: [URL] = []
         var asked: [String?] = []

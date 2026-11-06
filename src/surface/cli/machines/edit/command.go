@@ -18,8 +18,8 @@ type Deps struct {
 	// value: the machines known here, for completion.
 	Names func() []string
 	// value: the sizes the flags say, read with their units as create reads them.
-	Resources func(cpus int, memory, disk string) (machines.Resources, error)
-	Here      page.Context
+	Resources   func(cpus int, memory, disk string) (machines.Resources, error)
+	ThisMachine page.Context
 }
 
 type Input struct {
@@ -56,7 +56,7 @@ func Command(d Deps, env kit.Env) *cobra.Command {
 			if err != nil {
 				return err
 			}
-			return io.Page(pagemachines.Edited(edited, d.Here), nil)
+			return io.Page(pagemachines.Edited(edited, d.ThisMachine), nil)
 		},
 	}, env)
 }

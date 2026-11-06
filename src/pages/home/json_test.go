@@ -21,12 +21,12 @@ import (
 var update = flag.Bool("update", false, "rewrite the golden from the presenter")
 
 func fixed() pagehome.Overview {
-	node := catalog.Tool{Name: "node", Category: catalog.CategoryRuntimes, Installs: catalog.Anywhere(catalog.Mise("node", "lts")), Provides: []string{"node", "npm", "npx"}}
+	node := catalog.App{Name: "node", Category: catalog.CategoryRuntimes, Installs: catalog.Anywhere(catalog.Mise("node", "lts")), Provides: []string{"node", "npm", "npx"}}
 	return pagehome.Overview{
 		GeneratedAt: time.Date(2026, 10, 31, 14, 0, 0, 0, time.UTC),
-		Station:     overview.Station{Version: "v3.0.0", Commit: "abc1234", Daemon: overview.Check{Name: "daemon", State: catalog.StateOK, Value: "running v3.0.0"}},
+		Station:     overview.Station{Version: "v3.0.0", Commit: "abc1234", Engine: overview.Check{Name: "daemon", State: catalog.StateOK, Value: "running v3.0.0"}},
 		Machine: overview.Machine{
-			Name: "macbook", Registered: true, Kind: catalog.Host, Hostname: "macbook",
+			Name: "macbook", Registered: true, Kind: catalog.Mac, Hostname: "macbook",
 			OS: "Darwin 27.0.0", Arch: "arm64", User: "jterrazz", Shell: "zsh",
 		},
 		System: overview.System{
@@ -45,9 +45,9 @@ func fixed() pagehome.Overview {
 		Workspace: pagehome.Workspace{
 			Disk: []overview.Disk{{Name: "homebrew", Bytes: 123}},
 		},
-		Tools: []tools.Report{{Tool: node, Method: catalog.MethodMise, State: catalog.StateOK, Version: "24.11.0", Managed: true}},
-		Config: []config.Report{{
-			Item:  catalog.ConfigItem{Name: "hushlogin", Category: catalog.CategoryTerminal, Places: []catalog.MachineKind{catalog.Host, catalog.Linux, catalog.MacOS}},
+		Apps: []tools.Report{{App: node, Method: catalog.MethodMise, State: catalog.StateOK, Version: "24.11.0", Managed: true}},
+		Settings: []config.Report{{
+			Item:  catalog.Setting{Name: "hushlogin", Category: catalog.CategoryTerminal, Kinds: []catalog.MachineKind{catalog.Mac, catalog.Linux, catalog.MacOS}},
 			State: catalog.StateOK,
 		}},
 		Setup: overview.Setup{State: catalog.StateOK, Steps: []overview.Step{

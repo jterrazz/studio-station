@@ -16,7 +16,7 @@ import (
 )
 
 const (
-	KindHost = accounts.KindHost
+	KindHost = accounts.KindMac
 	KindVM   = accounts.KindVM
 
 	DaemonRunning   = "running"
@@ -80,7 +80,7 @@ func New(h system.Host, pool *probe.Pool, ids contract.Identities, p Ports, o Op
 }
 
 func (s *Service) where() string {
-	if s.o.Here == catalog.Host {
+	if s.o.Here == catalog.Mac {
 		return KindHost
 	}
 	return KindVM
@@ -89,7 +89,7 @@ func (s *Service) where() string {
 func (s *Service) providers() []catalog.Provider {
 	var out []catalog.Provider
 	for _, p := range catalog.Providers {
-		if s.where() == KindHost && !p.Host || s.where() == KindVM && !p.VM {
+		if s.where() == KindHost && !p.Mac || s.where() == KindVM && !p.VM {
 			continue
 		}
 		if !s.ids.Offers(p) {
@@ -187,7 +187,7 @@ func (s *Service) entry() Account {
 
 func (s *Service) Read(ctx context.Context, withVMs bool) <-chan Report {
 	now := s.h.Clock.Now().UTC()
-	here := Machine{Name: s.o.HereName, Kind: s.where(), Here: true}
+	here := Machine{Name: s.o.HereName, Kind: s.where(), ThisMac: true}
 	ps := s.providers()
 	for _, p := range ps {
 		here.Accounts = append(here.Accounts, Account{Provider: p.ID, State: catalog.StatePending})
@@ -246,14 +246,14 @@ func (s *Service) vmFrame(v VM, now time.Time) Machine {
 }
 
 func (s *Service) merge(r *Report, vms []VM, reads []VMRead, daemon string) {
-	r.Daemon = daemon
+	r.Engine = daemon
 	byName := map[string]VMRead{}
 	for _, v := range reads {
 		byName[v.Name] = v
 	}
 	for i := range r.Machines {
 		m := &r.Machines[i]
-		if m.Kind != KindVM || m.Here {
+		if m.Kind != KindVM || m.ThisMac {
 			continue
 		}
 		var v VM
@@ -308,7 +308,7 @@ func lentRows(v VM, own []Account, unreachable bool, now time.Time) []Account {
 		}
 		if lend != nil {
 			l := *lend
-			acc.Lent = &l
+			acc.Shared = &l
 			acc.Scopes = append([]string{l.Name}, acc.Scopes...)
 			switch left := l.Until.Sub(now); {
 			case left <= 0:
@@ -324,7 +324,7 @@ func lentRows(v VM, own []Account, unreachable bool, now time.Time) []Account {
 
 func lendFor(lends []Lend, provider string) *Lend {
 	for _, l := range lends {
-		for _, sc := range catalog.LendScopes {
+		for _, sc := range catalog.ShareScopes {
 			if sc.Name == l.Name && sc.Provider == provider {
 				return &l
 			}
@@ -348,12 +348,12 @@ func (s *Service) LendList() []string {
 
 func withHint(a Account, vm string) Account {
 	a.Hint = ""
-	if a.Lent != nil {
+	if a.Shared != nil {
 		switch a.Reason {
 		case ReasonExpiring:
-			a.Hint = "station accounts share " + accounts.AccountOf(a.Lent.Name) + " --with " + vm
+			a.Hint = "station accounts share " + accounts.AccountOf(a.Shared.Name) + " --with " + vm
 		case ReasonFailing:
-			a.Hint = "station accounts take-back " + accounts.AccountOf(a.Lent.Name) + " --from " + vm
+			a.Hint = "station accounts take-back " + accounts.AccountOf(a.Shared.Name) + " --from " + vm
 		}
 		return a
 	}

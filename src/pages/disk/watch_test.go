@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/jterrazz/studio-station/src/catalog"
-	probe "github.com/jterrazz/studio-station/src/core/call/lanes"
+	"github.com/jterrazz/studio-station/src/core/call/lanes"
 	"github.com/jterrazz/studio-station/src/disk"
 	"github.com/jterrazz/studio-station/src/domain/storage"
 	"github.com/jterrazz/studio-station/src/page"
@@ -63,25 +63,25 @@ func shape(p page.Page) (ids []string, rows map[string]int) {
 func TestNoSectionFlickers(t *testing.T) {
 	fs := staggered{Disk: systemtest.Disk{FS: systemtest.NewFS()}}
 	categories := []catalog.Category{catalog.CategoryPackageManagers, catalog.CategoryRuntimes, catalog.CategoryAIApps, catalog.CategoryAgentSkills}
-	tools := make([]catalog.Tool, 0, 40)
+	tools := make([]catalog.App, 0, 40)
 	names := make([]string, 0, 40)
 	for i := range 40 {
 		name := "t" + strconv.Itoa(i)
 		fs.Files["h/"+name+"/cache/f"] = &fstest.MapFile{Data: []byte("abc")}
-		tools = append(tools, catalog.Tool{Name: name, Category: categories[i%len(categories)], Installs: catalog.HostOnly(catalog.Shell(name)),
-			Storage: catalog.Storage{Paths: []catalog.Stored{{Path: "~/" + name + "/*", Level: catalog.LevelCache}}}})
+		tools = append(tools, catalog.App{Name: name, Category: categories[i%len(categories)], Installs: catalog.MacOnly(catalog.Shell(name)),
+			Disk: catalog.Disk{Paths: []catalog.Stored{{Path: "~/" + name + "/*", Level: catalog.LevelCache}}}})
 		names = append(names, name)
 	}
-	pool := probe.NewPool(context.Background(), clock{}, 4, 1)
+	pool := lanes.NewPool(context.Background(), clock{}, 4, 1)
 	defer pool.Close()
 	host := systemtest.Host(systemtest.NewRunner(t), fs.FS, systemtest.Env{}, systemtest.NewNet(), &systemtest.Clock{})
 	host.FS, host.Clock = fs, clock{}
-	s := storage.New(host, tools, storage.Options{Disk: fs, Pool: pool, Here: catalog.Host, Expand: storage.Expander{Home: "/h"}, Budget: 5 * time.Second, Inventory: inventory{names: names}})
+	s := storage.New(host, tools, storage.Options{Disk: fs, Pool: pool, Here: catalog.Mac, Expand: storage.Expander{Home: "/h"}, Budget: 5 * time.Second, Inventory: inventory{names: names}})
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	var pages []page.Page
 	for r := range s.Watch(ctx) {
-		pages = append(pages, Read(disk.Reading{Rows: disk.Classify(r)}, page.Context{Kind: "host"}, false))
+		pages = append(pages, Read(disk.Reading{Rows: disk.Classify(r)}, page.Context{Kind: "mac"}, false))
 	}
 	if len(pages) < 5 {
 		t.Fatalf("the watch sent %d values, want one per staggered answer", len(pages))

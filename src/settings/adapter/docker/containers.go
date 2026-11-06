@@ -75,7 +75,7 @@ func (c *Containers) docker(ctx context.Context, args []string) (string, error) 
 		if line, _, _ := strings.Cut(strings.TrimSpace(out.Stderr), "\n"); line != "" {
 			message += ": " + line
 		}
-		return "", &fail.Said{Message: message, Hint: "check that the docker daemon runs, then run it again"}
+		return "", &fail.Said{Message: message, Hint: "check that Docker runs, then run it again"}
 	}
 	return out.Stdout, nil
 }

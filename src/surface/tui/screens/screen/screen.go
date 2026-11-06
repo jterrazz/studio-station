@@ -18,7 +18,7 @@ type Machine struct {
 	// whether it is this one.
 	Mac, MacLabel string
 	MacHere       bool
-	Here          bool
+	ThisMachine   bool
 }
 
 type State map[string]string

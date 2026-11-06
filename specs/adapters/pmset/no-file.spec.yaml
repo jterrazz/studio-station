@@ -1,4 +1,4 @@
-description: 'awake writes no file: a keep-awake, a guard end, a refresh and an off leave the sandbox as it was'
+description: 'awake writes no file: a keep-awake, a guard end, a refresh and an off leave the test home as it was'
 fixture:
     - ../../__fixtures__/vms/
     - ../../__fixtures__/power/

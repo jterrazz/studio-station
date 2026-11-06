@@ -23,8 +23,8 @@ func (m machine) guest() *guest.Service {
 	if root == "" {
 		root = "/"
 	}
-	return guest.New(m.host, guest.Options{State: m.paths.State, ServicesEnv: filepath.Join(m.paths.Config, "services.env"), Kind: m.kind, Version: Version(), Listeners: m.listeners(root), Accounts: func(ctx context.Context, keys []string) any {
-		a := accounts.New(m.host, m.pool, m.identities(path.Join(m.paths.State, "children")), accounts.Ports{}, accounts.Options{Here: m.kind, HereName: m.where.Machine, Keys: func() []string { return keys }})
+	return guest.New(m.sys, guest.Options{State: m.paths.State, ServicesEnv: filepath.Join(m.paths.Config, "services.env"), Kind: m.kind, Version: Version(), Listeners: m.listeners(root), Accounts: func(ctx context.Context, keys []string) any {
+		a := accounts.New(m.sys, m.pool, m.identities(path.Join(m.paths.State, "children")), accounts.Ports{}, accounts.Options{Here: m.kind, HereName: m.where.Machine, Keys: func() []string { return keys }})
 		return a.Own(ctx)
 	}})
 }
@@ -36,9 +36,9 @@ func (m machine) listeners(root string) portscontract.Listeners {
 		return m.world.listeners()
 	}
 	if m.kind == catalog.Linux {
-		return procnet.New(m.host.FS, root)
+		return procnet.New(m.sys.FS, root)
 	}
-	return lsof.New(m.host.Run)
+	return lsof.New(m.sys.Run)
 }
 
 func guestCommand(env kit.Env, m machine) *cobra.Command {

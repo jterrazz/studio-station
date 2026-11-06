@@ -40,14 +40,14 @@ func groupOf(s apps.State) group {
 	return group{"not-known", "Not known", page.NotKnown}
 }
 
-func List(reports []apps.Report, here page.Context, all bool) page.Page {
+func List(reports []apps.Report, thisMac page.Context, all bool) page.Page {
 	// invariant: the Apps page groups by attention (SPEC §5.3): Updates and
 	// Failed open, then Not installed, Not managed and OK folded; what lives
 	// elsewhere is a count, unfolded with --all.
 	p := page.Page{
 		ID:      "apps",
 		Command: "apps",
-		Context: here,
+		Context: thisMac,
 		Hints:   next(reports, all),
 		Actions: Actions(),
 	}
@@ -60,7 +60,7 @@ func List(reports []apps.Report, here page.Context, all bool) page.Page {
 		row := Row(r)
 		byState[apps.StateOf(r)] = append(byState[apps.StateOf(r)], page.Item{Row: &row})
 	}
-	p.Sections = append(p.Sections, summary(reports, here))
+	p.Sections = append(p.Sections, summary(reports, thisMac))
 	if items := byState[apps.Pending]; len(items) > 0 {
 		p.Sections = append(p.Sections, page.Section{ID: "reading", Title: "Reading", Fold: page.Open, Columns: Columns(), Items: items})
 	}
@@ -84,7 +84,7 @@ func List(reports []apps.Report, here page.Context, all bool) page.Page {
 		s := page.Section{ID: "not-for-this-machine", Title: "Not for this machine", Fold: page.Open, Columns: Columns(), PipeCounts: true}
 		if all {
 			for _, t := range elsewhere {
-				row := page.Row{ID: t.Name, Label: t.Name, Mark: page.NotForThisMachine, Detail: page.Text(apps.LivesOn(t.Places()))}
+				row := page.Row{ID: t.Name, Label: t.Name, Mark: page.NotForThisMachine, Detail: page.Text(apps.LivesOn(t.LivesOn()))}
 				s.Items = append(s.Items, page.Item{Row: &row})
 			}
 		} else {
@@ -117,9 +117,9 @@ func next(reports []apps.Report, all bool) []page.Hint {
 	return hints
 }
 
-func summary(reports []apps.Report, here page.Context) page.Section {
+func summary(reports []apps.Report, thisMac page.Context) page.Section {
 	counts := apps.Counts(reports)
-	label := machineLabel(here)
+	label := machineLabel(thisMac)
 	whose := label
 	if label == "This Mac" {
 		whose = "this Mac"
@@ -171,7 +171,7 @@ func Actions() []page.Action {
 }
 
 func Row(r apps.Report) page.Row {
-	name := r.Tool.Name
+	name := r.App.Name
 	row := page.Row{ID: name, Label: name, Cells: []page.Value{version(r), method(r)}}
 	state := apps.StateOf(r)
 	if state == apps.Pending {
@@ -232,7 +232,7 @@ func version(r apps.Report) page.Value {
 }
 
 func method(r apps.Report) page.Value {
-	if r.Tool.System {
+	if r.App.System {
 		return page.Texts(string(r.Method), "system")
 	}
 	return page.Texts(string(r.Method))

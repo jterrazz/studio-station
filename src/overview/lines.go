@@ -135,9 +135,9 @@ func PortsRead(l ports.Listing) Read {
 	// reachable outside the tailnet with no declaration needs you.
 	public, private := 0, 0
 	var heard []ports.Port
-	for _, h := range l.Fleet.Hosts {
+	for _, h := range l.AllMachines.Macs {
 		shared := map[string]bool{}
-		for _, s := range h.Services {
+		for _, s := range h.Shared {
 			shared[s.VM+":"+strconv.Itoa(s.GuestPort)] = true
 		}
 		private += len(shared)
@@ -160,7 +160,7 @@ func AccountsRead(r accounts.Report, m machine.Ref) Read {
 	ok := 0
 	var broken []Part
 	for _, mm := range r.Machines {
-		if !mm.Here {
+		if !mm.ThisMac {
 			continue
 		}
 		for _, a := range mm.Accounts {
@@ -198,7 +198,7 @@ func BackgroundRead(tasks []background.Task, m machine.Ref) Read {
 func AwakeRead(r awake.Report, m machine.Ref) Read {
 	// invariant: Awake is the engine's: with the engine stopped its line
 	// says so rather than read off.
-	if r.Daemon != "" && r.Daemon != awake.EngineRunning && r.Daemon != awake.EngineReading {
+	if r.Engine != "" && r.Engine != awake.EngineRunning && r.Engine != awake.EngineReading {
 		return Unread(section.Awake, "needs the engine")
 	}
 	var parts []Part

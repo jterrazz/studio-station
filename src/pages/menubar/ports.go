@@ -26,15 +26,15 @@ type PortsOf struct {
 	Machine string
 }
 
-func Ports(l ports.Listing, of PortsOf, here page.Context) page.Page {
+func Ports(l ports.Listing, of PortsOf, thisMac page.Context) page.Page {
 	// invariant: SPEC §10.2 Ports and A port: the ports page of §5.6, red on
 	// top, then Public, then Private, each row's class in words; every action
 	// it shows is a call, but Review, which opens a terminal on the same list.
-	return portsPage(PortsID, l, of, here, declarePublic(l))
+	return portsPage(PortsID, l, of, thisMac, declarePublic(l))
 }
 
-func portsPage(id page.ID, l ports.Listing, of PortsOf, here page.Context, offer page.Action) page.Page {
-	p := pageports.Listed(l, here, false)
+func portsPage(id page.ID, l ports.Listing, of PortsOf, thisMac page.Context, offer page.Action) page.Page {
+	p := pageports.Listed(l, thisMac, false)
 	p.ID = id
 	p.Actions = nil
 	if of.Machine != "" && len(p.Sections) > 0 && p.Sections[0].ID == "summary" {
@@ -42,8 +42,8 @@ func portsPage(id page.ID, l ports.Listing, of PortsOf, here page.Context, offer
 	}
 	p.Actions = append(p.Actions, reviews(p, l, of)...)
 	p.Actions = append(p.Actions, offer)
-	for _, h := range l.Fleet.Hosts {
-		for _, s := range h.Services {
+	for _, h := range l.AllMachines.Macs {
+		for _, s := range h.Shared {
 			p.Actions = append(p.Actions, stopSharing(s, h.Name))
 		}
 	}
@@ -64,7 +64,7 @@ func reviews(p page.Page, l ports.Listing, of PortsOf) []page.Action {
 	}
 	var out []page.Action
 	var hosts []string
-	for _, h := range l.Fleet.Hosts {
+	for _, h := range l.AllMachines.Macs {
 		var rows []string
 		for _, port := range h.Ports {
 			if red[port.Key()] {
@@ -75,7 +75,7 @@ func reviews(p page.Page, l ports.Listing, of PortsOf) []page.Action {
 			continue
 		}
 		machine := of.Machine
-		if machine == "" && !h.Here {
+		if machine == "" && !h.ThisMac {
 			machine = h.Name
 		}
 		if of.Machine != "" && len(out) > 0 {
@@ -115,7 +115,7 @@ func routes() []page.Option {
 func declarePublic(l ports.Listing) page.Action {
 	var opts []page.Option
 	for _, red := range []bool{true, false} {
-		for _, h := range l.Fleet.Hosts {
+		for _, h := range l.AllMachines.Macs {
 			for _, p := range h.Ports {
 				if p.Declared != nil || p.Red() != red || p.Reach == ports.ThisMachine {
 					continue
@@ -134,19 +134,19 @@ func declarePublic(l ports.Listing) page.Action {
 	return page.Action{ID: ActionDeclarePublic, Label: "Declare public", On: page.OnPage, Priority: 2, Mutates: true, Form: form, Run: &page.Run{Call: CallDeclare}}
 }
 
-func stopSharing(s ports.ServiceView, host string) page.Action {
+func stopSharing(s ports.SharedPort, mac string) page.Action {
 	id := pageports.Row(s).ID
 	port := strconv.Itoa(s.GuestPort)
 	confirm := &page.Confirm{Question: "Stop sharing " + s.VM + "'s port " + port + "?",
 		Lines: []page.Value{page.Text(released(s))},
 		Yes:   "Stop sharing", No: "Cancel", Danger: true}
 	return page.Action{ID: ActionStopSharing + id, Label: "Stop sharing", On: page.OnRow, Rows: []string{id}, Priority: 3, Mutates: true, Confirm: confirm,
-		Run: &page.Run{Call: CallStopSharing, In: map[string]string{"VM": strconv.Quote(s.VM), "Port": strconv.Quote(port), "Host": strconv.Quote(host), "Confirm": "yes"}}}
+		Run: &page.Run{Call: CallStopSharing, In: map[string]string{"VM": strconv.Quote(s.VM), "Port": strconv.Quote(port), "Mac": strconv.Quote(mac), "Confirm": "yes"}}}
 }
 
-func released(s ports.ServiceView) string {
-	if s.HostPort == 0 {
+func released(s ports.SharedPort) string {
+	if s.Reserved == 0 {
 		return "Its link stops working on " + catalog.TailnetProduct + "."
 	}
-	return "Its link stops working on " + catalog.TailnetProduct + ", and reserved port " + strconv.Itoa(s.HostPort) + " is let go."
+	return "Its link stops working on " + catalog.TailnetProduct + ", and reserved port " + strconv.Itoa(s.Reserved) + " is let go."
 }

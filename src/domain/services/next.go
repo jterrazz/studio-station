@@ -11,7 +11,7 @@ type Phase = ports.Phase
 
 const (
 	None      = ports.PhaseNone
-	Published = ports.PhasePublished
+	Published = ports.PhaseShared
 	Closing   = ports.PhaseClosing
 	Waiting   = ports.PhaseWaiting
 	Refused   = ports.PhaseRefused
@@ -69,10 +69,10 @@ func Next(st State, ev Event, now time.Time) (State, []Action) {
 		return st, nil
 	case EvTick:
 		switch {
-		case st.Phase == Closing && now.Sub(st.Since) >= catalog.ServicePolicy.Grace:
+		case st.Phase == Closing && now.Sub(st.Since) >= catalog.PortPolicy.Grace:
 			st.Phase, st.Since = Waiting, now
 			return st, []Action{ActUnpublish}
-		case st.Phase == Waiting && !st.Pinned && !st.LastSeenAt.IsZero() && now.Sub(st.LastSeenAt) > catalog.ServicePolicy.Idle:
+		case st.Phase == Waiting && !st.Pinned && !st.LastSeenAt.IsZero() && now.Sub(st.LastSeenAt) > catalog.PortPolicy.Idle:
 			st.Phase = Gone
 			return st, []Action{ActRelease}
 		}

@@ -75,7 +75,7 @@ func (s shell) nodeNamed(name string) (node, bool) {
 
 func (s shell) choiceLine(n node, tree bool) string {
 	if n.all() {
-		return ui.FleetMark + " " + allMachines
+		return ui.AllMachinesMark + " " + allMachines
 	}
 	lead := ""
 	if tree && n.kind != machine.Mac {

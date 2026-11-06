@@ -289,14 +289,14 @@ func url(s string, width int) string {
 	if !ok {
 		return Middle(s, width)
 	}
-	host, _, _ := strings.Cut(rest, "/")
+	name, _, _ := strings.Cut(rest, "/")
 	port := ""
-	if i := strings.LastIndex(host, ":"); i >= 0 {
-		host, port = host[:i], host[i:]
+	if i := strings.LastIndex(name, ":"); i >= 0 {
+		name, port = name[:i], name[i:]
 	}
 	// invariant: only the host is cut: the scheme and the port are what a
 	// reader needs to reach it (G4), so the label shortens before either goes.
-	label, _, _ := strings.Cut(host, ".")
+	label, _, _ := strings.Cut(name, ".")
 	fixed := scheme + "://" + token.Ellipsis + port
 	if room := width - Width(fixed); room >= 1 {
 		return scheme + "://" + fit(label, room) + token.Ellipsis + port

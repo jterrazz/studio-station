@@ -3,7 +3,7 @@
   "id": "outcome",
   "command": "run dreset",
   "context": {
-    "kind": "host"
+    "kind": "mac"
   },
   "state": "failed",
   "error": {

@@ -19,7 +19,7 @@ func (s *Service) Probe(ctx context.Context, name string) (ProbeReport, error) {
 	if err != nil {
 		return ProbeReport{}, err
 	}
-	if m.Kind != catalog.Host {
+	if m.Kind != catalog.Mac {
 		return s.probeVM(ctx, m), nil
 	}
 	ip := s.resolve(ctx, name)

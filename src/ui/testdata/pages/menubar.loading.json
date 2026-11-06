@@ -4,7 +4,7 @@
   "command": "menubar",
   "context": {
     "machine": "jterrazz-macbook-pro",
-    "kind": "host"
+    "kind": "mac"
   },
   "state": "loading",
   "strip": {
@@ -249,7 +249,7 @@
       ],
       "priority": 4,
       "mutates": true,
-      "id": "power-awake",
+      "id": "awake-keep",
       "run": {
         "call": "awake.keep"
       },

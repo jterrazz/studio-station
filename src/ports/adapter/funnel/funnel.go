@@ -13,16 +13,16 @@ import (
 
 const Name = catalog.RouteTailscaleFunnel
 
-type Config interface {
+type Funnel interface {
 	// value: the ports this Mac's Funnel config opens to the internet.
 	Funneled(ctx context.Context) ([]int, error)
 }
 
-type Route struct{ config Config }
+type Route struct{ funnel Funnel }
 
 var _ contract.PublicRoute = Route{}
 
-func New(c Config) Route { return Route{config: c} }
+func New(c Funnel) Route { return Route{funnel: c} }
 
 func (Route) Name() string { return Name }
 
@@ -33,7 +33,7 @@ func (r Route) Verify(ctx context.Context, d ports.Declaration, on ports.Machine
 	if on.At != ports.OnMac {
 		return missing, nil
 	}
-	open, err := r.config.Funneled(ctx)
+	open, err := r.funnel.Funneled(ctx)
 	if err != nil {
 		return ports.Verified{}, err
 	}

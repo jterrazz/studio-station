@@ -23,7 +23,7 @@ type Policy struct {
 }
 
 func PolicyOf(s *PortsGroup) Policy {
-	d := catalog.ServicePolicy
+	d := catalog.PortPolicy
 	p := Policy{Low: d.RangeLow, High: d.RangeHigh, MaxPerVM: d.MaxPerVM, MinPort: d.MinPort, Ignored: d.Ignored, HTTPS: d.HTTPS}
 	if s == nil {
 		return p

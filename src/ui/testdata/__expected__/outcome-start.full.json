@@ -3,7 +3,7 @@
   "id": "outcome",
   "command": "engine start",
   "context": {
-    "kind": "host"
+    "kind": "mac"
   },
   "state": "ready",
   "sections": [

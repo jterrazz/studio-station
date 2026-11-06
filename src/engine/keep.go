@@ -32,7 +32,7 @@ const EventsStream = "engine.events" // value: the name the events watch opens w
 func Notifies(kind string) bool {
 	// value: the closed list of SPEC §10.4: the events the engine's events
 	// watch streams, which the menu bar posts as its notifications.
-	return slices.Contains([]string{EventRestarting, EventLoop, EventPoweredOff, EventBack, NoticeEnded, EventExposed, EventDiskLow}, kind)
+	return slices.Contains([]string{EventRestarting, EventLoop, EventPoweredOff, EventBack, NoticeAwakeEnded, EventExposed, EventDiskLow}, kind)
 }
 
 type Told struct {
@@ -59,7 +59,7 @@ func Back(vm string) Told {
 
 // invariant: what the engine tells goes to the Notifier and to every open
 // watch alike, its parts joined as the presentation joins them.
-func (d *Daemon) tell(ctx context.Context, vm string, t Told) {
+func (d *Engine) tell(ctx context.Context, vm string, t Told) {
 	text := strings.Join(t.Parts, ", ")
 	if d.o.Join != nil {
 		text = d.o.Join(t.Parts...)
@@ -70,7 +70,7 @@ func (d *Daemon) tell(ctx context.Context, vm string, t Told) {
 
 // invariant: a server whose run ended unexpectedly boots again after its
 // wait (SPEC §7.4); the owner is told of each restart, and once of a loop.
-func (d *Daemon) restartLater(ctx context.Context, v *vmState, up time.Duration, now time.Time) {
+func (d *Engine) restartLater(ctx context.Context, v *vmState, up time.Duration, now time.Time) {
 	d.mu.Lock()
 	was := v.restarts.Looping
 	v.restarts = v.restarts.After(up, now)
@@ -89,7 +89,7 @@ func (d *Daemon) restartLater(ctx context.Context, v *vmState, up time.Duration,
 // invariant: a running server's health check runs after its boot once it
 // has an address, then every minute, never two at once; a loop ends once a
 // run stays up 10 min. A failing check never restarts it.
-func (d *Daemon) keep(ctx context.Context, v *vmState) {
+func (d *Engine) keep(ctx context.Context, v *vmState) {
 	d.mu.Lock()
 	defer d.mu.Unlock()
 	if v.rec.Lifetime != machines.AlwaysOn || v.run == nil || v.stopping || v.state != StateRunning {
@@ -124,7 +124,7 @@ func (d *Daemon) keep(ctx context.Context, v *vmState) {
 	}()
 }
 
-func (d *Daemon) Events(ctx context.Context, send func(any) error) error {
+func (d *Engine) Events(ctx context.Context, send func(any) error) error {
 	// invariant: the events watch streams each event of the closed list the
 	// engine tells, once, as it is told, until the watcher leaves (the menu
 	// bar's notifications); any other word it says is not one.

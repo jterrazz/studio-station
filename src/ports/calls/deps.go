@@ -32,7 +32,7 @@ type Node interface {
 }
 
 type Ports interface {
-	List(ctx context.Context, hereOnly bool) (ports.Fleet, error)
+	List(ctx context.Context, hereOnly bool) (ports.AllMachines, error)
 	// value: the VM this binary runs in, inside one: its share and its stop
 	// of sharing ride the socket its Mac's engine offers there.
 	Placed() (vm string, inside bool)
@@ -40,11 +40,11 @@ type Ports interface {
 	// value: a port number as given, whatever the sharing policy ignores.
 	ParsePort(text string) (int, error)
 	// value: the other Mac a VM runs on; empty when it is one of this Mac's.
-	CheckVM(ctx context.Context, vm string) (host string, err error)
-	Share(ctx context.Context, vm string, port int) (ports.ServiceView, error)
+	CheckVM(ctx context.Context, vm string) (mac string, err error)
+	Share(ctx context.Context, vm string, port int) (ports.SharedPort, error)
 	// value: the other Mac that holds the reservation; empty when this one does.
-	CheckRelease(ctx context.Context, t ports.Target) (host string, err error)
-	Release(ctx context.Context, t ports.Target, host string, yes bool) (ports.Reservation, error)
+	CheckRelease(ctx context.Context, t ports.Target) (mac string, err error)
+	Release(ctx context.Context, t ports.Target, mac string, yes bool) (ports.Reservation, error)
 	// value: the machine's name (this Mac's when empty), and the other Mac
 	// that keeps its declarations; empty when this one does.
 	Keeper(ctx context.Context, machine string) (name, mac string, err error)

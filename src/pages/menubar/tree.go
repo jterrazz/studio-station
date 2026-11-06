@@ -18,7 +18,7 @@ func treeColumns() []page.Column {
 	return []page.Column{{Key: "name", Kind: page.KindText, Keep: 100}, {Key: "kind", Kind: page.KindText, Keep: 40}, {Key: "detail", Kind: page.KindList, Keep: 80}}
 }
 
-func Tree(f *machines.Fleet, svc *ports.Fleet, line func(machines.HostView) page.Value) page.Section {
+func Tree(f *machines.Fleet, svc *ports.AllMachines, line func(machines.HostView) page.Value) page.Section {
 	// invariant: SPEC §10.2's Machines: each Mac, then its Servers, then its
 	// Workspaces, each group named; a row's ID is its machine's name, the page
 	// it opens. line says what a Mac's row adds after its kind.
@@ -27,12 +27,12 @@ func Tree(f *machines.Fleet, svc *ports.Fleet, line func(machines.HostView) page
 		s.Items = []page.Item{{Row: &page.Row{ID: "reading", Label: "reading", Mark: page.Awaiting}}}
 		return s
 	}
-	for _, h := range f.Hosts {
+	for _, h := range f.Macs {
 		g := page.Group{Head: macRow(*f, h, line(h))}
 		var srv, ws []page.Item
 		for _, vm := range h.VMs {
 			row := vmRow(vm, shared(svc, vm.Name))
-			if !h.Reachable && !h.Here {
+			if !h.Reachable && !h.ThisMac {
 				row.Mark, row.Reason = page.NotKnown, ""
 				row.Cells[1] = page.List(row.Cells[1].Items[0], page.Text("not known while "+machines.Label(*f, h)+" does not answer"))
 			}
@@ -58,7 +58,7 @@ func macRow(f machines.Fleet, h machines.HostView, line page.Value) page.Row {
 	if line.IsNone() {
 		row.Cells[1] = page.None()
 	}
-	if !h.Reachable && !h.Here {
+	if !h.Reachable && !h.ThisMac {
 		row.Mark, row.Reason, row.Cells[1] = page.Broken, page.Unreachable, page.Text("Unreachable")
 	}
 	return row
@@ -107,13 +107,13 @@ func health(vm machines.VM) string {
 	return "healthy"
 }
 
-func shared(svc *ports.Fleet, vm string) int {
+func shared(svc *ports.AllMachines, vm string) int {
 	if svc == nil {
 		return 0
 	}
 	n := 0
-	for _, h := range svc.Hosts {
-		for _, s := range h.Services {
+	for _, h := range svc.Macs {
+		for _, s := range h.Shared {
 			if s.VM == vm {
 				n++
 			}

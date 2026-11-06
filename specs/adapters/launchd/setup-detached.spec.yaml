@@ -15,7 +15,7 @@ runs:
           ●	name	base
           ●	zshrc
           ◐	layout	the userspace tailscaled stops in the background	{{workdir}}/.local/state/station/logs/setup.log
-          ●	relocate	bunfig, go env, mise config, npmrc
+          ●	relocate	bunfig, go env, mise settings, npmrc
           ○	engine	not needed until tart is installed
           ○	apps	missing: homebrew mise git tart tailscale: run station setup on a terminal
           ●	settings	applied hushlogin tart-launcher git-shortcuts docker-shortcuts

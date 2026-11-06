@@ -18,14 +18,14 @@ func Tailnet(t *testing.T, open func(t *testing.T) contract.Tailnet) {
 	raw := ports.Share{Port: 40002, Reserved: 40002, Scheme: ports.SchemeTCP}
 	mounted := ports.Share{Port: 443, Path: "/linux-1/5173", Reserved: 40003, Scheme: ports.SchemeHTTPS}
 
-	t.Run("a node with sharing on names the host its shares answer at", func(t *testing.T) {
+	t.Run("a node with sharing on names the DNS name its shares answer at", func(t *testing.T) {
 		tn := open(t)
 		ready, err := tn.Ready(ctx)
-		if err != nil || !ready.On || ready.Host == "" {
-			t.Fatalf("Ready = %+v, %v; want sharing on at a host", ready, err)
+		if err != nil || !ready.On || ready.DNSName == "" {
+			t.Fatalf("Ready = %+v, %v; want sharing on at a DNS name", ready, err)
 		}
 		self, err := tn.Self(ctx)
-		if err != nil || self.Sharing != ready || self.DNSName != ready.Host {
+		if err != nil || self.Sharing != ready || self.DNSName != ready.DNSName {
 			t.Fatalf("Self = %+v, %v; want the sharing Ready reported, %+v", self, err, ready)
 		}
 	})
@@ -34,9 +34,9 @@ func Tailnet(t *testing.T, open func(t *testing.T) contract.Tailnet) {
 		tn := open(t)
 		ready, _ := tn.Ready(ctx)
 		want := map[ports.Share]string{
-			web:     "https://" + ready.Host + ":40001",
-			raw:     ready.Host + ":40002",
-			mounted: "https://" + ready.Host + "/linux-1/5173/",
+			web:     "https://" + ready.DNSName + ":40001",
+			raw:     ready.DNSName + ":40002",
+			mounted: "https://" + ready.DNSName + "/linux-1/5173/",
 		}
 		for _, s := range []ports.Share{web, raw, mounted} {
 			url, err := tn.Share(ctx, s)

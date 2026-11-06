@@ -16,16 +16,16 @@ type CheckRunnerSubject struct {
 }
 
 func CheckRunner(t *testing.T, subject func(t *testing.T) CheckRunnerSubject) {
-	t.Run("a check that answers passes", func(t *testing.T) {
+	t.Run("a health check that answers passes", func(t *testing.T) {
 		s := subject(t)
 		if err := s.Runner.Run(t.Context(), s.Answering()); err != nil {
-			t.Fatalf("a check that answers failed: %v", err)
+			t.Fatalf("a health check that answers failed: %v", err)
 		}
 	})
-	t.Run("a check that no longer answers fails", func(t *testing.T) {
+	t.Run("a health check that no longer answers fails", func(t *testing.T) {
 		s := subject(t)
 		if err := s.Runner.Run(t.Context(), s.Refusing()); err == nil {
-			t.Fatal("a check that does not answer passed")
+			t.Fatal("a health check that does not answer passed")
 		}
 	})
 }

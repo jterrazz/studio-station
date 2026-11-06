@@ -76,12 +76,12 @@ func pinnedAlgorithms(file, name string, remote net.Addr) []string {
 	if err != nil {
 		return nil
 	}
-	probe, err := ssh.NewPublicKey(ed25519.PublicKey(make([]byte, ed25519.PublicKeySize)))
+	placeholder, err := ssh.NewPublicKey(ed25519.PublicKey(make([]byte, ed25519.PublicKeySize)))
 	if err != nil {
 		return nil
 	}
 	var mismatch *knownhosts.KeyError
-	if !errors.As(check(name+":22", remote, probe), &mismatch) {
+	if !errors.As(check(name+":22", remote, placeholder), &mismatch) {
 		return nil
 	}
 	var algos []string

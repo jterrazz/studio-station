@@ -100,11 +100,11 @@ func kindWord(k string) string {
 	return "Mac"
 }
 
-func Page(v View, here page.Context) page.Page {
+func Page(v View, thisMac page.Context) page.Page {
 	// invariant: SPEC §6.2, the CLI half of §6.4: the last values and rates,
 	// "since boot" in words, the top processes; a stopped VM has none. Any
 	// machine but this one starts with `On <it>:` (SPEC §8.1).
-	p := page.Page{ID: "activity", Command: "activity", Context: here}
+	p := page.Page{ID: "activity", Command: "activity", Context: thisMac}
 	if !v.ThisMac {
 		p.Sections = append(p.Sections, page.OnMachine(v.Label))
 	}

@@ -45,7 +45,7 @@ func Gesture(a page.Action, rows []page.Row) (gesture.Gesture, bool) {
 // form first, as its command does on a terminal (A2); a secret's answer is
 // drawn masked. One that runs its own dialog is applied on a terminal.
 func values(r page.Row) (gesture.Gesture, bool) {
-	for _, it := range catalog.ConfigItems {
+	for _, it := range catalog.Settings {
 		if it.Name != r.ID || len(it.Inputs) == 0 || it.Interactive {
 			continue
 		}

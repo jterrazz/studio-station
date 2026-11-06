@@ -41,20 +41,20 @@ func HypervisorOf(w *world.World, mac, name string) *Hypervisor {
 }
 
 func (h *Hypervisor) Name() string {
-	if n := h.here().Hypervisor; n != "" && n != "none" {
+	if n := h.thisMac().Hypervisor; n != "" && n != "none" {
 		return n
 	}
 	return h.name
 }
 
-func (h *Hypervisor) Installed() bool { return h.here().Hypervisor != "none" }
+func (h *Hypervisor) Installed() bool { return h.thisMac().Hypervisor != "none" }
 
 func (h *Hypervisor) Version(context.Context) (string, error) { return "1.0.0", nil }
 
-func (h *Hypervisor) here() *world.Mac { return h.w.Mac(h.mac) }
+func (h *Hypervisor) thisMac() *world.Mac { return h.w.Mac(h.mac) }
 
 func (h *Hypervisor) disk(vm string) (*world.VM, bool) {
-	v, ok := h.here().VMs[vm]
+	v, ok := h.thisMac().VMs[vm]
 	return v, ok && v.Disk
 }
 
@@ -62,8 +62,8 @@ func (h *Hypervisor) Disks(context.Context) ([]contract.Disk, error) {
 	h.w.Lock()
 	defer h.w.Unlock()
 	out := []contract.Disk{}
-	for _, vm := range slices.Sorted(maps.Keys(h.here().VMs)) {
-		v := h.here().VMs[vm]
+	for _, vm := range slices.Sorted(maps.Keys(h.thisMac().VMs)) {
+		v := h.thisMac().VMs[vm]
 		if !v.Disk {
 			continue
 		}
@@ -83,7 +83,7 @@ func (h *Hypervisor) Fetch(_ context.Context, img imagescontract.ImageLocation, 
 	}
 	h.w.Lock()
 	defer h.w.Unlock()
-	if m := h.here(); !slices.Contains(m.Images, img.Ref) {
+	if m := h.thisMac(); !slices.Contains(m.Images, img.Ref) {
 		m.Images = append(m.Images, img.Ref)
 	}
 	return nil
@@ -92,7 +92,7 @@ func (h *Hypervisor) Fetch(_ context.Context, img imagescontract.ImageLocation, 
 func (h *Hypervisor) Clone(_ context.Context, from imagescontract.ImageLocation, vm string) error {
 	h.w.Lock()
 	defer h.w.Unlock()
-	m := h.here()
+	m := h.thisMac()
 	_, fromDisk := h.disk(from.Ref)
 	if !fromDisk && !slices.Contains(m.Images, from.Ref) {
 		return ErrNoImage
@@ -140,7 +140,7 @@ func (h *Hypervisor) Rename(_ context.Context, from, to string) error {
 	if _, held := h.disk(to); held {
 		return ErrHeldName
 	}
-	m := h.here()
+	m := h.thisMac()
 	delete(m.VMs, from)
 	if kept := m.VMs[to]; kept != nil {
 		v.Kept = kept.Kept
@@ -227,7 +227,7 @@ func (h *Hypervisor) Delete(_ context.Context, vm string) error {
 	}
 	v.Disk, v.PID, v.Ended = false, 0, nil
 	if v.Kept == nil {
-		delete(h.here().VMs, vm)
+		delete(h.thisMac().VMs, vm)
 	}
 	return nil
 }
@@ -235,7 +235,7 @@ func (h *Hypervisor) Delete(_ context.Context, vm string) error {
 func (h *Hypervisor) Discard(_ context.Context, img imagescontract.ImageLocation) error {
 	h.w.Lock()
 	defer h.w.Unlock()
-	m := h.here()
+	m := h.thisMac()
 	m.Images = slices.DeleteFunc(m.Images, func(ref string) bool { return ref == img.Ref })
 	if v, ok := m.VMs[img.Ref]; ok && v.Kept == nil {
 		delete(m.VMs, img.Ref)
@@ -279,7 +279,7 @@ func (r *run) Ended() <-chan machines.RunEnd {
 	defer r.once.Unlock()
 	if r.end == nil {
 		r.h.w.Lock()
-		v, ok := r.h.here().VMs[r.vm]
+		v, ok := r.h.thisMac().VMs[r.vm]
 		switch {
 		case ok && v.PID == r.pid:
 		case ok && v.Ended != nil && r.h.w.Fails("Hypervisor.Ended"):

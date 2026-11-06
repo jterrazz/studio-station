@@ -30,7 +30,7 @@ func New(files Files, home string) *Applier { return &Applier{files: files, home
 
 func (*Applier) Kind() catalog.EffectKind { return catalog.EffectTouch }
 
-func (a *Applier) at(it catalog.ConfigItem) (shown, full string, err error) {
+func (a *Applier) at(it catalog.Setting) (shown, full string, err error) {
 	t, ok := it.Effect.(catalog.Touch)
 	if !ok {
 		return "", "", errors.New(it.Name + " is not a file station creates")
@@ -38,7 +38,7 @@ func (a *Applier) at(it catalog.ConfigItem) (shown, full string, err error) {
 	return t.Path, expand(a.home, t.Path), nil
 }
 
-func (a *Applier) Observe(_ context.Context, it catalog.ConfigItem) (settings.Observation, error) {
+func (a *Applier) Observe(_ context.Context, it catalog.Setting) (settings.Observation, error) {
 	shown, full, err := a.at(it)
 	if err != nil {
 		return settings.Observation{}, err
@@ -52,7 +52,7 @@ func (a *Applier) Observe(_ context.Context, it catalog.ConfigItem) (settings.Ob
 	return o, nil
 }
 
-func (a *Applier) Apply(_ context.Context, it catalog.ConfigItem, _ map[string]string) (settings.Change, error) {
+func (a *Applier) Apply(_ context.Context, it catalog.Setting, _ map[string]string) (settings.Change, error) {
 	shown, full, err := a.at(it)
 	if err != nil {
 		return settings.Change{}, err
@@ -69,7 +69,7 @@ func (a *Applier) Apply(_ context.Context, it catalog.ConfigItem, _ map[string]s
 	return settings.Change{Steps: []settings.ChangeStep{{Label: shown, State: catalog.StateOK, Detail: "created"}}}, nil
 }
 
-func (a *Applier) Undo(_ context.Context, it catalog.ConfigItem) (settings.Change, error) {
+func (a *Applier) Undo(_ context.Context, it catalog.Setting) (settings.Change, error) {
 	shown, full, err := a.at(it)
 	if err != nil {
 		return settings.Change{}, err

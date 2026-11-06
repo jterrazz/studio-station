@@ -16,11 +16,11 @@ type ListIn struct {
 var List = call.Call[Deps, ListIn, ports.Listing]{
 	Name: "ports.list", Section: section.Ports, Where: call.AtTarget, Applies: ports.Applies,
 	Run: func(ctx context.Context, d Deps, in ListIn, _ call.Progress) (ports.Listing, error) {
-		fleet, err := d.Ports.List(ctx, !in.AllMachines)
+		allMachines, err := d.Ports.List(ctx, !in.AllMachines)
 		if _, inside := d.Ports.Placed(); err != nil || inside {
-			return ports.Listing{Fleet: fleet}, err
+			return ports.Listing{AllMachines: allMachines}, err
 		}
 		node, err := d.Tailnet.Status(ctx)
-		return ports.Listing{Fleet: ports.OwnDevices(fleet, node.Peers), Tailnet: node}, err
+		return ports.Listing{AllMachines: ports.OwnDevices(allMachines, node.Peers), Tailnet: node}, err
 	},
 }

@@ -10,7 +10,7 @@ import (
 
 func TestTheFakeChecksKeepTheCheckRunnerContract(t *testing.T) {
 	contracttest.CheckRunner(t, func(*testing.T) contracttest.CheckRunnerSubject {
-		w := &world.World{Here: "mac-mini"}
+		w := &world.World{ThisMac: "mac-mini"}
 		w.Mac("mac-mini").VMs = map[string]*world.VM{"infra": {PID: 2001}}
 		return contracttest.CheckRunnerSubject{
 			Runner:    CheckRunnerOf(w),

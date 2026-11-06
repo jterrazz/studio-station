@@ -19,7 +19,7 @@ runs:
       exit: 0
       stdout: |
           [["session:github"],["session:github"]]
-          [["lend_recall_failed","linux-1 share","taking GitHub back failed: deleting the copies failed for \"linux-1\": exit 1"]]
+          [["take_back_failed","linux-1 share","taking GitHub back failed: deleting the copies failed for \"linux-1\": exit 1"]]
     - command: 'accounts | /usr/bin/grep -A1 "^# Shared"'
       exit: 0
       stdout: |

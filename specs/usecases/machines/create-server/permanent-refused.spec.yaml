@@ -6,7 +6,7 @@ runs:
       stderr: |
           Error: a server is always on: --permanent is for workspaces
           Hint: station machines create infra-2 --server
-    - command: 'machines --here | /usr/bin/grep -c infra-2'
+    - command: 'machines --this-mac | /usr/bin/grep -c infra-2'
       exit: 1
       stdout: |
           0

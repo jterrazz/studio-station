@@ -1,9 +1,9 @@
  CPU 34% ▁▂▂▃▃▂▃▄▄▃▂▃▄▃▃▃  memory 14.1/17.2 GB
 
  Needs you  5 things need you  3 ◐  2 ✗
-   ◐ 2 app updates         station apps update
-   ✗ npm sign-in expired   npm login
-   ◐ ~/.tart is misplaced  station disk move ~/.tart
+   ◐ 2 app updates              station apps update
+   ✗ npm sign-in expired        npm login
+   ✗ 1 background task failing  station background
    + 2 more
 
  Machines  4 ●  1 ○

@@ -32,7 +32,7 @@ func (n *NeverSleeps) values() []settings.KeyValue {
 	return []settings.KeyValue{{Key: "never sleeps", Value: "off"}}
 }
 
-func (n *NeverSleeps) Observe(_ context.Context, it catalog.ConfigItem) (settings.Observation, error) {
+func (n *NeverSleeps) Observe(_ context.Context, it catalog.Setting) (settings.Observation, error) {
 	o := settings.Observation{State: catalog.StateAbsent, Before: n.values(), After: settings.Sets(it)}
 	if on, err := n.prefs.Get(); err != nil {
 		return o, err
@@ -42,7 +42,7 @@ func (n *NeverSleeps) Observe(_ context.Context, it catalog.ConfigItem) (setting
 	return o, nil
 }
 
-func (n *NeverSleeps) Apply(_ context.Context, it catalog.ConfigItem, _ map[string]string) (settings.Change, error) {
+func (n *NeverSleeps) Apply(_ context.Context, it catalog.Setting, _ map[string]string) (settings.Change, error) {
 	change := settings.Change{Before: n.values()}
 	if err := n.prefs.Set(true); err != nil {
 		return change, err
@@ -52,7 +52,7 @@ func (n *NeverSleeps) Apply(_ context.Context, it catalog.ConfigItem, _ map[stri
 	return change, nil
 }
 
-func (n *NeverSleeps) Undo(_ context.Context, it catalog.ConfigItem) (settings.Change, error) {
+func (n *NeverSleeps) Undo(_ context.Context, it catalog.Setting) (settings.Change, error) {
 	change := settings.Change{Before: n.values()}
 	if err := n.prefs.Set(false); err != nil {
 		return change, err

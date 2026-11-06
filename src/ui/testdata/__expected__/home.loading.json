@@ -3,7 +3,7 @@
   "id": "home",
   "command": "status",
   "context": {
-    "kind": "host"
+    "kind": "mac"
   },
   "state": "loading",
   "sections": [
@@ -22,7 +22,7 @@
       "items": [
         {
           "row": {
-            "id": "workspace/strays",
+            "id": "workspace/misplaced",
             "mark": "attention",
             "label": "misplaced",
             "detail": {
@@ -39,7 +39,7 @@
                 }
               ]
             },
-            "reason": "stray",
+            "reason": "misplaced",
             "hint": {
               "command": "station disk move ~/.tart"
             }
@@ -148,7 +148,7 @@
         },
         {
           "row": {
-            "id": "summary/tools",
+            "id": "summary/apps",
             "mark": "pending",
             "label": "Apps",
             "cells": [
@@ -167,7 +167,7 @@
         },
         {
           "row": {
-            "id": "summary/config",
+            "id": "summary/settings",
             "mark": "pending",
             "label": "Settings",
             "cells": [
@@ -186,7 +186,7 @@
         },
         {
           "row": {
-            "id": "summary/storage",
+            "id": "summary/disk",
             "mark": "ok",
             "label": "Disk",
             "cells": [
@@ -210,7 +210,7 @@
         },
         {
           "row": {
-            "id": "summary/fleet",
+            "id": "summary/all-machines",
             "mark": "pending",
             "label": "All machines",
             "cells": [
@@ -503,7 +503,7 @@
               "kind": "size",
               "n": 78383153152
             },
-            "reason": "stray",
+            "reason": "misplaced",
             "hint": {
               "command": "station disk move ~/.tart"
             }
@@ -524,7 +524,7 @@
               "kind": "size",
               "n": 2147483648
             },
-            "reason": "stray",
+            "reason": "misplaced",
             "hint": {
               "command": "station disk move ~/.bun"
             }
@@ -614,7 +614,7 @@
       ]
     },
     {
-      "id": "tools",
+      "id": "apps",
       "title": "Apps",
       "fold": "folded",
       "columns": [
@@ -646,7 +646,7 @@
       ]
     },
     {
-      "id": "config",
+      "id": "settings",
       "title": "Settings",
       "fold": "folded",
       "columns": [
@@ -695,7 +695,7 @@
       "label": "fix",
       "on": "row",
       "rows": [
-        "workspace/strays"
+        "workspace/misplaced"
       ],
       "mutates": true
     }

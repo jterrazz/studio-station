@@ -75,7 +75,7 @@ func (s *Service) retire(ctx context.Context) (rows []Step, background bool, err
 		removed = s.drop(dir) || removed
 	}
 	if removed {
-		here, _ := s.reg.Here()
+		here, _ := s.reg.ThisMac()
 		rows = append(rows, Step{Name: stepLayout, State: catalog.StateOK, Changed: true,
 			Detail: "userspace tailscaled retired; its node \"" + here + "\" stays at " + nodeConsole + " until you remove it"})
 	}

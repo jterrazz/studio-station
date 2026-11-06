@@ -17,10 +17,10 @@ import (
 )
 
 var (
-	ErrNoGuest   = errors.New("no guest answers at this address")
-	ErrClosed    = errors.New("the guest connection is closed")
-	ErrNoService = errors.New("nothing listens on this guest port")
-	ErrRefused   = errors.New("the guest connection is refused, as the world scripted it")
+	ErrNoGuest      = errors.New("no guest answers at this address")
+	ErrClosed       = errors.New("the guest connection is closed")
+	ErrNotListening = errors.New("nothing listens on this guest port")
+	ErrRefused      = errors.New("the guest connection is refused, as the world scripted it")
 )
 
 type Answer struct {
@@ -40,11 +40,11 @@ type VM struct {
 	poweroffs map[string]bool
 	received  map[string][]byte
 	files     map[string]File
-	services  map[int]string
+	listeners map[int]string
 }
 
 func NewVM() *VM {
-	return &VM{answers: map[string]Answer{}, poweroffs: map[string]bool{}, received: map[string][]byte{}, files: map[string]File{}, services: map[int]string{}}
+	return &VM{answers: map[string]Answer{}, poweroffs: map[string]bool{}, received: map[string][]byte{}, files: map[string]File{}, listeners: map[int]string{}}
 }
 
 func (v *VM) Program(line string, a Answer) {
@@ -56,7 +56,7 @@ func (v *VM) Program(line string, a Answer) {
 func (v *VM) Serve(port int, greeting string) {
 	v.mu.Lock()
 	defer v.mu.Unlock()
-	v.services[port] = greeting
+	v.listeners[port] = greeting
 }
 
 func (v *VM) Received(line string) []byte {
@@ -89,12 +89,12 @@ func (g *Guests) Serving(session string) *Guests {
 
 func GuestsOf(w *world.World) *Guests { return &Guests{w: w, vms: map[string]*VM{}} }
 
-func NewGuests() *Guests { return GuestsOf(&world.World{Here: "here"}) }
+func NewGuests() *Guests { return GuestsOf(&world.World{ThisMac: "this-mac"}) }
 
 func (g *Guests) Add(vm string) *VM {
 	g.w.Lock()
 	if g.w.Holder(vm) == "" {
-		g.w.Mac(g.w.Here).VMs[vm] = &world.VM{}
+		g.w.Mac(g.w.ThisMac).VMs[vm] = &world.VM{}
 	}
 	g.w.Macs[g.w.Holder(vm)].VMs[vm].Guest = &world.Guest{}
 	g.w.Unlock()
@@ -200,12 +200,12 @@ func (c *guest) snapshot() []byte {
 	c.w.Unlock()
 	found := make([]reported, 0, len(listening))
 	for _, l := range listening {
-		if !slices.ContainsFunc(containers, func(k world.Container) bool { return slices.Contains(k.Published, l.Port) }) {
+		if !slices.ContainsFunc(containers, func(k world.Container) bool { return slices.Contains(k.Shared, l.Port) }) {
 			found = append(found, reported{Port: l.Port, IP: l.Bind, Process: l.Process})
 		}
 	}
 	for _, k := range containers {
-		for _, port := range k.Published {
+		for _, port := range k.Shared {
 			found = append(found, reported{Port: port, IP: "0.0.0.0", Process: k.Name})
 		}
 	}
@@ -325,13 +325,13 @@ func (c *guest) Forward(_ context.Context, _ string, port int) (io.ReadWriteClos
 		return nil, ErrClosed
 	}
 	c.vm.mu.Lock()
-	greeting, ok := c.vm.services[port]
+	greeting, ok := c.vm.listeners[port]
 	c.vm.mu.Unlock()
 	if !ok {
 		greeting, ok = c.answers(port)
 	}
 	if !ok {
-		return nil, errors.Join(ErrNoService, errors.New("port "+strconv.Itoa(port)))
+		return nil, errors.Join(ErrNotListening, errors.New("port "+strconv.Itoa(port)))
 	}
 	return &stream{Reader: strings.NewReader(greeting + "\n")}, nil
 }
@@ -362,7 +362,7 @@ func (c *guest) answers(port int) (string, bool) {
 			return "HTTP/1.1 200 OK", true
 		}
 	}
-	if slices.ContainsFunc(c.w.Containers(c.name), func(k world.Container) bool { return slices.Contains(k.Published, port) }) {
+	if slices.ContainsFunc(c.w.Containers(c.name), func(k world.Container) bool { return slices.Contains(k.Shared, port) }) {
 		return "HTTP/1.1 200 OK", true
 	}
 	return "", false

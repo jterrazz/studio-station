@@ -38,16 +38,16 @@ type CLI struct {
 	fs    Files
 	root  string
 	track string
-	host  *warmHost
+	self  *warmSelf
 }
 
-type warmHost struct {
+type warmSelf struct {
 	mu   sync.Mutex
 	name string
 }
 
 func New(run Commands, files Files, root string) *CLI {
-	return &CLI{run: run, fs: files, root: root, host: &warmHost{}}
+	return &CLI{run: run, fs: files, root: root, self: &warmSelf{}}
 }
 
 func (t *CLI) Tracked(dir string) *CLI {
@@ -124,7 +124,7 @@ func withoutWarnings(text string) string {
 type rawNode struct {
 	ID           string   `json:"ID"`
 	UserID       int64    `json:"UserID"`
-	HostName     string   `json:"HostName"`
+	MachineName  string   `json:"HostName"`
 	DNSName      string   `json:"DNSName"`
 	TailscaleIPs []string `json:"TailscaleIPs"`
 	Online       bool     `json:"Online"`
@@ -147,8 +147,8 @@ type rawStatus struct {
 }
 
 func (n *rawNode) name() string {
-	if n.HostName != "" && n.HostName != "localhost" {
-		return n.HostName
+	if n.MachineName != "" && n.MachineName != "localhost" {
+		return n.MachineName
 	}
 	label, _, _ := strings.Cut(strings.TrimSuffix(n.DNSName, "."), ".")
 	return label
@@ -205,7 +205,7 @@ func peersOf(st rawStatus) []ports.Node {
 func sharingOf(st rawStatus) ports.SharingState {
 	s := ports.SharingState{Backend: st.BackendState, On: st.BackendState == ports.Running && len(st.CertDomains) > 0}
 	if st.Self != nil {
-		s.Host = strings.TrimSuffix(st.Self.DNSName, ".")
+		s.DNSName = strings.TrimSuffix(st.Self.DNSName, ".")
 	}
 	return s
 }
@@ -221,7 +221,7 @@ func (t *CLI) Self(ctx context.Context) (ports.Self, error) {
 	out.Online = st.BackendState == ports.Running
 	if st.Self != nil {
 		out.ID, out.Name, out.IP, out.Tags = st.Self.ID, st.Self.name(), st.Self.ip(), st.Self.Tags
-		out.DNSName = out.Sharing.Host
+		out.DNSName = out.Sharing.DNSName
 		if u, ok := st.User[strconv.FormatInt(st.Self.UserID, 10)]; ok {
 			out.Login = u.LoginName
 		}
@@ -244,9 +244,9 @@ func (t *CLI) Ready(ctx context.Context) (ports.SharingState, error) {
 }
 
 func (t *CLI) remember(s ports.SharingState) {
-	t.host.mu.Lock()
-	t.host.name = s.Host
-	t.host.mu.Unlock()
+	t.self.mu.Lock()
+	t.self.name = s.DNSName
+	t.self.mu.Unlock()
 }
 
 func target(s ports.Share) string {
@@ -273,18 +273,18 @@ func (t *CLI) Share(ctx context.Context, s ports.Share) (string, error) {
 	if err := t.serve(ctx, args...); err != nil {
 		return "", err
 	}
-	t.host.mu.Lock()
-	host := t.host.name
-	t.host.mu.Unlock()
+	t.self.mu.Lock()
+	name := t.self.name
+	t.self.mu.Unlock()
 	switch {
-	case host == "":
+	case name == "":
 		return "", nil
 	case s.Scheme == ports.SchemeTCP:
-		return host + ":" + strconv.Itoa(s.Port), nil
+		return name + ":" + strconv.Itoa(s.Port), nil
 	case s.Mounted():
-		return "https://" + host + s.Path + "/", nil
+		return "https://" + name + s.Path + "/", nil
 	}
-	return "https://" + host + ":" + strconv.Itoa(s.Port), nil
+	return "https://" + name + ":" + strconv.Itoa(s.Port), nil
 }
 
 func (t *CLI) Unshare(ctx context.Context, s ports.Share) error {
@@ -316,17 +316,17 @@ func (t *CLI) serve(ctx context.Context, args ...string) error {
 func refused(detail string) error { return &ports.Refused{By: "tailscale serve", Detail: detail} }
 
 func (t *CLI) Warm(ctx context.Context) error {
-	t.host.mu.Lock()
-	host := t.host.name
-	t.host.mu.Unlock()
-	if host == "" {
+	t.self.mu.Lock()
+	name := t.self.name
+	t.self.mu.Unlock()
+	if name == "" {
 		return nil
 	}
 	// invariant: both outputs are stdout, thrown away: the certificate stays in
 	// tailscaled's own store, so the first https request after it is answered
 	// at once. /dev/null is refused, as an existing file that is not a regular
 	// one (measured 2026-11-02).
-	out, err := t.call(ctx, 0, "cert", "--cert-file=-", "--key-file=-", host)
+	out, err := t.call(ctx, 0, "cert", "--cert-file=-", "--key-file=-", name)
 	if err != nil {
 		return err
 	}
@@ -386,8 +386,8 @@ func parseFunnel(data []byte) ([]int, error) {
 		return nil, err
 	}
 	var open []int
-	for hostPort, on := range raw.AllowFunnel {
-		_, portText, _ := strings.Cut(hostPort, ":")
+	for addr, on := range raw.AllowFunnel {
+		_, portText, _ := strings.Cut(addr, ":")
 		if port, err := strconv.Atoi(portText); err == nil && on && !slices.Contains(open, port) {
 			open = append(open, port)
 		}
@@ -406,8 +406,8 @@ func parseServe(data []byte) ([]ports.Share, error) {
 	}
 	var shares []ports.Share
 	seen := map[int]bool{}
-	for hostPort, web := range raw.Web {
-		_, portText, _ := strings.Cut(hostPort, ":")
+	for addr, web := range raw.Web {
+		_, portText, _ := strings.Cut(addr, ":")
 		port, _ := strconv.Atoi(portText)
 		for p, h := range web.Handlers {
 			shares = append(shares, ports.Share{Port: port, Path: p, Scheme: ports.SchemeHTTPS, Target: h.Proxy})

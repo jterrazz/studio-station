@@ -5,11 +5,12 @@ import (
 	core "github.com/jterrazz/studio-station/src/core/contract"
 )
 
+const GroupShareList = "share_list"
+
 const (
-	GroupShareList = "share_list"
-	// value: the key station v2 kept the list under, read while no
-	// share_list is written.
-	GroupLendList = "lend_list"
+	// value: alias of the key station v2 kept the share list under, read
+	// while no share_list is written.
+	GroupV2ShareList = "lend_list"
 )
 
 type ShareListPrefs struct{ p core.Preferences }
@@ -19,7 +20,7 @@ func ShareList(p core.Preferences) ShareListPrefs { return ShareListPrefs{p: p} 
 func (s ShareListPrefs) Get() ([]string, error) {
 	// invariant: the list is the owner's, written by hand; a Mac whose
 	// preferences name none shares accounts.DefaultShareList.
-	for _, group := range []string{GroupShareList, GroupLendList} {
+	for _, group := range []string{GroupShareList, GroupV2ShareList} {
 		var names []string
 		if err := s.p.Read(group, &names); err != nil {
 			return nil, err
@@ -36,5 +37,5 @@ func (s ShareListPrefs) Set(names []string) error {
 	if err := s.p.Write(GroupShareList, names); err != nil {
 		return err
 	}
-	return s.p.Write(GroupLendList, nil)
+	return s.p.Write(GroupV2ShareList, nil)
 }

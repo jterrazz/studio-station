@@ -7,7 +7,7 @@ runs:
       exit: 0
       stdout: |
           ●	gh		mise
-          ○	github-login			needs a terminal: station config install github-login
+          ○	github-login			needs a terminal: station settings apply github-login
       files:
           .calls:
               contains:

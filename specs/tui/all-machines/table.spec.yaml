@@ -1,11 +1,11 @@
-description: 'the All machines table: KIND, CPU, PORTS, AWAKE, NEED; enter opens a machine, sidebar or not'
+description: 'the All machines table and its sections in the one order; enter opens a machine, sidebar or not'
 fixture:
     - ../../__fixtures__/terminal/
 env:
     - two-macs
     - terminal
 runs:
-    - command: '--version >/dev/null; terminal --size 110x34 "$STATION" | /usr/bin/head -14'
+    - command: '--version >/dev/null; terminal --size 110x34 "$STATION" | /usr/bin/head -21'
       stdin: |
           see mac-mini         1
           send \x1b
@@ -30,6 +30,13 @@ runs:
           │  └ ● infra always on │┃                                                                                    ┃
           │                      │┃ Needs you · 10                                                                     ┃
           │ ALL MACHINES         │┃   ✗ This Mac  npm sign-in expired                                    npm login     ┃
+          │▸Overview             │┃   ✗ This Mac  com.jterrazz.brain.x-snapshot is failing, last exit 2  station back… ┃
+          │ Activity             │┃   ◐ This Mac  1 mise update waiting                                  station apps… ┃
+          │ Settings             │┃   ◐ This Mac  2 brew updates waiting                                 station apps… ┃
+          │ Ports                │┃   ◐ This Mac  Firewall: off                                          System Setti… ┃
+          │ Accounts             │┃   ◐ This Mac  ~/.tart is misplaced                                   station disk… ┃
+          │ Images               │┃   ◐ This Mac  com.bjango.istatmenus.installer is an orphan           sudo launchc… ┃
+          │                      │┃   ◐ This Mac  com.docker.socket is an orphan                         sudo launchc… ┃
     - command: '--version >/dev/null; terminal --size 110x34 "$STATION"'
       stdin: |
           see mac-mini         1

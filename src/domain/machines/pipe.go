@@ -55,7 +55,7 @@ func (s *Service) hostOf(ctx context.Context, name string) (string, bool) {
 	if err != nil {
 		return "", false
 	}
-	for _, h := range fleet.Hosts {
+	for _, h := range fleet.Macs {
 		for _, vm := range h.VMs {
 			if vm.Name == name {
 				return h.Name, true

@@ -4,7 +4,7 @@ runs:
     - command: 'settings apply dock-reset dock-spacer'
       exit: 0
       stdout: |
-          ●	dock-reset	dock: reset to the system defaults
+          ●	dock-reset	dock: back to the system defaults
           ●	dock-spacer	dock: spacer tile added
       files:
           .calls:

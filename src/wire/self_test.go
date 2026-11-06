@@ -11,15 +11,15 @@ import (
 )
 
 func TestALaptopAndADesktopDifferByWhatTheirPowerReports(t *testing.T) {
-	laptop := profileOf(context.Background(), nil, "host", "macbook", awakefake.NewPower(contracttest.Laptop()), func() (string, bool) { return "hv", true })
-	desktop := profileOf(context.Background(), nil, "host", "mini", awakefake.NewPower(contracttest.Desktop()), func() (string, bool) { return "hv", true })
+	laptop := profileOf(context.Background(), nil, "mac", "macbook", awakefake.NewPower(contracttest.Laptop()), func() (string, bool) { return "hv", true })
+	desktop := profileOf(context.Background(), nil, "mac", "mini", awakefake.NewPower(contracttest.Desktop()), func() (string, bool) { return "hv", true })
 	if !laptop.Caps.Battery || !laptop.Caps.Lid || !laptop.Caps.Engine || !laptop.Caps.VMs || !laptop.Caps.Jobs {
 		t.Errorf("the laptop's capabilities: %+v", laptop.Caps)
 	}
 	if desktop.Caps.Battery || desktop.Caps.Lid || !desktop.Caps.Thermal || !desktop.Caps.Engine {
 		t.Errorf("the desktop's capabilities: %+v", desktop.Caps)
 	}
-	if laptop.Kind != coremachine.Mac || legacyKind(laptop) != catalog.Host || laptop.Ref.Name != "macbook" {
+	if laptop.Kind != coremachine.Mac || legacyKind(laptop) != catalog.Mac || laptop.Ref.Name != "macbook" {
 		t.Errorf("the laptop's profile: %+v", laptop)
 	}
 }

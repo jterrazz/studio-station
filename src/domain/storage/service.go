@@ -38,7 +38,7 @@ type Options struct {
 	Pool      *probe.Pool
 	Here      catalog.MachineKind
 	Expand    Expander
-	Files     map[catalog.ToolFile]string
+	Files     map[catalog.AppFile]string
 	Inventory Inventory
 	Budget    time.Duration
 	// value: applies the settings a moved folder needs (tart-launcher).
@@ -51,11 +51,11 @@ type Configurer interface {
 
 type Service struct {
 	h     system.Host
-	tools []catalog.Tool
+	tools []catalog.App
 	o     Options
 }
 
-func New(h system.Host, tools []catalog.Tool, o Options) *Service {
+func New(h system.Host, tools []catalog.App, o Options) *Service {
 	if o.Pool == nil {
 		o.Pool = probe.NewPool(context.Background(), h.Clock, commandLane, walkLane)
 	}
@@ -65,21 +65,21 @@ func New(h system.Host, tools []catalog.Tool, o Options) *Service {
 type (
 	Entry       = disk.Entry
 	PathReport  = disk.PathReport
-	StrayReport = disk.StrayReport
+	StrayReport = disk.MisplacedReport
 	Row         = disk.Tally
 	Report      = disk.Survey
 	Outcome     = disk.Outcome
 )
 
 func (s *Service) Entries() []Entry {
-	everywhere := []catalog.MachineKind{catalog.Host, catalog.Linux, catalog.MacOS}
+	everywhere := []catalog.MachineKind{catalog.Mac, catalog.Linux, catalog.MacOS}
 	out := []Entry{
-		{Name: StationName, Category: StationCategory, Storage: catalog.StationStorage, Places: everywhere},
-		{Name: catalog.KeysRow, Category: StationCategory, Storage: catalog.SSHStorage, Places: everywhere},
+		{Name: StationName, Category: StationCategory, Disk: catalog.StationDisk, Kinds: everywhere},
+		{Name: catalog.KeysRow, Category: StationCategory, Disk: catalog.SSHDisk, Kinds: everywhere},
 	}
 	for _, t := range s.tools {
-		if t.Storage.Declared() {
-			out = append(out, Entry{Name: t.Name, Category: string(t.Category), Storage: t.Storage, Places: t.Places()})
+		if t.Disk.Declared() {
+			out = append(out, Entry{Name: t.Name, Category: string(t.Category), Disk: t.Disk, Kinds: t.LivesOn()})
 		}
 	}
 	return out
@@ -105,7 +105,7 @@ func (s *Service) Names() []string {
 }
 
 func (s *Service) placed(e Entry) bool {
-	for _, k := range e.Places {
+	for _, k := range e.Kinds {
 		if k == s.o.Here {
 			return true
 		}
@@ -119,7 +119,7 @@ func (s *Service) find(name string) (Entry, error) {
 			continue
 		}
 		if !s.placed(e) {
-			return e, &disk.ElsewhereError{Name: name, Places: e.Places}
+			return e, &disk.ElsewhereError{Name: name, Kinds: e.Kinds}
 		}
 		return e, nil
 	}
@@ -159,10 +159,10 @@ func (s *Service) List(ctx context.Context) (Report, error) {
 func (s *Service) otherRoots() []string {
 	var claimed []string
 	for _, e := range s.Placed() {
-		for _, p := range e.Storage.Paths {
+		for _, p := range e.Disk.Paths {
 			claimed = append(claimed, s.o.Expand.Expand(p.Path))
 		}
-		for _, p := range e.Storage.Installed {
+		for _, p := range e.Disk.Installed {
 			claimed = append(claimed, s.o.Expand.Expand(p))
 		}
 	}
@@ -222,7 +222,7 @@ func (s *Service) exists(pattern string) bool {
 
 func (s *Service) strays(e Entry) []StrayReport {
 	out := []StrayReport{}
-	for _, st := range e.Storage.Strays {
+	for _, st := range e.Disk.Misplaced {
 		abs := s.o.Expand.Expand(st.Path)
 		if _, err := s.h.FS.Stat(abs); err != nil {
 			continue
@@ -232,7 +232,7 @@ func (s *Service) strays(e Entry) []StrayReport {
 	return out
 }
 
-func (s *Service) stray(e Entry, st catalog.Stray, abs string, bytes int64) StrayReport {
+func (s *Service) stray(e Entry, st catalog.Misplaced, abs string, bytes int64) StrayReport {
 	r := StrayReport{Name: e.Name, Path: s.o.Expand.Display(abs), Bytes: bytes, Repair: "station disk move " + s.o.Expand.Display(abs)}
 	if len(st.Move) > 0 {
 		r.To = s.o.Expand.Display(s.o.Expand.Expand(st.Move[0].To))
@@ -240,7 +240,7 @@ func (s *Service) stray(e Entry, st catalog.Stray, abs string, bytes int64) Stra
 	return r
 }
 
-func (s *Service) Relocated(st catalog.Storage) bool {
+func (s *Service) Relocated(st catalog.Disk) bool {
 	for _, r := range st.Relocate {
 		if r.Pending != "" {
 			continue
@@ -272,7 +272,7 @@ func (s *Service) Free(ctx context.Context, names []string) ([]Outcome, error) {
 		if err != nil {
 			return nil, err
 		}
-		if len(e.Storage.Clean) == 0 && len(e.Storage.Strays) == 0 {
+		if len(e.Disk.Free) == 0 && len(e.Disk.Misplaced) == 0 {
 			return nil, &disk.NothingToFreeError{Name: name}
 		}
 		entries = append(entries, e)
@@ -282,7 +282,7 @@ func (s *Service) Free(ctx context.Context, names []string) ([]Outcome, error) {
 		// invariant: a bare free empties every Can rebuild row, the rows
 		// whose caches hold anything, and only those.
 		for _, e := range s.Placed() {
-			if len(e.Storage.Clean) > 0 && s.levelBytes(e, catalog.LevelCache) > 0 {
+			if len(e.Disk.Free) > 0 && s.levelBytes(e, catalog.LevelCache) > 0 {
 				entries = append(entries, e)
 			}
 		}
@@ -295,13 +295,13 @@ func (s *Service) Free(ctx context.Context, names []string) ([]Outcome, error) {
 			outcomes = append(outcomes, Outcome{Name: e.Name, Result: catalog.StateAbsent, Detail: "not installed"})
 			continue
 		}
-		failure := s.actions(ctx, e.Storage.Clean, present)
+		failure := s.actions(ctx, e.Disk.Free, present)
 		if !present && failure == nil {
 			failure = s.deleteCaches(e)
 		}
-		for _, st := range e.Storage.Strays {
+		for _, st := range e.Disk.Misplaced {
 			if _, err := s.h.FS.Stat(s.o.Expand.Expand(st.Path)); err == nil {
-				failure = first(failure, s.actions(ctx, st.Clean, present))
+				failure = first(failure, s.actions(ctx, st.Free, present))
 			}
 		}
 		outcomes = append(outcomes, s.outcome(e.Name, failure, before-s.cacheBytes(e), false))
@@ -316,22 +316,22 @@ func (s *Service) CheckErase(name string) (Entry, error) {
 	if err != nil {
 		return e, err
 	}
-	if len(e.Storage.Reset) > 0 {
+	if len(e.Disk.Erase) > 0 {
 		return e, nil
 	}
 	if kept := s.keptOnly(e); kept != "" {
 		return e, &disk.NeverTouchedError{Name: name, Path: kept}
 	}
-	return e, &disk.NothingToEraseError{Name: name, Hint: e.Storage.NoReset}
+	return e, &disk.NothingToEraseError{Name: name, Hint: e.Disk.NoErase}
 }
 
 func (s *Service) keptOnly(e Entry) string {
 	first := ""
-	for _, p := range e.Storage.Paths {
+	for _, p := range e.Disk.Paths {
 		if !p.PlacedOn(s.o.Here) {
 			continue
 		}
-		if p.Level != catalog.LevelKept && p.Level != catalog.LevelConfig {
+		if p.Level != catalog.LevelKept && p.Level != catalog.LevelSettings {
 			return ""
 		}
 		if first == "" && !strings.Contains(p.Path, "*") {
@@ -346,8 +346,8 @@ func (s *Service) CheckRunning(ctx context.Context, name string) error {
 	if err != nil {
 		return err
 	}
-	if e.Storage.Quit != "" && s.running(ctx, e.Storage.Quit) {
-		return &disk.RunningError{Name: name, Process: e.Storage.Quit, Verb: "erase", Subject: name}
+	if e.Disk.Quit != "" && s.running(ctx, e.Disk.Quit) {
+		return &disk.RunningError{Name: name, Process: e.Disk.Quit, Verb: "erase", Subject: name}
 	}
 	return nil
 }
@@ -358,7 +358,7 @@ func (s *Service) Plan(name string) []PathReport {
 		return nil
 	}
 	var out []PathReport
-	for _, p := range e.Storage.Paths {
+	for _, p := range e.Disk.Paths {
 		if !p.PlacedOn(s.o.Here) || (p.Level != catalog.LevelCache && p.Level != catalog.LevelData) {
 			continue
 		}
@@ -375,7 +375,7 @@ func (s *Service) Erase(ctx context.Context, name string) (Outcome, error) {
 	}
 	before := s.levelBytes(e, catalog.LevelCache) + s.levelBytes(e, catalog.LevelData)
 	present := s.isInstalled(ctx, e.Name)
-	failure := first(s.actions(ctx, e.Storage.Clean, present), s.actions(ctx, e.Storage.Reset, present))
+	failure := first(s.actions(ctx, e.Disk.Free, present), s.actions(ctx, e.Disk.Erase, present))
 	if !present && failure == nil {
 		failure = s.deleteCaches(e)
 	}
@@ -392,7 +392,7 @@ func (s *Service) Move(ctx context.Context, folder string) (Outcome, error) {
 		abs = s.o.Expand.Expand(folder)
 	}
 	for _, e := range s.Placed() {
-		for _, st := range e.Storage.Strays {
+		for _, st := range e.Disk.Misplaced {
 			if s.o.Expand.Expand(st.Path) != abs || !s.exists(st.Path) {
 				continue
 			}
@@ -402,7 +402,7 @@ func (s *Service) Move(ctx context.Context, folder string) (Outcome, error) {
 	return Outcome{}, &disk.NotMisplacedError{Path: s.o.Expand.Display(abs)}
 }
 
-func (s *Service) move(ctx context.Context, e Entry, st catalog.Stray) (Outcome, error) {
+func (s *Service) move(ctx context.Context, e Entry, st catalog.Misplaced) (Outcome, error) {
 	shown := s.o.Expand.Display(s.o.Expand.Expand(st.Path))
 	if st.Busy != "" && s.running(ctx, st.Busy) {
 		return Outcome{}, &disk.RunningError{Name: e.Name, Process: st.Busy, Verb: "move", Subject: shown}
@@ -425,7 +425,7 @@ func (s *Service) move(ctx context.Context, e Entry, st catalog.Stray) (Outcome,
 			to = s.o.Expand.Display(dest)
 		}
 	}
-	for _, a := range st.Clean {
+	for _, a := range st.Free {
 		if a.Run == nil {
 			_ = s.action(ctx, a)
 		}
@@ -453,9 +453,9 @@ func (s *Service) Volume(ctx context.Context) (total, free int64, err error) {
 
 func (s *Service) outcome(name string, f *actionFailure, freed int64, reset bool) Outcome {
 	if f != nil {
-		return Outcome{Name: name, Result: catalog.StateBroken, Detail: f.detail, Reason: f.reason, Reset: reset}
+		return Outcome{Name: name, Result: catalog.StateBroken, Detail: f.detail, Reason: f.reason, Erase: reset}
 	}
-	return Outcome{Name: name, Result: catalog.StateOK, Freed: max(freed, 0), Reset: reset}
+	return Outcome{Name: name, Result: catalog.StateOK, Freed: max(freed, 0), Erase: reset}
 }
 
 func (s *Service) running(ctx context.Context, process string) bool {
@@ -464,7 +464,7 @@ func (s *Service) running(ctx context.Context, process string) bool {
 
 func (s *Service) cacheBytes(e Entry) int64 {
 	total := s.levelBytes(e, catalog.LevelCache)
-	for _, st := range e.Storage.Strays {
+	for _, st := range e.Disk.Misplaced {
 		total += s.dirSize(s.o.Expand.Expand(st.Path))
 	}
 	return total
@@ -472,7 +472,7 @@ func (s *Service) cacheBytes(e Entry) int64 {
 
 func (s *Service) levelBytes(e Entry, level catalog.Level) int64 {
 	var total int64
-	for _, p := range e.Storage.Paths {
+	for _, p := range e.Disk.Paths {
 		if p.Level == level && p.PlacedOn(s.o.Here) {
 			total += s.storedBytes(p)
 		}
@@ -537,7 +537,7 @@ func (s *Service) action(ctx context.Context, a catalog.Action) *actionFailure {
 
 func (s *Service) deleteCaches(e Entry) *actionFailure {
 	var failed *actionFailure
-	for _, p := range e.Storage.Paths {
+	for _, p := range e.Disk.Paths {
 		if p.Level == catalog.LevelCache && p.PlacedOn(s.o.Here) {
 			failed = first(failed, s.delete(p.Path))
 		}

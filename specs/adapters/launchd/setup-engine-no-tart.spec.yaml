@@ -1,4 +1,4 @@
-description: 'with no tart no VM can exist, so setup writes no daemon'
+description: 'with no tart no VM can exist, so setup writes no engine'
 env:
     - USER=tester
 runs:
@@ -8,7 +8,7 @@ runs:
           ●	name	m
           ●	zshrc
           ●	layout	nothing to retire
-          ●	relocate	bunfig, go env, mise config, npmrc
+          ●	relocate	bunfig, go env, mise settings, npmrc
           ○	engine	not needed until tart is installed
           ○	apps	missing: homebrew mise git tart tailscale: run station setup on a terminal
           ●	settings	applied hushlogin tart-launcher git-shortcuts docker-shortcuts

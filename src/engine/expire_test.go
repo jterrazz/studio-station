@@ -89,7 +89,7 @@ func newSharing(t *testing.T, held map[string][]accounts.Share) sharing {
 		machines.VMRecord{Name: "web", Lifetime: machines.Permanent, Want: machines.WantRunning},
 	)
 	s := sharing{harness: h, shares: &fakeShares{held: held, expires: make(chan expired, 8)}, told: &toldNotifier{}}
-	h.d.o.Lends, h.d.notifier = s.shares, s.told
+	h.d.o.AccountShares, h.d.notifier = s.shares, s.told
 	for name, guest := range map[string]string{"api": GuestConnected, "web": GuestConnecting} {
 		v, _ := h.d.find(name)
 		v.state, v.guest = StateRunning, guest
@@ -101,13 +101,13 @@ func newSharing(t *testing.T, held map[string][]accounts.Share) sharing {
 // take-back it starts; a sweep that takes nothing back fails the test.
 func (s sharing) sweep(t *testing.T) expired {
 	t.Helper()
-	s.d.sweepLends(t.Context())
+	s.d.sweepShares(t.Context())
 	wait, cancel := context.WithTimeout(t.Context(), 5*time.Second)
 	defer cancel()
 	select {
 	case e := <-s.shares.expires:
-		s.d.lendMu.Lock()
-		defer s.d.lendMu.Unlock()
+		s.d.shareMu.Lock()
+		defer s.d.shareMu.Unlock()
 		return e
 	case <-wait.Done():
 		t.Fatal("the expire job took nothing back")
@@ -117,7 +117,7 @@ func (s sharing) sweep(t *testing.T) expired {
 
 func (s sharing) sweepNothing(t *testing.T) {
 	t.Helper()
-	s.d.sweepLends(t.Context())
+	s.d.sweepShares(t.Context())
 	wait, cancel := context.WithTimeout(t.Context(), 100*time.Millisecond)
 	defer cancel()
 	select {
@@ -176,7 +176,7 @@ func TestAFailedTakeBackKeepsItsShareAndIsToldOncePerHour(t *testing.T) {
 		}
 	}
 	n := s.told.told[0]
-	if n.Kind != NoticeRecallFailed || n.Subject != "api share" || !strings.Contains(n.Text, "taking GitHub back failed: deleting the copies") {
+	if n.Kind != NoticeTakeBackFailed || n.Subject != "api share" || !strings.Contains(n.Text, "taking GitHub back failed: deleting the copies") {
 		t.Errorf("told %+v, want the GitHub take-back failure of api", n)
 	}
 	held, _ := s.shares.Held()

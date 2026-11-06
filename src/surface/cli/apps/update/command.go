@@ -22,8 +22,8 @@ import (
 )
 
 type Deps struct {
-	Here page.Context
-	Now  func() time.Time
+	ThisMachine page.Context
+	Now         func() time.Time
 }
 
 func Command(d Deps, env kit.Env) *cobra.Command {
@@ -49,7 +49,7 @@ func Command(d Deps, env kit.Env) *cobra.Command {
 			if err != nil {
 				return err
 			}
-			if err := io.Page(pageapps.Updated(outcomes, ran(env, d.Now().Sub(start)), d.Here), nil); err != nil {
+			if err := io.Page(pageapps.Updated(outcomes, ran(env, d.Now().Sub(start)), d.ThisMachine), nil); err != nil {
 				return err
 			}
 			return partial(outcomes, "re-run it: station apps update ")
@@ -82,8 +82,8 @@ func everyMachine(ctx context.Context, env kit.Env, d Deps, req appscalls.Update
 		}
 		updates = append(updates, u)
 	}
-	for _, h := range list.Fleet.Hosts {
-		if !h.Reachable && !h.Here {
+	for _, h := range list.All.Macs {
+		if !h.Reachable && !h.ThisMac {
 			updates = append(updates, pageapps.MachineUpdate{Machine: h.Name, Err: h.Name + " does not answer"})
 			failed++
 			continue
@@ -104,7 +104,7 @@ func everyMachine(ctx context.Context, env kit.Env, d Deps, req appscalls.Update
 	if err := ctx.Err(); err != nil {
 		return err
 	}
-	if err := io.Page(pageapps.EveryMachine(updates, d.Here), nil); err != nil {
+	if err := io.Page(pageapps.EveryMachine(updates, d.ThisMachine), nil); err != nil {
 		return err
 	}
 	if failed > 0 {

@@ -43,7 +43,7 @@ func printed() map[string]local.Output {
 
 func signedIn(on ...string) *cli.Reads {
 	run := local.Played(func(c local.Cmd) (local.Output, error) { return printed()[c.Name], nil }, on...)
-	config := files{fstest.MapFS{"home/" + catalog.DockerConfig: {Data: []byte(`{"credsStore":"osxkeychain"}`)}}}
+	config := files{fstest.MapFS{"home/" + catalog.DockerSettingsFile: {Data: []byte(`{"credsStore":"osxkeychain"}`)}}}
 	return cli.New(run, config, cli.Options{Home: "/home"})
 }
 

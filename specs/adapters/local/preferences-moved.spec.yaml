@@ -10,7 +10,7 @@ runs:
           preferences.json
           zsh
           {
-            "here": "x",
+            "name": "x",
             "vm_user": "vmu"
           }
           ●	name	x

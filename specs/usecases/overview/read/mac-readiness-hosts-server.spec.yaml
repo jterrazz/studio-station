@@ -1,4 +1,4 @@
-description: 'a Mac that hosts a server shows its readiness though it may sleep, each power fix named'
+description: 'a Mac that hosts a server shows its readiness though it may sleep, each fix it lacks named'
 env: mini-sleeps
 runs:
     - command: 'overview --on mac-mini | /usr/bin/sed -n ''/^# Mac readiness/,/^# /p'''

@@ -271,7 +271,7 @@ struct HomeContent: View {
 
     func awakeTile(_ s: Section) -> some View {
         let toggle = (page.actions ?? []).first { $0.rows?.contains("awake") == true && $0.run != nil }
-        let on = toggle?.id == "power-sleep"
+        let on = toggle?.id == "awake-off"
         let words = (s.items?.first?.row?.cells?.first).map { Format.show($0) } ?? ""
         return TileBox {
             VStack(alignment: .leading, spacing: 4) {

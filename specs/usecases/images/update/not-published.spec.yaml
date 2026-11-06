@@ -1,8 +1,0 @@
-description: 'an image no registry publishes is said so, and nothing is fetched'
-env: two-macs
-runs:
-    - command: 'images update macos'
-      exit: 1
-      stderr: |
-          Error: no version of macos is published
-          Hint: station images

@@ -16,7 +16,7 @@ type Run struct {
 	Took time.Duration
 }
 
-func Outcomes(verb string, outcomes []apps.Outcome, run Run, here page.Context) page.Page {
+func Outcomes(verb string, outcomes []apps.Outcome, run Run, thisMac page.Context) page.Page {
 	// invariant: an outcome opens with what changed, counted, on which
 	// machine and in how long (`Installed 2 apps on This Mac · 9s`), then
 	// each app with the version and the method that now hold it.
@@ -38,11 +38,11 @@ func Outcomes(verb string, outcomes []apps.Outcome, run Run, here page.Context) 
 			rows = append(rows, step)
 		}
 	}
-	p := pages.Outcome("apps "+verb, here, Columns(), rows, "apps to "+verb)
+	p := pages.Outcome("apps "+verb, thisMac, Columns(), rows, "apps to "+verb)
 	if changed == 0 {
 		return p
 	}
-	head := page.Row{ID: "summary/" + verb, Label: done(verb) + " " + plural(changed, "app") + where(verb, run.On, here), Mark: page.OK}
+	head := page.Row{ID: "summary/" + verb, Label: done(verb) + " " + plural(changed, "app") + where(verb, run.On, thisMac), Mark: page.OK}
 	var words []string
 	if failed > 0 {
 		head.Mark = page.Broken
@@ -69,10 +69,10 @@ func done(verb string) string {
 	return verb
 }
 
-func where(verb, on string, here page.Context) string {
+func where(verb, on string, thisMac page.Context) string {
 	label := on
 	if label == "" {
-		label = machineLabel(here)
+		label = machineLabel(thisMac)
 	}
 	if verb == "remove" {
 		return " from " + label
@@ -80,25 +80,25 @@ func where(verb, on string, here page.Context) string {
 	return " on " + label
 }
 
-func machineLabel(here page.Context) string {
-	if here.Kind == string(catalog.Host) || here.Machine == "" {
+func machineLabel(thisMac page.Context) string {
+	if thisMac.Kind == string(catalog.Mac) || thisMac.Machine == "" {
 		return "This Mac"
 	}
-	return here.Machine
+	return thisMac.Machine
 }
 
-func Updated(outcomes []apps.Outcome, run Run, here page.Context) page.Page {
+func Updated(outcomes []apps.Outcome, run Run, thisMac page.Context) page.Page {
 	// invariant: an update with nothing to update says every app is up to
 	// date, a calm line, never an empty list.
 	if len(outcomes) > 0 {
-		return Outcomes("update", outcomes, run, here)
+		return Outcomes("update", outcomes, run, thisMac)
 	}
-	label := machineLabel(here)
+	label := machineLabel(thisMac)
 	if run.On != "" {
 		label = run.On
 	}
 	row := page.Row{ID: "up-to-date", Label: "every app is up to date on " + label, Mark: page.OK}
-	return pages.Outcome("apps update", here, nil, []page.Row{row}, "apps to update")
+	return pages.Outcome("apps update", thisMac, nil, []page.Row{row}, "apps to update")
 }
 
 type MachineUpdate struct {
@@ -109,7 +109,7 @@ type MachineUpdate struct {
 	Err      string
 }
 
-func EveryMachine(updates []MachineUpdate, here page.Context) page.Page {
+func EveryMachine(updates []MachineUpdate, thisMac page.Context) page.Page {
 	// invariant: --all-machines tells one line per machine: what it updated,
 	// why it was skipped (a server, a stopped VM), or that it did not answer.
 	rows := make([]page.Row, 0, len(updates))
@@ -134,5 +134,5 @@ func EveryMachine(updates []MachineUpdate, here page.Context) page.Page {
 		}
 		rows = append(rows, row)
 	}
-	return pages.Outcome("apps update", here, nil, rows, "machines to update")
+	return pages.Outcome("apps update", thisMac, nil, rows, "machines to update")
 }

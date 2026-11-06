@@ -63,7 +63,7 @@ func atoi(s string) int {
 	return n
 }
 
-type Daemon struct {
+type EngineCheck struct {
 	// value: the hypervisor station's daemon runs VMs with, and whether it is installed.
 	Hypervisor string
 	Installed  bool
@@ -74,10 +74,10 @@ type Daemon struct {
 	Err     error
 }
 
-func DaemonRow(d Daemon, station string) Check {
+func EngineRow(d EngineCheck, station string) Check {
 	// invariant: the daemon matters where VMs can exist: a host with its hypervisor; one that
 	// does not answer, or answers another version, is degraded, never an error.
-	c := Check{Name: "daemon", State: catalog.StateAbsent}
+	c := Check{Name: "engine", State: catalog.StateAbsent}
 	if !d.Installed {
 		c.Value = "not needed until " + d.Hypervisor + " is installed"
 		return c

@@ -11,14 +11,14 @@ import (
 )
 
 type node struct {
-	name   string
-	label  string
-	kind   machine.Kind
-	mark   page.Mark
-	mac    string
-	here   bool
-	engine string
-	facts  []string
+	name    string
+	label   string
+	kind    machine.Kind
+	mark    page.Mark
+	mac     string
+	thisMac bool
+	engine  string
+	facts   []string
 	// value: why the machines read marks it (a Mac that does not answer).
 	reason page.Reason
 }
@@ -42,9 +42,9 @@ func (n node) heading() string {
 	}
 }
 
-func tree(here page.Context, p *page.Page) []node {
+func tree(thisMac page.Context, p *page.Page) []node {
 	nodes := []node{{label: allMachines}}
-	this := node{name: here.Machine, label: "This Mac", kind: machine.Mac, mark: page.Awaiting, here: true}
+	this := node{name: thisMac.Machine, label: "This Mac", kind: machine.Mac, mark: page.Awaiting, thisMac: true}
 	if p == nil {
 		return append(nodes, this)
 	}
@@ -54,7 +54,7 @@ func tree(here page.Context, p *page.Page) []node {
 				continue
 			}
 			h := it.Group.Head
-			mac := node{name: h.ID, label: cmp.Or(h.Short, h.Label), kind: machine.Mac, mark: h.Mark, here: h.ID == here.Machine, reason: h.Reason}
+			mac := node{name: h.ID, label: cmp.Or(h.Short, h.Label), kind: machine.Mac, mark: h.Mark, thisMac: h.ID == thisMac.Machine, reason: h.Reason}
 			mac.engine = ui.Plain(column(s, h, "state"))
 			if mac.engine == engineStopped {
 				mac.mark = page.Attention
@@ -128,7 +128,7 @@ func words(n node, s section.ID) []string {
 	default:
 		w = []string{string(s)}
 	}
-	if !n.here {
+	if !n.thisMac {
 		w = append(w, "--on", n.name)
 	}
 	return w

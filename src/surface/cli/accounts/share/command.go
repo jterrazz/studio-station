@@ -65,29 +65,29 @@ func Command(d Deps, env kit.Env) *cobra.Command {
 	}, env)
 }
 
-type LendInput struct {
+type ShareInput struct {
 	To    string
 	Names []string
 }
 
-func Lend(d Deps, env kit.Env) *cobra.Command {
+func LendAlias(d Deps, env kit.Env) *cobra.Command {
 	// value: secrets lend, the v2 words of share: --to is --with, and each
 	// secret named (every one the share list holds, when none is) is the
 	// account it carries.
-	cmd := kit.Command(kit.Leaf[LendInput]{
+	cmd := kit.Command(kit.Leaf[ShareInput]{
 		Use:  "lend --to <vm> [<name...>]",
 		Args: cobra.ArbitraryArgs,
-		Declare: func(f *pflag.FlagSet, in *LendInput) {
+		Declare: func(f *pflag.FlagSet, in *ShareInput) {
 			f.StringVar(&in.To, "with", "", "the VM that receives the copies")
 		},
-		Bind: func(in *LendInput, args []string) error {
+		Bind: func(in *ShareInput, args []string) error {
 			in.Names = args
 			if in.To == "" {
 				return kit.Refuse("station accounts share needs a VM", "station accounts share <account> --with <vm>")
 			}
 			return nil
 		},
-		Run: func(ctx context.Context, in *LendInput, io kit.IO) error {
+		Run: func(ctx context.Context, in *ShareInput, io kit.IO) error {
 			names := in.Names
 			if len(names) == 0 {
 				r, err := call.Read(ctx, env.Calls, env.Target(), accountscalls.List, accountscalls.ListIn{}, nil)

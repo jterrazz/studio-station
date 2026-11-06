@@ -8,7 +8,7 @@ import (
 )
 
 func TestAnAppPresentButNotHeldByItsMethodIsNotManagedNeverOK(t *testing.T) {
-	appStore := apps.Report{Tool: catalog.Tool{Name: "dia"}, Method: catalog.MethodCask, State: catalog.StateOK, Detail: "app-store"}
+	appStore := apps.Report{App: catalog.App{Name: "dia"}, Method: catalog.MethodCask, State: catalog.StateOK, Detail: "app-store"}
 	if got := apps.StateOf(appStore); got != apps.NotManaged {
 		t.Errorf("state %s", got)
 	}

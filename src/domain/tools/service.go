@@ -35,14 +35,14 @@ type VMs interface {
 
 type Service struct {
 	h      system.Host
-	tools  []catalog.Tool
-	byName map[string]catalog.Tool
+	tools  []catalog.App
+	byName map[string]catalog.App
 	cfg    Configurer
 	o      Options
 }
 
-func New(h system.Host, list []catalog.Tool, cfg Configurer, o Options) *Service {
-	byName := make(map[string]catalog.Tool, len(list))
+func New(h system.Host, list []catalog.App, cfg Configurer, o Options) *Service {
+	byName := make(map[string]catalog.App, len(list))
 	for _, t := range list {
 		byName[t.Name] = t
 	}
@@ -70,8 +70,8 @@ const (
 	WhyFailing   = apps.WhyFailing
 )
 
-func (s *Service) Placed() []catalog.Tool {
-	var placed []catalog.Tool
+func (s *Service) Placed() []catalog.App {
+	var placed []catalog.App
 	for _, t := range s.tools {
 		if _, ok := t.InstallOn(s.o.Here); ok {
 			placed = append(placed, t)
@@ -80,9 +80,9 @@ func (s *Service) Placed() []catalog.Tool {
 	return placed
 }
 
-func (s *Service) Find(names []string) ([]catalog.Tool, error) {
+func (s *Service) Find(names []string) ([]catalog.App, error) {
 	seen := map[string]bool{}
-	var found []catalog.Tool
+	var found []catalog.App
 	for _, name := range names {
 		if seen[name] {
 			continue
@@ -93,7 +93,7 @@ func (s *Service) Find(names []string) ([]catalog.Tool, error) {
 			return nil, &apps.UnknownError{Name: name}
 		}
 		if _, ok := t.InstallOn(s.o.Here); !ok {
-			return nil, &apps.ElsewhereError{App: name, Places: t.Places()}
+			return nil, &apps.ElsewhereError{App: name, Kinds: t.LivesOn()}
 		}
 		found = append(found, t)
 	}
@@ -104,7 +104,7 @@ func (s *Service) CheckInstall(ctx context.Context, names []string) error {
 	found, err := s.Find(names)
 	var place *apps.ElsewhereError
 	if errors.As(err, &place) {
-		place.VM = s.runningVM(ctx, place.Places)
+		place.VM = s.runningVM(ctx, place.Kinds)
 	}
 	if err != nil {
 		return err
@@ -156,18 +156,18 @@ func (s *Service) CheckUpgrade(names []string) error {
 	return nil
 }
 
-func (s *Service) install(t catalog.Tool) catalog.Install {
+func (s *Service) install(t catalog.App) catalog.Install {
 	i, _ := t.InstallOn(s.o.Here)
 	return i
 }
 
 // invariant: the registry wire builds holds an installer for every method
 // the catalogue places.
-func (s *Service) installer(t catalog.Tool) contract.Installer {
+func (s *Service) installer(t catalog.App) contract.Installer {
 	return s.o.Installers[s.install(t).Method()]
 }
 
-func (s *Service) lined(t catalog.Tool) (contract.Lined, bool) {
+func (s *Service) lined(t catalog.App) (contract.Lined, bool) {
 	l, ok := s.installer(t).(contract.Lined)
 	return l, ok
 }

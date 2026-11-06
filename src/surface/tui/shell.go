@@ -77,11 +77,11 @@ const machinesKey = "\x00machines"
 
 func newShell(ctx context.Context, d Deps) shell {
 	ctx, cancel := context.WithCancel(ctx)
-	s := shell{ctx: ctx, cancel: cancel, deps: d, width: 110, height: 30, dark: true, at: d.Here.Machine,
+	s := shell{ctx: ctx, cancel: cancel, deps: d, width: 110, height: 30, dark: true, at: d.ThisMachine.Machine,
 		focus: ui.PaneMaster, reads: map[string]read{}, lists: map[string]ui.List{}, asked: map[string]bool{}, samples: map[string][]int{},
 		states: map[string]screen.State{}, gens: map[string]int{}, held: &held{}}
-	s.nodes = tree(d.Here, nil)
-	if d.Opens != "" && d.Opens != d.Here.Machine {
+	s.nodes = tree(d.ThisMachine, nil)
+	if d.Opens != "" && d.Opens != d.ThisMachine.Machine {
 		s.at = d.Opens
 	}
 	s.side = s.sectionEntry()
@@ -188,7 +188,7 @@ func (s shell) answer(msg answered) (tea.Model, tea.Cmd) {
 		p := msg.page
 		before := s.entries()[min(s.side, len(s.entries())-1)]
 		s.machines = &p
-		s.nodes = tree(s.deps.Here, s.machines)
+		s.nodes = tree(s.deps.ThisMachine, s.machines)
 		s.side = s.sectionEntry()
 		if !before.isSection {
 			for i, e := range s.entries() {
@@ -198,7 +198,7 @@ func (s shell) answer(msg answered) (tea.Model, tea.Cmd) {
 			}
 		}
 		for _, n := range s.nodes {
-			if n.kind == machine.Mac && !n.here {
+			if n.kind == machine.Mac && !n.thisMac {
 				var cmd tea.Cmd
 				s, cmd = s.ask(s.key(n, section.Overview), s.words(n, section.Overview))
 				cmds = append(cmds, cmd)
@@ -806,7 +806,7 @@ func (s shell) header() ui.Header {
 	if n.all() {
 		n = s.nodes[1]
 		for _, x := range s.nodes {
-			if x.here {
+			if x.thisMac {
 				n = x
 			}
 		}

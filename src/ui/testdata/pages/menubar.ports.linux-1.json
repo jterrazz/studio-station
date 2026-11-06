@@ -4,7 +4,7 @@
   "command": "ports",
   "context": {
     "machine": "jterrazz-macbook-pro",
-    "kind": "host"
+    "kind": "mac"
   },
   "state": "ready",
   "sections": [
@@ -302,7 +302,7 @@
         "call": "ports.stop-sharing",
         "in": {
           "Confirm": "yes",
-          "Host": "\"macbook\"",
+          "Mac": "\"macbook\"",
           "Port": "\"5173\"",
           "VM": "\"linux-1\""
         }
@@ -333,7 +333,7 @@
         "call": "ports.stop-sharing",
         "in": {
           "Confirm": "yes",
-          "Host": "\"macbook\"",
+          "Mac": "\"macbook\"",
           "Port": "\"5432\"",
           "VM": "\"linux-1\""
         }

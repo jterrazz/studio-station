@@ -13,8 +13,8 @@ import (
 )
 
 type Deps struct {
-	Names func() []string
-	Here  page.Context
+	Names       func() []string
+	ThisMachine page.Context
 }
 
 type Input struct{ Name string }
@@ -34,12 +34,12 @@ func Command(d Deps, env kit.Env) *cobra.Command {
 				return err
 			}
 			if out.Diff != "" && io.PageJSON {
-				return io.Page(pagesettings.Diff(in.Name, out.Diff, d.Here), nil)
+				return io.Page(pagesettings.Diff(in.Name, out.Diff, d.ThisMachine), nil)
 			}
 			if out.Diff != "" {
 				return io.Raw([]byte(out.Diff))
 			}
-			return io.Page(pagesettings.Values(out.Row, out.Before, out.After, d.Here), nil)
+			return io.Page(pagesettings.Values(out.Row, out.Before, out.After, d.ThisMachine), nil)
 		},
 	}, env)
 }

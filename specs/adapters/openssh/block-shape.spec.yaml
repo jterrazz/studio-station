@@ -1,4 +1,4 @@
-description: 'each block has its shape: a VM here through its pipe, one elsewhere through its host'
+description: 'each block has its shape: a VM of This Mac through its pipe, one elsewhere through its Mac'
 fixture:
     - ../../__fixtures__/hosts-x-y/
     - ../../__fixtures__/machines-stubs/

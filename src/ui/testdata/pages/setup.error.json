@@ -3,7 +3,7 @@
   "id": "outcome",
   "command": "setup",
   "context": {
-    "kind": "host"
+    "kind": "mac"
   },
   "state": "failed",
   "error": {

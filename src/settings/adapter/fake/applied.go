@@ -25,9 +25,9 @@ var (
 func AppliedOf(w *world.World, mac string) *Applied { return &Applied{w: w, mac: mac} }
 
 func NewApplied() *Applied {
-	w := &world.World{Here: "here"}
-	w.Mac("here")
-	return AppliedOf(w, "here")
+	w := &world.World{ThisMac: "this-mac"}
+	w.Mac("this-mac")
+	return AppliedOf(w, "this-mac")
 }
 
 func (a *Applied) kept() map[string]settings.Applied {

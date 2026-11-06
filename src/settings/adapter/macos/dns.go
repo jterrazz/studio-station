@@ -42,6 +42,6 @@ func (m *Mac) applyDNS(ctx context.Context) (settings.Change, error) {
 }
 
 func (m *Mac) dnsInstalled(ctx context.Context) bool {
-	out, ok := m.probe(ctx, "profiles", "-C", "-v")
+	out, ok := m.output(ctx, "profiles", "-C", "-v")
 	return ok && strings.Contains(out, catalog.DNSProfileID)
 }

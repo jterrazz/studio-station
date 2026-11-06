@@ -33,7 +33,7 @@ type Reach struct {
 
 type Router struct {
 	registry *call.Registry
-	here     machine.Profile
+	thisMac  machine.Profile
 	reach    Reach
 	// value: this Mac's engine, where a call of this machine that needs its
 	// state runs; nil runs every call of this machine in this process.
@@ -55,8 +55,8 @@ type link struct {
 	retired bool
 }
 
-func NewRouter(registry *call.Registry, here machine.Profile, reach Reach) *Router {
-	return &Router{registry: registry, here: here, reach: reach, open: map[string]*link{}}
+func NewRouter(registry *call.Registry, thisMac machine.Profile, reach Reach) *Router {
+	return &Router{registry: registry, thisMac: thisMac, reach: reach, open: map[string]*link{}}
 }
 
 func (r *Router) WithEngine(engine call.Router) *Router {
@@ -74,7 +74,7 @@ func (r *Router) Invoke(ctx context.Context, target machine.Ref, name string, in
 		return r.engine.Invoke(ctx, target, name, in, out, p)
 	}
 	if r.local(t) {
-		v, ran := r.registry.Run(ctx, r.here, name, in, p)
+		v, ran := r.registry.Run(ctx, r.thisMac, name, in, p)
 		call.Set(out, v)
 		return ran
 	}
@@ -109,7 +109,7 @@ func (r *Router) Watch(ctx context.Context, target machine.Ref, name string, in 
 		return r.engine.Watch(ctx, target, name, in, p)
 	}
 	if r.local(t) {
-		return r.registry.Stream(ctx, r.here, name, in, p)
+		return r.registry.Stream(ctx, r.thisMac, name, in, p)
 	}
 	l, err := r.endpoint(ctx, t, name)
 	if err != nil {
@@ -155,7 +155,7 @@ func wire(ctx context.Context, updates <-chan call.Update[json.RawMessage], ende
 // rides the engine of the Mac it is on, which resolves it the same way; a
 // name no record here holds is asked of the other Macs, never dialed.
 func (r *Router) resolve(ctx context.Context, target machine.Ref) (machine.Ref, error) {
-	if target == (machine.Ref{}) || target == r.here.Ref || target.Name == r.here.Ref.Name {
+	if target == (machine.Ref{}) || target == r.thisMac.Ref || target.Name == r.thisMac.Ref.Name {
 		return machine.Ref{}, nil
 	}
 	if target.On != "" || r.reach.Locate == nil {
@@ -204,7 +204,7 @@ func (r *Router) endpoint(ctx context.Context, t machine.Ref, name string) (*lin
 func (r *Router) connect(ctx context.Context, t machine.Ref) (l *link, hello contract.Hello, fresh bool, err error) {
 	// invariant: a link it returns is held by the caller until release.
 	dialer, mac := r.reach.Macs, t.Mac()
-	if t.On != "" && t.On == r.here.Ref.Name {
+	if t.On != "" && t.On == r.thisMac.Ref.Name {
 		dialer = r.reach.Engine
 	}
 	if dialer == nil {
@@ -314,7 +314,7 @@ func (r *Router) Close() {
 }
 
 func (r *Router) Served() contract.Hello {
-	return serve.Local(r.registry, r.here, r.reach.Version).Hello()
+	return serve.Local(r.registry, r.thisMac, r.reach.Version).Hello()
 }
 
 func (r *Router) Serve(ctx context.Context, target machine.Ref, name string, in json.RawMessage, p call.Progress) (any, error) {
@@ -323,7 +323,7 @@ func (r *Router) Serve(ctx context.Context, target machine.Ref, name string, in 
 	// engine's connection to that VM, and nothing hops to a third machine.
 	vm, ok := r.vm(target)
 	if !ok {
-		return serve.Local(r.registry, r.here, r.reach.Version).Invoke(ctx, target, name, in, p)
+		return serve.Local(r.registry, r.thisMac, r.reach.Version).Invoke(ctx, target, name, in, p)
 	}
 	l, err := r.endpoint(ctx, vm, name)
 	if err != nil {
@@ -340,7 +340,7 @@ func (r *Router) Serve(ctx context.Context, target machine.Ref, name string, in 
 func (r *Router) ServeWatch(ctx context.Context, target machine.Ref, name string, in json.RawMessage, p call.Progress) (<-chan call.Update[any], error) {
 	vm, ok := r.vm(target)
 	if !ok {
-		return serve.Local(r.registry, r.here, r.reach.Version).Watch(ctx, target, name, in, p)
+		return serve.Local(r.registry, r.thisMac, r.reach.Version).Watch(ctx, target, name, in, p)
 	}
 	l, err := r.endpoint(ctx, vm, name)
 	if err != nil {
@@ -356,16 +356,16 @@ func (r *Router) ServeWatch(ctx context.Context, target machine.Ref, name string
 }
 
 func (r *Router) vm(target machine.Ref) (machine.Ref, bool) {
-	if target.Name == "" || target.Name == r.here.Ref.Name {
+	if target.Name == "" || target.Name == r.thisMac.Ref.Name {
 		return machine.Ref{}, false
 	}
 	if r.reach.Locate == nil {
 		return machine.Ref{}, false
 	}
-	if t, _ := r.reach.Locate(target.Name); t.On != r.here.Ref.Name {
+	if t, _ := r.reach.Locate(target.Name); t.On != r.thisMac.Ref.Name {
 		return machine.Ref{}, false
 	}
-	return machine.Ref{Name: target.Name, On: r.here.Ref.Name}, true
+	return machine.Ref{Name: target.Name, On: r.thisMac.Ref.Name}, true
 }
 
 func Endpoint(c api.Client) call.Router {

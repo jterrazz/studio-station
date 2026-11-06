@@ -11,7 +11,7 @@ import (
 )
 
 func seeded(s contracttest.Seed, m catalog.Method) *world.World {
-	w := &world.World{Here: "mbp"}
+	w := &world.World{ThisMac: "mbp"}
 	w.Mac("mbp").Apps = map[catalog.Method]*world.Manager{m: {Absent: s.Absent, Installed: s.Installed}}
 	if s.Fails {
 		w.Script = []world.Fault{{Call: "Installer.Install"}, {Call: "Installer.Update"}, {Call: "Installer.Remove"}, {Call: "Bundler.Bundle"}}

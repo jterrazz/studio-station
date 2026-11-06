@@ -14,7 +14,7 @@ import (
 	"github.com/jterrazz/studio-station/src/settings"
 )
 
-func Matrix(m settings.Matrix, now time.Time, all bool, label func(string) string, here page.Context) page.Page {
+func Matrix(m settings.Matrix, now time.Time, all bool, label func(string) string, thisMac page.Context) page.Page {
 	// invariant: the first line counts the settings, the machines and what
 	// needs a look; then what needs a look, with its gesture; then the
 	// machines, each read now, kept from its last read or said silent, and
@@ -22,7 +22,7 @@ func Matrix(m settings.Matrix, now time.Time, all bool, label func(string) strin
 	// row per setting and one column per
 	// machine, a group's rows that need no look folded on one line unless
 	// every row is unfolded.
-	p := page.Page{ID: ID, Command: "settings --all-machines", Context: here, Actions: matrixActions(m)}
+	p := page.Page{ID: ID, Command: "settings --all-machines", Context: thisMac, Actions: matrixActions(m)}
 	machines := machinesSection(m, now, label)
 	p.Sections = append(p.Sections, matrixLine(m, machines.Caption))
 	machines.Caption = nil
@@ -123,7 +123,7 @@ func machinesSection(m settings.Matrix, now time.Time, label func(string) string
 	s := page.Section{ID: "machines", Title: "Machines", Caption: caption, Columns: cols, Uncounted: true}
 	for _, c := range m.Columns {
 		mark, reason, words := standing(c, now)
-		row := page.Row{ID: c.Name, Label: c.Name, Short: heading(c.Place, label), Mark: mark, Reason: reason, Cells: []page.Value{page.Text(kindWord(c.Place)), page.Texts(words...)}}
+		row := page.Row{ID: c.Name, Label: c.Name, Short: heading(c.LivesOn, label), Mark: mark, Reason: reason, Cells: []page.Value{page.Text(kindWord(c.LivesOn)), page.Texts(words...)}}
 		s.Items = append(s.Items, page.Item{Row: &row})
 	}
 	for _, name := range m.Servers {
@@ -156,14 +156,14 @@ func standing(c settings.Column, now time.Time) (page.Mark, page.Reason, []strin
 	return page.OK, "", []string{"read"}
 }
 
-func heading(p settings.Place, label func(string) string) string {
-	if p.Here {
+func heading(p settings.LivesOn, label func(string) string) string {
+	if p.ThisMachine {
 		return "This Mac"
 	}
 	return label(p.Name)
 }
 
-func kindWord(p settings.Place) string {
+func kindWord(p settings.LivesOn) string {
 	if p.Mac {
 		return "Mac"
 	}
@@ -179,14 +179,14 @@ func lookSection(m settings.Matrix, now time.Time, label func(string) string) pa
 			}
 			r, _ := c.Row(mr.Name)
 			one := Row(r, now)
-			row := page.Row{ID: c.Name + "/" + mr.Name, Label: c.Name, Short: heading(c.Place, label), Mark: one.Mark, Reason: one.Reason, Cells: append([]page.Value{page.Text(mr.Name)}, one.Cells...)}
+			row := page.Row{ID: c.Name + "/" + mr.Name, Label: c.Name, Short: heading(c.LivesOn, label), Mark: one.Mark, Reason: one.Reason, Cells: append([]page.Value{page.Text(mr.Name)}, one.Cells...)}
 			switch {
 			case c.Away == settings.Stopped:
 				row.Hint = page.Cmd("station machines start " + c.Name)
 			case one.Hint != nil:
 				hint := *one.Hint
 				hint.Key = ""
-				if !hint.External && !c.Here {
+				if !hint.External && !c.ThisMachine {
 					hint.Command += " --on " + c.Name
 				}
 				row.Hint = &hint
@@ -201,7 +201,7 @@ func groupSection(m settings.Matrix, g settings.Group, id, title string, all boo
 	cols := make([]page.Column, 0, len(m.Columns)+2)
 	cols = append(cols, page.Column{Key: "name", Kind: page.KindText, Keep: 100})
 	for _, c := range m.Columns {
-		cols = append(cols, page.Column{Key: c.Name, Label: heading(c.Place, label), Kind: page.KindText, Keep: 20})
+		cols = append(cols, page.Column{Key: c.Name, Label: heading(c.LivesOn, label), Kind: page.KindText, Keep: 20})
 	}
 	cols = append(cols, page.Column{Key: "ok", Label: "OK", Kind: page.KindText, Keep: 20})
 	s := page.Section{ID: id, Title: title, Columns: cols, Uncounted: true}
@@ -252,10 +252,10 @@ func foldedRow(m settings.Matrix, rows []settings.MatrixRow, more bool) page.Row
 	var marks []page.Mark
 	for i, c := range m.Columns {
 		ok, of := 0, 0
-		var here []page.Mark
+		var thisMac []page.Mark
 		for _, r := range rows {
 			if r.Cells[i] != settings.Cell(settings.StateNotForThisMachine) {
-				here = append(here, cellMark(r.Cells[i]))
+				thisMac = append(thisMac, cellMark(r.Cells[i]))
 			}
 			if r.Counts[i] {
 				of++
@@ -264,8 +264,8 @@ func foldedRow(m settings.Matrix, rows []settings.MatrixRow, more bool) page.Row
 				}
 			}
 		}
-		okAll, ofAll, lives = okAll+ok, ofAll+of, lives || (c.Known() && len(here) > 0)
-		mark := worst(here)
+		okAll, ofAll, lives = okAll+ok, ofAll+of, lives || (c.Known() && len(thisMac) > 0)
+		mark := worst(thisMac)
 		if c.Known() {
 			marks = append(marks, mark)
 		}
@@ -366,16 +366,16 @@ type MatrixRowJSON struct {
 }
 
 func contractKind(kind string) string {
-	if kind == string(catalog.Host) {
+	if kind == string(catalog.Mac) {
 		return "mac"
 	}
 	return "workspace"
 }
 
-func MatrixContract(m settings.Matrix, now time.Time, here page.Context) MatrixJSON {
+func MatrixContract(m settings.Matrix, now time.Time, thisMac page.Context) MatrixJSON {
 	// invariant: a machine that could not be read now is a finding, in the
 	// words of its row in Machines.
-	body := MatrixJSON{Schema: "station.settings.matrix/v1", Machine: MachineJSON{Name: here.Machine, Kind: contractKind(here.Kind)}, Columns: []string{}, Skipped: []SkippedJSON{}, Rows: []MatrixRowJSON{}}
+	body := MatrixJSON{Schema: "station.settings.matrix/v1", Machine: MachineJSON{Name: thisMac.Machine, Kind: contractKind(thisMac.Kind)}, Columns: []string{}, Skipped: []SkippedJSON{}, Rows: []MatrixRowJSON{}}
 	var fs []finding.Finding
 	for _, c := range m.Columns {
 		body.Columns = append(body.Columns, c.Name)
@@ -387,7 +387,7 @@ func MatrixContract(m settings.Matrix, now time.Time, here page.Context) MatrixJ
 			fs = append(fs, finding.Finding{Machine: machine.Ref{Name: c.Name}, Section: section.Settings, Severity: severity, Subject: c.Name, Text: c.Name + ": " + strings.Join(words, ", ")})
 		}
 	}
-	body.Findings = finding.FleetDoc(fs)
+	body.Findings = finding.AllMachinesDoc(fs)
 	for _, s := range m.Servers {
 		body.Skipped = append(body.Skipped, SkippedJSON{Name: s, Why: "server"})
 	}

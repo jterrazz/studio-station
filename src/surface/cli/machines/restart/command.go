@@ -21,8 +21,8 @@ type Deps struct {
 	// name is a VM's.
 	IsMac func(name string) bool
 	// value: the VMs that run on a Mac now, which its restart pauses.
-	Pausing func(mac string) []string
-	Here    page.Context
+	Pausing     func(mac string) []string
+	ThisMachine page.Context
 }
 
 type Input struct{ Name string }
@@ -59,7 +59,7 @@ func Command(d Deps, env kit.Env) *cobra.Command {
 				if err != nil {
 					return err
 				}
-				return io.Page(pagemachines.Back(back, d.Here), nil)
+				return io.Page(pagemachines.Back(back, d.ThisMachine), nil)
 			}
 			var report machines.RestartReport
 			err := io.Confirmed(func(answer string) error {
@@ -70,7 +70,7 @@ func Command(d Deps, env kit.Env) *cobra.Command {
 			if err != nil {
 				return err
 			}
-			return io.Page(pagemachines.Restarted(report, d.Here), nil)
+			return io.Page(pagemachines.Restarted(report, d.ThisMachine), nil)
 		},
 	}, env)
 }

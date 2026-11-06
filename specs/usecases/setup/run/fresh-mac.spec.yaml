@@ -17,7 +17,7 @@ runs:
           ●       name    jterrazz-macbook-pro
           ●       zshrc
           ●       layout  nothing to retire
-          ●       relocate        bunfig, go env, mise config, npmrc
+          ●       relocate        bunfig, go env, mise settings, npmrc
           ●       engine  running {{string}}
           ●       apps    installed homebrew mise git tart tailscale
           ●       settings        applied hushlogin backup-exclusions git-shortcuts dockes
@@ -27,7 +27,7 @@ runs:
           ○       claude-token    next: station settings apply claude-token
           ○       dock-reset      next: station settings apply dock-reset
           ○       dock-spacer     next: station settings apply dock-spacer
-    - command: '--version >/dev/null; /usr/bin/jq -c ''.macs["jterrazz-macbook-pro"] | [.preferences.here, (.jobs | keys), .engine.stopped]'' world.json; /usr/bin/grep -c "^# >>> station >>>$" .zshrc; /bin/test -f .hushlogin && echo quiet login applied'
+    - command: '--version >/dev/null; /usr/bin/jq -c ''.macs["jterrazz-macbook-pro"] | [.preferences.name, (.jobs | keys), .engine.stopped]'' world.json; /usr/bin/grep -c "^# >>> station >>>$" .zshrc; /bin/test -f .hushlogin && echo quiet login applied'
       exit: 0
       stdout: |
           ["jterrazz-macbook-pro",["com.jterrazz.station.engine"],null]

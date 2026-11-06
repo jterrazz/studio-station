@@ -53,21 +53,21 @@ func NewMac(run local.Runner, files MacFiles, o MacOptions) *Mac {
 type procedure struct {
 	of      catalog.Procedure
 	observe func(ctx context.Context, want []settings.KeyValue) settings.Observation
-	apply   func(ctx context.Context, it catalog.ConfigItem, values map[string]string) (settings.Change, error)
-	undo    func(ctx context.Context, it catalog.ConfigItem) (settings.Change, error)
+	apply   func(ctx context.Context, it catalog.Setting, values map[string]string) (settings.Change, error)
+	undo    func(ctx context.Context, it catalog.Setting) (settings.Change, error)
 }
 
 func (p procedure) Kind() catalog.EffectKind { return p.of.Kind() }
 
-func (p procedure) Observe(ctx context.Context, it catalog.ConfigItem) (settings.Observation, error) {
+func (p procedure) Observe(ctx context.Context, it catalog.Setting) (settings.Observation, error) {
 	return p.observe(ctx, settings.Sets(it)), nil
 }
 
-func (p procedure) Apply(ctx context.Context, it catalog.ConfigItem, values map[string]string) (settings.Change, error) {
+func (p procedure) Apply(ctx context.Context, it catalog.Setting, values map[string]string) (settings.Change, error) {
 	return p.apply(ctx, it, values)
 }
 
-func (p procedure) Undo(ctx context.Context, it catalog.ConfigItem) (settings.Change, error) {
+func (p procedure) Undo(ctx context.Context, it catalog.Setting) (settings.Change, error) {
 	if p.undo == nil {
 		return settings.Change{}, contract.ErrNoUndo
 	}
@@ -78,7 +78,7 @@ func (m *Mac) Appliers() []contract.Applier {
 	return []contract.Applier{
 		procedure{of: catalog.ProcDNS, observe: m.observeDNS, apply: bare(m.applyDNS)},
 		procedure{of: catalog.ProcSpotlight, observe: m.observeSpotlight, apply: bare(m.applySpotlight)},
-		procedure{of: catalog.ProcRestartAfterPowerCut, observe: m.observePower, apply: m.applyPower, undo: m.undoPower},
+		procedure{of: catalog.ProcRestartAfterPowerCut, observe: m.observeRestart, apply: m.applyRestart, undo: m.undoRestart},
 		procedure{of: catalog.ProcAutologin, observe: m.observeAutologin, apply: valued(m.applyAutologin), undo: kept(m.undoAutologin)},
 		procedure{of: catalog.ProcLockAfterLogin, observe: m.observeLock, apply: bare(m.applyLock), undo: kept(m.undoLock)},
 		procedure{of: catalog.ProcSshd, observe: m.observeRemoteLogin, apply: bare(m.applyRemoteLogin), undo: kept(m.undoRemoteLogin)},
@@ -87,20 +87,20 @@ func (m *Mac) Appliers() []contract.Applier {
 	}
 }
 
-func bare(fn func(ctx context.Context) (settings.Change, error)) func(context.Context, catalog.ConfigItem, map[string]string) (settings.Change, error) {
-	return func(ctx context.Context, _ catalog.ConfigItem, _ map[string]string) (settings.Change, error) {
+func bare(fn func(ctx context.Context) (settings.Change, error)) func(context.Context, catalog.Setting, map[string]string) (settings.Change, error) {
+	return func(ctx context.Context, _ catalog.Setting, _ map[string]string) (settings.Change, error) {
 		return fn(ctx)
 	}
 }
 
-func valued(fn func(ctx context.Context, values map[string]string) (settings.Change, error)) func(context.Context, catalog.ConfigItem, map[string]string) (settings.Change, error) {
-	return func(ctx context.Context, _ catalog.ConfigItem, values map[string]string) (settings.Change, error) {
+func valued(fn func(ctx context.Context, values map[string]string) (settings.Change, error)) func(context.Context, catalog.Setting, map[string]string) (settings.Change, error) {
+	return func(ctx context.Context, _ catalog.Setting, values map[string]string) (settings.Change, error) {
 		return fn(ctx, values)
 	}
 }
 
-func kept(fn func(ctx context.Context) (settings.Change, error)) func(context.Context, catalog.ConfigItem) (settings.Change, error) {
-	return func(ctx context.Context, _ catalog.ConfigItem) (settings.Change, error) { return fn(ctx) }
+func kept(fn func(ctx context.Context) (settings.Change, error)) func(context.Context, catalog.Setting) (settings.Change, error) {
+	return func(ctx context.Context, _ catalog.Setting) (settings.Change, error) { return fn(ctx) }
 }
 
 // value: an observation from what is there and what station sets: OK when
@@ -137,8 +137,8 @@ func digestOf(values []settings.KeyValue) string {
 	return strings.Join(parts, "\n")
 }
 
-func (m *Mac) probe(ctx context.Context, name string, args ...string) (string, bool) {
-	return local.Probe(ctx, m.run, local.Cmd{Name: name, Args: args, Timeout: readBudget})
+func (m *Mac) output(ctx context.Context, name string, args ...string) (string, bool) {
+	return local.Read(ctx, m.run, local.Cmd{Name: name, Args: args, Timeout: readBudget})
 }
 
 func (m *Mac) must(ctx context.Context, name string, args ...string) (string, error) {

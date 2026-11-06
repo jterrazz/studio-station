@@ -1,4 +1,4 @@
-description: 'reset go takes what go install and the checksum database left under GOPATH, and leaves the config'
+description: 'erase go takes what go install and the checksum database left under GOPATH, and leaves its settings'
 fixture: ./__fixtures__/disk-go/
 runs:
     - command: '--version >/dev/null; /bin/mkdir -p .local/share/go/bin .local/share/go/pkg/sumdb/sum.golang.org .config/go && echo x > .local/share/go/bin/gopls && echo x > .local/share/go/pkg/sumdb/sum.golang.org/latest && echo GOPATH=x > .config/go/env'

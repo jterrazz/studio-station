@@ -181,7 +181,7 @@ func (s shell) gesture(a page.Action, rows []page.Row) (gesture.Gesture, bool) {
 	case section.Background:
 		return backgroundscreen.Gesture(p, a, rows)
 	case section.Images:
-		return imagesscreen.Gesture(s.deps.Here, a, rows)
+		return imagesscreen.Gesture(s.deps.ThisMachine, a, rows)
 	case section.SSH:
 		return sshscreen.Gesture(p, a, rows)
 	case section.Activity, section.Ports, section.Awake:

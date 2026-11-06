@@ -19,8 +19,8 @@ import (
 )
 
 func accountsCommand(env kit.Env, m machine) *cobra.Command {
-	return accountscmd.Command(accountscmd.Deps{Here: m.where}, env,
-		accountsshare.Command(accountsshare.Deps{Now: m.host.Clock.Now}, env),
+	return accountscmd.Command(accountscmd.Deps{ThisMachine: m.where}, env,
+		accountsshare.Command(accountsshare.Deps{Now: m.sys.Clock.Now}, env),
 		accountstakeback.Command(env),
 	)
 }
@@ -29,9 +29,9 @@ func accountsCommand(env kit.Env, m machine) *cobra.Command {
 // station accounts for one release (SPEC §4.3); allow and disallow are
 // refused, the share list being the owner's to write.
 func secretsAlias(env kit.Env, m machine) *cobra.Command {
-	return kit.Alias("secrets", accountscmd.Command(accountscmd.Deps{Here: m.where}, env,
-		kit.AliasArgs(kit.Alias("lend", accountsshare.Lend(accountsshare.Deps{Now: m.host.Clock.Now}, env), "share"), "<account>"),
-		kit.AliasArgs(kit.Alias("recall", accountstakeback.Recall(env), "take-back"), "<account>"),
+	return kit.Alias("secrets", accountscmd.Command(accountscmd.Deps{ThisMachine: m.where}, env,
+		kit.AliasArgs(kit.Alias("lend", accountsshare.LendAlias(accountsshare.Deps{Now: m.sys.Clock.Now}, env), "share"), "<account>"),
+		kit.AliasArgs(kit.Alias("recall", accountstakeback.RecallAlias(env), "take-back"), "<account>"),
 		accountscmd.Retired("allow", env),
 		accountscmd.Retired("disallow", env),
 	), "accounts")
@@ -39,7 +39,7 @@ func secretsAlias(env kit.Env, m machine) *cobra.Command {
 
 func (m machine) secretStores() secrets.Stores {
 	return secrets.Stores{
-		ShareList: m.stores.shareList(), Hosts: m.stores.hosts(), Name: m.stores.name(),
+		ShareList: m.stores.shareList(), Hosts: m.stores.macs(), Name: m.stores.name(),
 		Shares: m.stores.shares, Machines: m.stores.machines,
 	}
 }
@@ -47,7 +47,7 @@ func (m machine) secretStores() secrets.Stores {
 // value: whether a VM of this Mac runs, as its engine says, asked through
 // the engine's socket.
 func (m machine) vmRunning(ctx context.Context, vm string) (bool, error) {
-	live, err := m.hostDaemon().VMs(ctx)
+	live, err := m.macEngine().VMs(ctx)
 	if err != nil {
 		return false, err
 	}
@@ -73,8 +73,8 @@ func (s sharedGuest) GuestExec(ctx context.Context, vm, line, stdin string) (std
 	return out.Stdout, out.ExitCode, err
 }
 
-func (m machine) secrets() *secrets.Service { return m.secretsVia(m.hostDaemon(), m.vmRunning) }
+func (m machine) secrets() *secrets.Service { return m.secretsVia(m.macEngine(), m.vmRunning) }
 
 func (m machine) secretsVia(guest secrets.Guest, running func(context.Context, string) (bool, error)) *secrets.Service {
-	return secrets.New(m.host, guest, m.secretStores(), m.secretSource(studio.Options{Budget: secrets.ExportBudget}), m.identities(engine.ChildrenDir(m.paths.State)), secrets.Options{Here: m.kind, Running: running, Receives: receives(guest), Log: filepath.Join(m.paths.State, "logs", "accounts.log")})
+	return secrets.New(m.sys, guest, m.secretStores(), m.secretSource(studio.Options{Budget: secrets.ExportBudget}), m.identities(engine.ChildrenDir(m.paths.State)), secrets.Options{Here: m.kind, Running: running, Receives: receives(guest), Log: filepath.Join(m.paths.State, "logs", "accounts.log")})
 }

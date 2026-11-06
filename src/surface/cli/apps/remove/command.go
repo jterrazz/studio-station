@@ -16,9 +16,9 @@ import (
 )
 
 type Deps struct {
-	Names func() []string
-	Here  page.Context
-	Now   func() time.Time
+	Names       func() []string
+	ThisMachine page.Context
+	Now         func() time.Time
 }
 
 func Command(d Deps, env kit.Env) *cobra.Command {
@@ -41,7 +41,7 @@ func Command(d Deps, env kit.Env) *cobra.Command {
 			if err != nil {
 				return err
 			}
-			if err := io.Page(pageapps.Outcomes("remove", outcomes, ran(env, d.Now().Sub(start)), d.Here), nil); err != nil {
+			if err := io.Page(pageapps.Outcomes("remove", outcomes, ran(env, d.Now().Sub(start)), d.ThisMachine), nil); err != nil {
 				return err
 			}
 			return partial(outcomes, "re-run it: station apps remove ")

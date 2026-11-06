@@ -14,7 +14,7 @@ const (
 	KeyShare    = "s"
 	KeyTakeBack = "t"
 	KeyReload   = "R"
-	DaemonRow   = "engine"
+	EngineRow   = "engine"
 )
 
 func columns() []page.Column {
@@ -91,10 +91,10 @@ func identity(a accounts.Account) page.Value {
 }
 
 func until(a accounts.Account, now time.Time) page.Value {
-	if a.Lent == nil {
+	if a.Shared == nil {
 		return page.None()
 	}
-	return page.Until(a.Lent.Until, now)
+	return page.Until(a.Shared.Until, now)
 }
 
 func row(m accounts.Machine, a accounts.Account, now time.Time) page.Row {
@@ -109,7 +109,7 @@ func row(m accounts.Machine, a accounts.Account, now time.Time) page.Row {
 	if len(a.Identity) > 1 {
 		id, last = page.Identity(a.Identity[0]), detail(a, a.Identity[1:]...)
 	}
-	if a.Lent != nil {
+	if a.Shared != nil {
 		last = until(a, now)
 	}
 	scope := page.Texts(a.Scopes...)
@@ -175,7 +175,7 @@ func head(m accounts.Machine, rows []page.Row) page.Row {
 // value: a VM lists the rows that say something (a right read, a lend, a
 // fault); the providers merely absent there fold away under one heading.
 func shown(m accounts.Machine, a accounts.Account) bool {
-	return m.Kind != accounts.KindVM || a.State != catalog.StateAbsent || a.Lent != nil
+	return m.Kind != accounts.KindVM || a.State != catalog.StateAbsent || a.Shared != nil
 }
 
 func group(m accounts.Machine, now time.Time) page.Item {
@@ -205,8 +205,8 @@ func group(m accounts.Machine, now time.Time) page.Item {
 	return page.Item{Group: g}
 }
 
-func daemonRow(state string) page.Row {
-	r := page.Row{ID: DaemonRow, Label: DaemonRow, Mark: page.Attention, Reason: page.Stopped, Cells: []page.Value{page.Text(state)}, Hint: page.Cmd("station engine start")}
+func engineRow(state string) page.Row {
+	r := page.Row{ID: EngineRow, Label: EngineRow, Mark: page.Attention, Reason: page.Stopped, Cells: []page.Value{page.Text(state)}, Hint: page.Cmd("station engine start")}
 	if state == accounts.DaemonAbsent {
 		r.Hint = page.Cmd("station setup")
 	}
@@ -218,7 +218,7 @@ func Section(r accounts.Report) page.Section {
 	s := page.Section{ID: "accounts", Title: "Accounts", Columns: columns()}
 	vms := 0
 	for _, m := range r.Machines {
-		if m.Kind == accounts.KindVM && !m.Here {
+		if m.Kind == accounts.KindVM && !m.ThisMac {
 			vms++
 			if stopped(r) {
 				continue
@@ -228,7 +228,7 @@ func Section(r accounts.Report) page.Section {
 	}
 	switch {
 	case stopped(r):
-		d := daemonRow(r.Daemon)
+		d := engineRow(r.Engine)
 		s.Items = append(s.Items, page.Item{Row: &d})
 	case vms == 0 && len(r.Machines) > 0 && r.Machines[0].Kind == accounts.KindHost:
 		s.Items = append(s.Items, page.Item{Note: &page.Note{Text: "no VMs: accounts shared with a VM appear here"}})
@@ -237,11 +237,11 @@ func Section(r accounts.Report) page.Section {
 }
 
 func stopped(r accounts.Report) bool {
-	return r.Daemon == accounts.DaemonStopped || r.Daemon == accounts.DaemonAbsent
+	return r.Engine == accounts.DaemonStopped || r.Engine == accounts.DaemonAbsent
 }
 
-func Page(r accounts.Report, here page.Context) page.Page {
-	p := page.Page{ID: "accounts", Command: "accounts", Context: here, Sections: []page.Section{firstLine(r, here), Section(r)}}
+func Page(r accounts.Report, thisMac page.Context) page.Page {
+	p := page.Page{ID: "accounts", Command: "accounts", Context: thisMac, Sections: []page.Section{firstLine(r, thisMac), Section(r)}}
 	if len(r.Machines) == 1 && r.Machines[0].Kind == accounts.KindHost && !stopped(r) {
 		p.Hints = []page.Hint{*page.Cmd("station machines create")}
 	}
@@ -259,18 +259,18 @@ func Actions() []page.Action {
 
 // value: the first line: the machine, its accounts, what needs you and the
 // VMs its accounts are shared with.
-func firstLine(r accounts.Report, here page.Context) page.Section {
+func firstLine(r accounts.Report, thisMac page.Context) page.Section {
 	r = r.Resolved()
 	label := "This Mac"
-	if here.Machine != "" && here.Kind != string(accounts.KindHost) {
-		label = here.Machine
+	if thisMac.Machine != "" && thisMac.Kind != string(accounts.KindHost) {
+		label = thisMac.Machine
 	}
 	var words []string
 	shared := 0
 	for _, m := range r.Machines {
-		if !m.Here {
+		if !m.ThisMac {
 			for _, a := range m.Accounts {
-				if a.Lent != nil {
+				if a.Shared != nil {
 					shared++
 					break
 				}

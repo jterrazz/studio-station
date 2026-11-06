@@ -97,10 +97,10 @@ func macs(views []View) page.Section {
 	return page.Section{ID: Macs, Title: "Thermal and battery", Uncounted: true, Columns: []page.Column{{Key: "name", Kind: page.KindText, Keep: 100}, {Key: "thermal", Kind: page.KindText, Keep: 100}, {Key: "battery", Kind: page.KindText, Keep: 100}}, Items: items}
 }
 
-func AllMachines(views []View, here page.Context, graph bool) page.Page {
+func AllMachines(views []View, thisMac page.Context, graph bool) page.Page {
 	// value: graph is the TUI's: its screen draws each Mac's thermal state
 	// and battery, which the CLI's page leaves to each machine's own.
-	p := page.Page{ID: "activity-all", Command: "activity --all-machines", Context: here}
+	p := page.Page{ID: "activity-all", Command: "activity --all-machines", Context: thisMac}
 	answering := 0
 	var kept, direct time.Duration
 	for _, v := range views {

@@ -1,4 +1,4 @@
-description: 'at its start the daemon removes only its range''s serve entries no lease justifies, both kinds'
+description: 'at its start the engine removes only its range''s serve entries no reservation justifies, both kinds'
 fixture:
     - ../../__fixtures__/vms/
     - ../../__fixtures__/engine-vm/

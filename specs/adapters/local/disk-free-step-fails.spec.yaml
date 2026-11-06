@@ -1,4 +1,4 @@
-description: 'a failing action is its row''s ✗ with its last stderr line; the other rows still clean, exit 1'
+description: 'a failing action is its row''s ✗ with its last stderr line; the other rows are still freed, exit 1'
 fixture:
     - ../__fixtures__/system-tools/
     - ./__fixtures__/disk-go/

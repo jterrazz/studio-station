@@ -14,7 +14,7 @@ import (
 )
 
 type Deps struct {
-	Here page.Context
+	ThisMachine page.Context
 	// value: this machine's home, so a folder the shell expanded is sent as
 	// ~/…, the same folder on the machine that moves it.
 	Home string
@@ -40,7 +40,7 @@ func Command(d Deps, env kit.Env) *cobra.Command {
 			if err != nil {
 				return err
 			}
-			return io.Page(pagedisk.Moved(outcome, d.Here), nil)
+			return io.Page(pagedisk.Moved(outcome, d.ThisMachine), nil)
 		},
 	}, env)
 }

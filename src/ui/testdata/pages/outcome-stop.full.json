@@ -3,7 +3,7 @@
   "id": "outcome",
   "command": "engine stop",
   "context": {
-    "kind": "host"
+    "kind": "mac"
   },
   "state": "ready",
   "sections": [

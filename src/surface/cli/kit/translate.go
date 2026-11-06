@@ -29,17 +29,17 @@ func Translate(err error, path string) *fail.Error {
 		return worded
 	}
 	for _, failure := range []func(error) (*fail.Error, bool){
-		toolsFailure,
-		configFailure,
+		appsFailure,
+		settingsFailure,
 		setupFailure,
 		machinesFailure,
 		imagesFailure,
 		secretsFailure,
 		tailnetFailure,
-		powerFailure,
-		daemonFailure,
+		awakeFailure,
+		engineFailure,
 		saidFailure,
-		settingsFailure,
+		preferencesFailure,
 	} {
 		if f, ok := failure(err); ok {
 			return f
@@ -62,8 +62,8 @@ func Translate(err error, path string) *fail.Error {
 	return failed(message, hint, err)
 }
 
-func AdminApply(setting, mac string, here bool) string {
+func AdminApply(setting, mac string, thisMac bool) string {
 	// value: the command that applies an admin setting on that Mac's own
 	// terminal, in the words' table.
-	return words.AdminApply(setting, mac, here)
+	return words.AdminApply(setting, mac, thisMac)
 }

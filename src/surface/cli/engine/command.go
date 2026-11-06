@@ -14,8 +14,8 @@ import (
 )
 
 type Deps struct {
-	Here page.Context
-	Zone *time.Location
+	ThisMachine page.Context
+	Zone        *time.Location
 }
 
 func Command(d Deps, env kit.Env, children ...*cobra.Command) *cobra.Command {
@@ -30,7 +30,7 @@ func Command(d Deps, env kit.Env, children ...*cobra.Command) *cobra.Command {
 			if err != nil {
 				return err
 			}
-			return io.Page(pageengine.Read(r, d.Zone, d.Here), r.JSON())
+			return io.Page(pageengine.Read(r, d.Zone, d.ThisMachine), r.JSON())
 		},
 	}, env)
 	cmd.AddCommand(children...)

@@ -33,13 +33,13 @@ type banned struct {
 // concept it used to name, with the phrases it keeps.
 func bannedWords() []banned {
 	return []banned{
-		{word: "host", allowed: []string{"host:port"}},
+		{word: "host", allowed: []string{"host:port", "host key", "known host"}},
 		{word: "fleet", forms: []string{"fleets"}},
 		{word: "here", only: `^here$|\bhere v\d`},
 		{word: "daemon", forms: []string{"daemons"}},
 		{word: "tool"},
 		{word: "tools"},
-		{word: "config", allowed: []string{".config/", "git config"}},
+		{word: "config", allowed: []string{".config/", "git config", "ssh config", "ssh_config"}},
 		{word: "storage"},
 		{word: "service", forms: []string{"services"}},
 		{word: "lease", forms: []string{"leases", "leased"}},
@@ -52,8 +52,8 @@ func bannedWords() []banned {
 		{word: "lasting"},
 		{word: "stray", forms: []string{"strays"}},
 		{word: "clean", allowed: []string{"dclean"}},
-		{word: "reset", allowed: []string{"dock-reset", "dock reset", "dreset"}},
-		{word: "power", allowed: []string{"power cut", "power-cut", "power source", "low power mode"}},
+		{word: "reset", allowed: []string{"dock-reset", "dock reset", "dreset", "counter reset"}},
+		{word: "power", allowed: []string{"power cut", "power-cut", "power source", "low power", "low-power", "power off", "power management"}},
 		{word: "place", forms: []string{"places"}},
 		{word: "Resources", exact: true},
 		{word: "Tasks", exact: true},
@@ -97,9 +97,19 @@ func visible(v any, skip bool, out *[]string) {
 	}
 }
 
-func bannedIn(texts []string) []string {
+var snakeRe = regexp.MustCompile(`\b[a-z0-9]+(?:_[a-z0-9]+)+\b`)
+
+// invariant: a snake_case word is its words (`power_ended`, `fleet_size`);
+// an environment variable's name (`DOCKER_CONFIG`) is another program's.
+func snakeWords(t string) string {
+	return snakeRe.ReplaceAllStringFunc(t, func(w string) string { return strings.ReplaceAll(w, "_", " ") })
+}
+
+func bannedIn(texts []string) []string { return bannedInList(bannedWords(), texts) }
+
+func bannedInList(list []banned, texts []string) []string {
 	var found []string
-	for _, b := range bannedWords() {
+	for _, b := range list {
 		words := []string{regexp.QuoteMeta(b.word)}
 		for _, f := range b.forms {
 			words = append(words, regexp.QuoteMeta(f))
@@ -113,6 +123,7 @@ func bannedIn(texts []string) []string {
 		}
 		re := regexp.MustCompile(pattern)
 		for _, t := range texts {
+			t = snakeWords(t)
 			for _, a := range b.allowed {
 				t = regexp.MustCompile(`(?i)`+regexp.QuoteMeta(a)).ReplaceAllString(t, "")
 			}
@@ -198,7 +209,7 @@ func TestBannedWordsBite(t *testing.T) {
 }
 
 func TestBannedWordsBiteOnTheirForms(t *testing.T) {
-	for _, text := range []string{"2 strays", "3 services", "the leases", "published", "two daemons", "probes"} {
+	for _, text := range []string{"2 strays", "3 services", "the leases", "published", "two daemons", "probes", "fleet_size", "leased_port", "power_ended"} {
 		if got := bannedIn([]string{text}); len(got) != 1 {
 			t.Errorf("%q says %v, want one retired word: a form is the word it comes from", text, got)
 		}

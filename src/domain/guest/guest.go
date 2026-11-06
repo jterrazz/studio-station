@@ -77,7 +77,7 @@ type message struct {
 }
 
 func (s *Service) Check() error {
-	if s.o.Kind == catalog.Host {
+	if s.o.Kind == catalog.Mac {
 		return &HostOnlyRefusedError{}
 	}
 	return nil
@@ -383,7 +383,7 @@ func (g *session) serve(ctx context.Context, conn system.Conn, quit context.Canc
 			return
 		}
 		frame := map[string]any{"v": 2, "id": r.ID}
-		if op, ok := map[string]string{callServices: "services", callReserve: "reserve", callRelease: "release"}[r.Call]; !ok || r.V != 2 {
+		if op, ok := map[string]string{callServices: "ports", callReserve: "reserve", callRelease: "release"}[r.Call]; !ok || r.V != 2 {
 			frame["error"] = fault{Type: "refused", Code: "call.unknown", Message: "no call is named " + r.Call, Hint: "station services"}
 		} else if reply := g.relay(ctx, op, r.In.Port); reply.OK {
 			frame["out"] = reply.Result

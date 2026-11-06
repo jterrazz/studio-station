@@ -36,5 +36,5 @@ func sshTarget(user, host string) model.SSHTarget {
 	if user != "" {
 		command = "ssh " + user + "@" + host
 	}
-	return model.SSHTarget{User: user, Host: host, Command: command}
+	return model.SSHTarget{User: user, Address: host, Command: command}
 }

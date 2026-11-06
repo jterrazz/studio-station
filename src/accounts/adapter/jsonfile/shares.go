@@ -144,7 +144,7 @@ func (s *Shares) Migrate(context.Context) error {
 		if !ok || e.IsDir() {
 			continue
 		}
-		shares, rest, found := s.lentIn(vm)
+		shares, rest, found := s.sharedIn(vm)
 		if !found {
 			continue
 		}
@@ -167,10 +167,12 @@ func (s *Shares) Migrate(context.Context) error {
 	return nil
 }
 
+// value: alias of v2's `lent` key of a VM record, read once and moved.
+//
 // invariant: a v2 record holds its shares as plain names (before shares
 // expired) or as {name, at, until}; a plain name reads as shared at the
 // record's mtime for the default term.
-func (s *Shares) lentIn(vm string) (shares []accounts.Share, rest map[string]json.RawMessage, found bool) {
+func (s *Shares) sharedIn(vm string) (shares []accounts.Share, rest map[string]json.RawMessage, found bool) {
 	data, err := s.files.ReadFile(s.record(vm))
 	if err != nil {
 		return nil, nil, false

@@ -8,7 +8,7 @@ runs:
           ●	name	jterrazz-mac-mini
           ●	zshrc
           ●	layout	nothing to retire
-          ●	relocate	bunfig, go env, mise config, npmrc
+          ●	relocate	bunfig, go env, mise settings, npmrc
           ●	engine	restarted
           ○	apps	missing: homebrew mise git tart tailscale: run station setup on a terminal
           ●	settings	applied hushlogin backup-exclusions tart-launcher git-shortcuts docker-shortcuts

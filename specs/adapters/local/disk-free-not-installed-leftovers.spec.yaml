@@ -1,4 +1,4 @@
-description: 'a misplaced folder of a tool not installed is put right by path, as the overview''s repair says'
+description: 'a misplaced folder of an app not installed is put right by path, as the overview''s fix says'
 fixture:
     - ./__fixtures__/disk-relocated/
     - ./__fixtures__/disk-strays/

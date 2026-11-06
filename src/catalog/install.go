@@ -48,7 +48,7 @@ type UvInstall struct{ Package string }
 
 type BunInstall struct{ Package, Name string }
 
-type MiseInstall struct{ Tool, Version string }
+type MiseInstall struct{ App, Version string }
 
 type ScriptInstall struct {
 	URL  string
@@ -94,7 +94,7 @@ func (i BunInstall) Key() string {
 	return i.Package
 }
 
-func (i MiseInstall) Key() string   { return i.Tool }
+func (i MiseInstall) Key() string   { return i.App }
 func (i ScriptInstall) Key() string { return i.URL }
 func (i ShellInstall) Key() string  { return i.Line }
 func (i AppInstall) Key() string    { return i.Hint }
@@ -120,9 +120,9 @@ func Npm(pkg string) Install             { return NpmInstall{Package: pkg} }
 func Uv(pkg string) Install              { return UvInstall{Package: pkg} }
 func Bun(pkg string) Install             { return BunInstall{Package: pkg} }
 func BunAs(source, name string) Install  { return BunInstall{Package: source, Name: name} }
-func Mise(tool, version string) Install  { return MiseInstall{Tool: tool, Version: version} }
+func Mise(app, version string) Install   { return MiseInstall{App: app, Version: version} }
 func Shell(line string) Install          { return ShellInstall{Line: line} }
-func App(hint string) Install            { return AppInstall{Hint: hint} }
+func AppFrom(hint string) Install        { return AppInstall{Hint: hint} }
 func Skill(repo, skill string) Install   { return SkillInstall{Repo: repo, Skill: skill} }
 
 func Script(url string, args ...string) Install { return ScriptInstall{URL: url, Args: args} }

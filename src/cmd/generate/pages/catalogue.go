@@ -7,9 +7,9 @@ import (
 	pageapps "github.com/jterrazz/studio-station/src/pages/apps"
 )
 
-func here() page.Context { return page.Context{Kind: "host"} }
+func thisMacContext() page.Context { return page.Context{Kind: "mac"} }
 
-type tool struct {
+type app struct {
 	name     string
 	category catalog.Category
 	method   catalog.Method
@@ -22,11 +22,11 @@ type tool struct {
 	needs    string
 }
 
-func reports(list []tool, pending bool) []tools.Report {
+func reports(list []app, pending bool) []tools.Report {
 	out := make([]tools.Report, 0, len(list))
 	for _, t := range list {
 		r := tools.Report{
-			Tool:    catalog.Tool{Name: t.name, Category: t.category, System: t.system},
+			App:     catalog.App{Name: t.name, Category: t.category, System: t.system},
 			Method:  t.method,
 			State:   t.state,
 			Version: t.version,
@@ -45,17 +45,17 @@ func reports(list []tool, pending bool) []tools.Report {
 	return out
 }
 
-func thisMac() []tool {
+func thisMac() []app {
 	const (
 		pm   = catalog.CategoryPackageManagers
 		rt   = catalog.CategoryRuntimes
 		apps = catalog.CategoryAIApps
 		sk   = catalog.CategoryAgentSkills
 	)
-	mise := func(name, version string) tool {
-		return tool{name: name, category: rt, method: catalog.MethodMise, state: catalog.StateDegraded, version: version, detail: "installed, mise not installed", why: tools.WhyMissing, needs: "mise"}
+	mise := func(name, version string) app {
+		return app{name: name, category: rt, method: catalog.MethodMise, state: catalog.StateDegraded, version: version, detail: "installed, mise not installed", why: tools.WhyMissing, needs: "mise"}
 	}
-	return []tool{
+	return []app{
 		{name: "homebrew", category: pm, method: catalog.MethodScript, system: true, state: catalog.StateOK, version: "7.0.12-8-g57cac9d"},
 		{name: "mise", category: pm, method: catalog.MethodBrew, system: true, state: catalog.StateAbsent},
 		{name: "mas", category: pm, method: catalog.MethodBrew, state: catalog.StateAbsent},
@@ -76,7 +76,7 @@ func thisMac() []tool {
 	}
 }
 
-func lateMac() []tool {
+func lateMac() []app {
 	out := thisMac()
 	for i := range out {
 		if out[i].method == catalog.MethodBrew {
@@ -88,9 +88,9 @@ func lateMac() []tool {
 
 func Apps() []Fixture {
 	return []Fixture{
-		{"apps.loading", pageapps.List(reports(thisMac(), true), here(), false)},
-		{"apps.empty", pageapps.List(nil, here(), false)},
-		{"apps.error", pageapps.List(reports(lateMac(), false), here(), false)},
-		{"apps.full", pageapps.List(reports(thisMac(), false), here(), false)},
+		{"apps.loading", pageapps.List(reports(thisMac(), true), thisMacContext(), false)},
+		{"apps.empty", pageapps.List(nil, thisMacContext(), false)},
+		{"apps.error", pageapps.List(reports(lateMac(), false), thisMacContext(), false)},
+		{"apps.full", pageapps.List(reports(thisMac(), false), thisMacContext(), false)},
 	}
 }

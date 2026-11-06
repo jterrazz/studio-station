@@ -298,8 +298,8 @@ type Strip struct {
 	NetSpark    []int   `json:"net_spark,omitempty"`
 	Battery     Value   `json:"battery,omitzero"`
 	Net         []Value `json:"net,omitempty"`
-	// value: a held Power session's word and time left, after the battery.
-	Power Value    `json:"power,omitzero"`
+	// value: a held keep-awake's word and time left, after the battery.
+	Awake Value    `json:"awake,omitzero"`
 	Top   *Section `json:"top,omitempty"`
 }
 
@@ -333,7 +333,7 @@ type Reason string
 
 const (
 	Outdated    Reason = "outdated"
-	Stray       Reason = "stray"
+	Misplaced   Reason = "misplaced"
 	Unreachable Reason = "unreachable"
 	Mismatch    Reason = "mismatch"
 	Unmanaged   Reason = "unmanaged"

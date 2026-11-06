@@ -107,7 +107,7 @@ func heldFor(points []Sample, holds func(prev, x Sample) bool) time.Duration {
 	return newest.At.Sub(since)
 }
 
-func Lasting(now, kept []finding.Finding) []finding.Finding {
+func Persisting(now, kept []finding.Finding) []finding.Finding {
 	// invariant: what a machine reads now judges each subject it raises;
 	// what must last (a CPU busy for 10 min) is judged on the series an
 	// engine keeps.

@@ -39,7 +39,7 @@ func overviewCommand(env kit.Env, m machine) *cobra.Command {
 // value: the one Overview `overview --on <vm>` and `machines <vm>` both
 // print (MA-06): a VM is read from All machines.
 func (m machine) overviewDeps(status bool) overviewcmd.Deps {
-	return overviewcmd.Deps{Here: m.where, Status: status, Fleet: func(ctx context.Context) (machines.Fleet, error) {
+	return overviewcmd.Deps{ThisMachine: m.where, Status: status, AllMachines: func(ctx context.Context) (machines.Fleet, error) {
 		return m.machines(false).Fleet(ctx, false)
 	}}
 }
@@ -49,11 +49,11 @@ func statusCommand(env kit.Env, m machine) *cobra.Command {
 }
 
 func statusDeps(env kit.Env, m machine) overviewcalls.Sections {
-	h := m.host
+	h := m.sys
 	d := overviewcalls.Sections{
 		Pool:  m.pool,
 		Clock: h.Clock,
-		Here: overviewcalls.Here{
+		ThisMac: overviewcalls.ThisMac{
 			Kind: m.kind, Hostname: h.Env.Hostname(), OS: h.Env.GOOS(), Arch: h.Env.GOARCH(), User: h.Env.User(), Shell: h.Env.Shell(),
 			Home: h.Env.Home(), Root: m.systemRoot(), Version: Version(), Commit: Commit(),
 			Agent: func() bool {
@@ -65,12 +65,12 @@ func statusDeps(env kit.Env, m machine) overviewcalls.Sections {
 		Identity:   m.stores.identity(),
 		Owner:      settingscli.New(h.Run, h.FS, settingscli.Options{Home: h.Env.Home(), Pool: m.pool}),
 		Tailnet:    m.tailnetStatus(),
-		Power:      statusPower{s: m.power()},
-		Tools:      toolsService(env, m),
-		Config:     configRead{configService(m)},
-		Setup:      setupRead{setupService(env, m)},
-		Disk:       diskRead{m.storage(env)},
-		Daemon:     m.hostDaemon(),
+		Awake:      statusAwake{s: m.awakeService()},
+		Apps:       appsOf(env, m),
+		Settings:   configRead{settingsOf(m)},
+		Setup:      setupRead{setupOf(env, m)},
+		Disk:       diskRead{m.diskOf(env)},
+		Engine:     m.macEngine(),
 		Hypervisor: m.hypervisor(),
 	}
 	meter := m.meter()
@@ -79,7 +79,7 @@ func statusDeps(env kit.Env, m machine) overviewcalls.Sections {
 	if m.kind != catalog.Linux {
 		// value: the status page reads listeners, jobs and app updates on a Mac only.
 		d.Listeners, d.Jobs, d.Updates = listening, m.jobs(overviewcalls.ReadBudget), brew.New(h.Run, nil)
-		d.Servers = hostedServers{d: m.hostDaemon()}
+		d.Servers = hostedServers{d: m.macEngine()}
 	}
 	d.Facts, d.Meter, d.Battery = facts, meter, m.powerPort
 	return d
@@ -91,9 +91,9 @@ func (m machine) meter() activitycontract.Meter {
 	case m.world != nil:
 		return m.world.meter()
 	case m.kind == catalog.Linux:
-		return activitylinux.New(rootFS{fs: m.host.FS, root: cmp.Or(m.systemRoot(), "/")}, m.host.Clock)
+		return activitylinux.New(rootFS{fs: m.sys.FS, root: cmp.Or(m.systemRoot(), "/")}, m.sys.Clock)
 	}
-	return activitymacos.New(local.NewKernel(m.vars), m.host.Clock)
+	return activitymacos.New(local.NewKernel(m.vars), m.sys.Clock)
 }
 
 // value: the Inspector of this machine's facts: its system's own tools, or
@@ -103,12 +103,12 @@ func (m machine) facts() settingscontract.Inspector {
 	case m.world != nil:
 		return m.world.inspector()
 	case m.kind == catalog.Linux:
-		return settingslinux.New(m.host.Run)
+		return settingslinux.New(m.sys.Run)
 	}
-	return settingsmacos.New(m.host.Run, m.host.FS, m.host.Clock, settingsmacos.Options{Root: m.systemRoot(), Jobs: m.jobs(config.ReadBudget)})
+	return settingsmacos.New(m.sys.Run, m.sys.FS, m.sys.Clock, settingsmacos.Options{Root: m.systemRoot(), Jobs: m.jobs(config.ReadBudget)})
 }
 
-type hostedServers struct{ d hostDaemon }
+type hostedServers struct{ d macEngine }
 
 func (s hostedServers) Hosted(ctx context.Context) bool {
 	live, err := s.d.VMs(ctx)
@@ -181,7 +181,7 @@ func diskOf(report storage.Report) overviewcalls.DiskReading[storage.StrayReport
 	if report.Other > 0 {
 		rows = append(rows, overview.Disk{Name: "other", Level: catalog.LevelCache, Bytes: report.Other})
 	}
-	return overviewcalls.DiskReading[storage.StrayReport]{Rows: rows, Strays: append(make([]storage.StrayReport, 0, len(report.Strays)), report.Strays...)}
+	return overviewcalls.DiskReading[storage.StrayReport]{Rows: rows, Misplaced: append(make([]storage.StrayReport, 0, len(report.Misplaced)), report.Misplaced...)}
 }
 
 // value: the machine's files under its root, as the Linux Meter reads /proc.

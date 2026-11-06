@@ -1,4 +1,4 @@
-description: 'storage on a terminal fills a sized row and its mark while a hung tool holds the inventory'
+description: 'disk on a terminal fills a sized row and its mark while a hung app holds the inventory'
 fixture:
     - ../../__fixtures__/terminal/
     - ./__fixtures__/disk-hung-docker/

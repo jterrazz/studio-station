@@ -9,5 +9,5 @@ runs:
           method	brew
           version	1.8.1
           lives on	every machine
-          category	CLI Tools
+          category	Command line
           what	Command-line JSON processor

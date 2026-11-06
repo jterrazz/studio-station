@@ -5,7 +5,13 @@ import (
 	"github.com/jterrazz/studio-station/src/ports"
 )
 
-const GroupPorts = "services"
+const GroupPorts = "ports"
+
+const (
+	// value: alias of the key station v2 kept the ports policy under, read
+	// under ports and written there at the next write.
+	RetiredGroupPorts = "services"
+)
 
 type PortsPrefs struct{ p core.Preferences }
 

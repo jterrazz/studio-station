@@ -29,10 +29,10 @@ type Deps struct {
 	// value: refuses this machine when the call's rule says no, before any
 	// check of the request.
 	Admit func() error
-	// value: the fleet, for the host question; read only.
-	Fleet func(ctx context.Context) (machines.Fleet, error)
-	Here  page.Context
-	Ask   kit.Asker
+	// value: All machines, for the Mac question; read only.
+	AllMachines func(ctx context.Context) (machines.AllMachines, error)
+	ThisMachine page.Context
+	Ask         kit.Asker
 }
 
 type Input struct {
@@ -46,7 +46,7 @@ type Input struct {
 	request    machines.CreateRequest
 	buildFirst bool
 	// value: another Mac chosen on a terminal, the create sent there.
-	host string
+	mac string
 }
 
 func Command(d Deps, env kit.Env) *cobra.Command {
@@ -128,10 +128,10 @@ func Command(d Deps, env kit.Env) *cobra.Command {
 				}
 			}
 			target := env.Target()
-			if in.host != "" {
-				target = machine.Ref{Name: in.host}
+			if in.mac != "" {
+				target = machine.Ref{Name: in.mac}
 			}
-			if in.buildFirst && in.host == "" {
+			if in.buildFirst && in.mac == "" {
 				if _, err := call.Invoke(ctx, env.Calls, env.Target(), imagescalls.Build, imagescalls.BuildIn{Names: []string{in.request.Image}}, nil); err != nil {
 					return err
 				}
@@ -151,7 +151,7 @@ func Command(d Deps, env kit.Env) *cobra.Command {
 			if err != nil {
 				return err
 			}
-			return io.Page(pagemachines.Created(created, d.Here), pagemachines.CreatedContract(schema, created))
+			return io.Page(pagemachines.Created(created, d.ThisMachine), pagemachines.CreatedContract(schema, created))
 		},
 	}, env)
 }
@@ -175,25 +175,25 @@ func nowWords(in *Input) string {
 }
 
 func ask(ctx context.Context, d Deps, in *Input) error {
-	var hosts []pagemachines.HostChoice
-	if fleet, fleetErr := d.Fleet(ctx); fleetErr == nil {
-		for _, h := range fleet.Hosts {
+	var macs []pagemachines.MacChoice
+	if allMachines, allMachinesErr := d.AllMachines(ctx); allMachinesErr == nil {
+		for _, h := range allMachines.Macs {
 			if h.Reachable {
-				hosts = append(hosts, pagemachines.HostChoice{Name: h.Name, Here: h.Here, Detail: vmCount(len(h.VMs))})
+				macs = append(macs, pagemachines.MacChoice{Name: h.Name, ThisMac: h.ThisMac, Detail: vmCount(len(h.VMs))})
 			}
 		}
 	}
 	answers := map[string]string{}
-	if form := pagemachines.CreateForm(string(in.request.Lifetime), hosts); len(form.Fields) > 0 {
+	if form := pagemachines.CreateForm(string(in.request.Lifetime), macs); len(form.Fields) > 0 {
 		asked, err := d.Ask.Form(form)
 		if err != nil {
 			return err
 		}
 		answers = asked
 	}
-	for _, h := range hosts {
-		if h.Name == answers["host"] && !h.Here {
-			in.host = h.Name
+	for _, h := range macs {
+		if h.Name == answers["mac"] && !h.ThisMac {
+			in.mac = h.Name
 			return nil
 		}
 	}

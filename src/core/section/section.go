@@ -44,8 +44,9 @@ func For(k machine.Kind) []ID {
 }
 
 func AllMachines() []ID {
-	// invariant: the sections of All machines, each a read across every machine (SPEC §9.2).
-	return []ID{Overview, Activity, Ports, Settings, Images, Accounts}
+	// invariant: the sections of All machines, each a read across every machine
+	// (SPEC §9.2), in the one order.
+	return []ID{Overview, Activity, Settings, Ports, Accounts, Images}
 }
 
 func (id ID) Title() string {

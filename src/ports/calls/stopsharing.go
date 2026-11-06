@@ -20,14 +20,14 @@ type StopSharingIn struct {
 	VM   string
 	Port string
 	// value: the Mac the VM runs on, when the caller has read it; empty finds it.
-	Host    string
+	Mac     string
 	Confirm string
 }
 
 type StopSharingOut struct {
 	Reservation ports.Reservation
 	// value: the Mac that released it when it is not this one.
-	Host string
+	Mac string
 }
 
 var StopSharing = call.Call[Deps, StopSharingIn, StopSharingOut]{
@@ -47,17 +47,17 @@ var StopSharing = call.Call[Deps, StopSharingIn, StopSharingOut]{
 			}
 		}
 		t := ports.Target{VM: vm, Port: port}
-		host := in.Host
-		if host == "" {
-			if host, err = d.Ports.CheckRelease(ctx, t); err != nil {
+		mac := in.Mac
+		if mac == "" {
+			if mac, err = d.Ports.CheckRelease(ctx, t); err != nil {
 				return StopSharingOut{}, err
 			}
 		}
 		if err = confirm.Require(confirm.For(confirm.StopSharing, d.Kind), strings.TrimPrefix(vm+":"+in.Port, ":"), in.Confirm); err != nil {
 			return StopSharingOut{}, err
 		}
-		r, err := d.Ports.Release(ctx, t, host, in.Confirm == confirm.Yes)
-		return StopSharingOut{Reservation: r, Host: host}, err
+		r, err := d.Ports.Release(ctx, t, mac, in.Confirm == confirm.Yes)
+		return StopSharingOut{Reservation: r, Mac: mac}, err
 	},
 }
 

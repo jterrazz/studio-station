@@ -15,7 +15,7 @@ import (
 )
 
 type Deps struct {
-	Here page.Context
+	ThisMachine page.Context
 }
 
 type Input struct{ Name, User, Key string }
@@ -45,7 +45,7 @@ func Command(d Deps, env kit.Env) *cobra.Command {
 			if err != nil {
 				return err
 			}
-			return io.Page(pagemachines.Added(added, d.Here), nil)
+			return io.Page(pagemachines.Added(added, d.ThisMachine), nil)
 		},
 	}, env)
 	_ = cmd.Flags().MarkHidden("name")

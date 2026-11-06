@@ -14,7 +14,7 @@ import (
 )
 
 type Deps struct {
-	Here page.Context
+	ThisMachine page.Context
 }
 
 type Input struct{ VM, Port string }
@@ -39,7 +39,7 @@ func Command(d Deps, env kit.Env) *cobra.Command {
 			if err != nil {
 				return err
 			}
-			return io.PagePiped(pageports.Shared(v, d.Here), pageports.PortObject(v), v.URLs.Public+"\n")
+			return io.PagePiped(pageports.Shared(v, d.ThisMachine), pageports.PortObject(v), v.URLs.Public+"\n")
 		},
 	}, env)
 }

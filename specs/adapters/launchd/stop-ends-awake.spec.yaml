@@ -17,7 +17,7 @@ runs:
     - command: '--version > /dev/null; : > launchctl.loaded; : > .calls; "$STATION" engine stop --yes; echo "exit $?"; /usr/bin/grep -E "^(power|launchctl bootout)" .calls | /usr/bin/sed -E ''s/gui\/[0-9]+/gui\/U/'''
       exit: 0
       stdout: |
-          ●	engine	the lid reset · the engine stopped
+          ●	engine	the lid released · the engine stopped
           exit 0
           power clamshell normal
           launchctl bootout gui/U/com.jterrazz.station.engine

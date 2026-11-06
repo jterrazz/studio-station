@@ -8,5 +8,5 @@ import (
 )
 
 func activityCommand(env kit.Env, m machine) *cobra.Command {
-	return activitycmd.Command(activitycmd.Deps{Here: m.where, Now: m.host.Clock.Now, Label: m.label}, env)
+	return activitycmd.Command(activitycmd.Deps{ThisMachine: m.where, Now: m.sys.Clock.Now, Label: m.label}, env)
 }

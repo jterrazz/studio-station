@@ -30,38 +30,38 @@ type sectionRead func(ctx context.Context, r call.Router, self machine.Ref) (ove
 // value: the read of each section an Overview has a line for, by its call
 // (SSH is the door, by the machine's name).
 func sectionReads() map[section.ID]sectionRead {
-	here := machine.Ref{}
+	thisMac := machine.Ref{}
 	return map[section.ID]sectionRead{
 		section.Activity: func(ctx context.Context, r call.Router, _ machine.Ref) (overview.Read, error) {
-			out, err := call.Read(ctx, r, here, activitycalls.Read, activitycalls.ReadIn{Quick: true}, nil)
+			out, err := call.Read(ctx, r, thisMac, activitycalls.Read, activitycalls.ReadIn{Quick: true}, nil)
 			return overview.ActivityRead(out), err
 		},
 		section.Apps: func(ctx context.Context, r call.Router, self machine.Ref) (overview.Read, error) {
-			out, err := call.Read(ctx, r, here, appscalls.List, appscalls.ListIn{}, nil)
+			out, err := call.Read(ctx, r, thisMac, appscalls.List, appscalls.ListIn{}, nil)
 			return overview.AppsRead(out, self), err
 		},
 		section.Settings: func(ctx context.Context, r call.Router, self machine.Ref) (overview.Read, error) {
-			out, err := call.Read(ctx, r, here, settingscalls.List, settingscalls.ListIn{}, nil)
+			out, err := call.Read(ctx, r, thisMac, settingscalls.List, settingscalls.ListIn{}, nil)
 			return overview.SettingsRead(out, self), err
 		},
 		section.Disk: func(ctx context.Context, r call.Router, self machine.Ref) (overview.Read, error) {
-			out, err := call.Read(ctx, r, here, diskcalls.Read, diskcalls.ReadIn{}, nil)
+			out, err := call.Read(ctx, r, thisMac, diskcalls.Read, diskcalls.ReadIn{}, nil)
 			return overview.DiskRead(out, self), err
 		},
 		section.Ports: func(ctx context.Context, r call.Router, _ machine.Ref) (overview.Read, error) {
-			out, err := call.Invoke(ctx, r, here, portscalls.List, portscalls.ListIn{}, nil)
+			out, err := call.Invoke(ctx, r, thisMac, portscalls.List, portscalls.ListIn{}, nil)
 			return overview.PortsRead(out), err
 		},
 		section.Accounts: func(ctx context.Context, r call.Router, self machine.Ref) (overview.Read, error) {
-			out, err := call.Read(ctx, r, here, accountscalls.List, accountscalls.ListIn{}, nil)
+			out, err := call.Read(ctx, r, thisMac, accountscalls.List, accountscalls.ListIn{}, nil)
 			return overview.AccountsRead(out, self), err
 		},
 		section.Background: func(ctx context.Context, r call.Router, self machine.Ref) (overview.Read, error) {
-			out, err := call.Invoke(ctx, r, here, backgroundcalls.List, backgroundcalls.ListIn{}, nil)
+			out, err := call.Invoke(ctx, r, thisMac, backgroundcalls.List, backgroundcalls.ListIn{}, nil)
 			return overview.BackgroundRead(out, self), err
 		},
 		section.Awake: func(ctx context.Context, r call.Router, self machine.Ref) (overview.Read, error) {
-			out, err := call.Read(ctx, r, here, awakecalls.Read, awakecalls.ReadIn{}, nil)
+			out, err := call.Read(ctx, r, thisMac, awakecalls.Read, awakecalls.ReadIn{}, nil)
 			return overview.AwakeRead(out, self), err
 		},
 		section.SSH: func(_ context.Context, _ call.Router, self machine.Ref) (overview.Read, error) {
@@ -74,17 +74,17 @@ type answer struct {
 	id        section.ID
 	read      overview.Read
 	err       error
-	all       *machines.Fleet
+	all       *machines.AllMachines
 	readiness []overview.Check
 }
 
-func (r *Reader[Tool, Item, Stray]) Compose(ctx context.Context) <-chan overview.Summary {
+func (r *Reader[App, Item, Misplaced]) Compose(ctx context.Context) <-chan overview.Summary {
 	// invariant: overview.read owns no fact: every line is a section's own
 	// read through the Router, in the one order of the machine's kind; the
 	// first value has every line pending, each answer fills its own, and the
 	// last is the whole Overview.
 	kind := r.d.Kind
-	head := overview.Head{Name: r.d.Here.Hostname, Kind: kind, Here: true}
+	head := overview.Head{Name: r.d.ThisMac.Hostname, Kind: kind, ThisMac: true}
 	self := machine.Ref{Name: head.Name}
 	if r.d.Meter != nil {
 		if sample, err := r.d.Meter.Sample(ctx); err == nil && !sample.Boot.IsZero() {
@@ -117,12 +117,12 @@ func (r *Reader[Tool, Item, Stray]) Compose(ctx context.Context) <-chan overview
 	if kind == machine.Mac {
 		left++
 		go func() {
-			out, err := call.Read(ctx, r.d.Calls, machine.Ref{}, machinescalls.List, machinescalls.ListIn{Here: true, Unwritten: true}, nil)
+			out, err := call.Read(ctx, r.d.Calls, machine.Ref{}, machinescalls.List, machinescalls.ListIn{ThisMac: true, Unwritten: true}, nil)
 			if err != nil {
 				answers <- answer{err: err}
 				return
 			}
-			answers <- answer{all: &out.Fleet}
+			answers <- answer{all: &out.All}
 		}()
 		left++
 		go func() { answers <- answer{readiness: r.readiness(ctx)} }()
@@ -131,7 +131,7 @@ func (r *Reader[Tool, Item, Stray]) Compose(ctx context.Context) <-chan overview
 	go func() {
 		defer close(out)
 		got := map[section.ID]answer{}
-		var all *machines.Fleet
+		var all *machines.AllMachines
 		var readiness []overview.Check
 		send := func() bool {
 			sum := summarize(head, ids, got, reading, all)
@@ -169,7 +169,7 @@ func (r *Reader[Tool, Item, Stray]) Compose(ctx context.Context) <-chan overview
 	return out
 }
 
-func summarize(head overview.Head, ids []section.ID, got map[section.ID]answer, reading *engine.Reading, all *machines.Fleet) overview.Summary {
+func summarize(head overview.Head, ids []section.ID, got map[section.ID]answer, reading *engine.Reading, all *machines.AllMachines) overview.Summary {
 	state, own := engineOf(head, reading)
 	var vms []overview.VM
 	if all != nil {
@@ -216,12 +216,12 @@ func engineOf(head overview.Head, r *engine.Reading) (overview.Engine, []finding
 
 // value: what a Mac's Overview reads of All machines: its VMs and their
 // findings; the other Macs are All machines' own.
-func thisMacsVMs(f machines.Fleet) ([]finding.Finding, []overview.VM) {
-	i := slices.IndexFunc(f.Hosts, func(h machines.HostView) bool { return h.Here })
+func thisMacsVMs(f machines.AllMachines) ([]finding.Finding, []overview.VM) {
+	i := slices.IndexFunc(f.Macs, func(h machines.MacView) bool { return h.ThisMac })
 	if i < 0 {
 		return nil, nil
 	}
-	h := f.Hosts[i]
+	h := f.Macs[i]
 	var own []finding.Finding
 	for _, fd := range machines.Findings(f) {
 		if fd.Machine.On == h.Name {

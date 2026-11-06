@@ -10,7 +10,7 @@ runs:
       exit: 0
       stdout: |
           jterrazz-mac-mini 2026.11.01
-    - command: 'machines --here --json | /usr/bin/jq -r ''[.. | objects | select(has("name") and has("lifetime")) | .name] | sort | join(" ")'''
+    - command: 'machines --this-mac --json | /usr/bin/jq -r ''[.. | objects | select(has("name") and has("lifetime")) | .name] | sort | join(" ")'''
       exit: 0
       stdout: |
           api linux-1

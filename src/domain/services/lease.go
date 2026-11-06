@@ -8,7 +8,7 @@ import (
 	portscontract "github.com/jterrazz/studio-station/src/ports/contract"
 )
 
-const Schema = "station.services/v1"
+const Schema = ports.AllMachinesSchema
 
 type Lease = ports.Reservation
 

@@ -1,4 +1,4 @@
-description: 'the Overview on a terminal fills in place, then prints once, and reads each section once'
+description: 'the Overview on a terminal fills as it reads, then prints once, and reads each section once'
 fixture:
     - ../../../__fixtures__/terminal/
     - ./__fixtures__/recording/

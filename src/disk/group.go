@@ -64,7 +64,7 @@ func GroupOf(l catalog.Level) Group {
 		return CanRebuild
 	case catalog.LevelData:
 		return YourData
-	case catalog.LevelConfig, catalog.LevelKept:
+	case catalog.LevelSettings, catalog.LevelKept:
 	}
 	return NeverTouched
 }
@@ -78,10 +78,10 @@ func Classify(s Survey) []Row {
 	// rebuild when its app has a clean command.
 	var out []Row
 	for _, t := range s.Rows {
-		for _, st := range t.Strays {
+		for _, st := range t.Misplaced {
 			out = append(out, Row{App: t.Entry.Name, Group: Misplaced, Paths: []string{st.Path}, Bytes: st.Bytes, MoveTo: st.To, Pending: t.Pending})
 		}
-		frees := len(t.Entry.Storage.Clean) > 0
+		frees := len(t.Entry.Disk.Free) > 0
 		if t.Unknown {
 			if frees {
 				out = append(out, Row{App: t.Entry.Name, Group: CanRebuild, Bytes: -1})

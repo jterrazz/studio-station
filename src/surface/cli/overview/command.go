@@ -17,13 +17,13 @@ import (
 )
 
 type Deps struct {
-	Here page.Context
+	ThisMachine page.Context
 	// value: the hidden status alias, whose --json keeps station.status/v1
 	// for the scripts that decode it (SPEC §11.4).
 	Status bool
 	// value: All machines, read once a target names a VM: its Overview is
 	// its Mac's view of it; nil reads every target as a machine of its own.
-	Fleet func(ctx context.Context) (machines.Fleet, error)
+	AllMachines func(ctx context.Context) (machines.AllMachines, error)
 }
 
 type Input struct{ All bool }
@@ -59,7 +59,7 @@ func Run(ctx context.Context, d Deps, env kit.Env, all bool, io kit.IO) error {
 			return err
 		}
 		err = io.LivePage(kit.Updates(updates, func(out overviewcalls.ReadOut) page.Page {
-			return pagehome.Summary(out.Summary, d.Here, all)
+			return pagehome.Summary(out.Summary, d.ThisMachine, all)
 		}))
 		if err != nil {
 			return err
@@ -70,7 +70,7 @@ func Run(ctx context.Context, d Deps, env kit.Env, all bool, io kit.IO) error {
 	if err != nil {
 		return err
 	}
-	return io.Page(pagehome.Summary(out.Summary, d.Here, all), pagehome.SummaryContract(out.Summary, call.Schema(overviewcalls.Read.Name)))
+	return io.Page(pagehome.Summary(out.Summary, d.ThisMachine, all), pagehome.SummaryContract(out.Summary, call.Schema(overviewcalls.Read.Name)))
 }
 
 // invariant: a VM's Overview is its Mac's view of it around what it reads
@@ -80,7 +80,7 @@ func Run(ctx context.Context, d Deps, env kit.Env, all bool, io kit.IO) error {
 func far(ctx context.Context, d Deps, env kit.Env, vm pagemachines.VMOverview, all bool, io kit.IO) error {
 	schema := call.Schema(overviewcalls.Read.Name)
 	alone := func() error {
-		return io.Page(pagemachines.VMPage(vm, nil, d.Here, all), pagemachines.VMContract(vm, nil, schema))
+		return io.Page(pagemachines.VMPage(vm, nil, d.ThisMachine, all), pagemachines.VMContract(vm, nil, schema))
 	}
 	if !vm.Mac.Reachable || vm.VM.State != machines.Running {
 		return alone()
@@ -91,7 +91,7 @@ func far(ctx context.Context, d Deps, env kit.Env, vm pagemachines.VMOverview, a
 			return alone()
 		}
 		err = io.LivePage(kit.Updates(updates, func(out overviewcalls.ReadOut) page.Page {
-			return pagemachines.VMPage(vm, &out.Summary, d.Here, all)
+			return pagemachines.VMPage(vm, &out.Summary, d.ThisMachine, all)
 		}))
 		if err != nil {
 			return err
@@ -102,7 +102,7 @@ func far(ctx context.Context, d Deps, env kit.Env, vm pagemachines.VMOverview, a
 	if err != nil {
 		return alone()
 	}
-	return io.Page(pagemachines.VMPage(vm, &out.Summary, d.Here, all), pagemachines.VMContract(vm, &out.Summary, schema))
+	return io.Page(pagemachines.VMPage(vm, &out.Summary, d.ThisMachine, all), pagemachines.VMContract(vm, &out.Summary, schema))
 }
 
 // value: station status --json, station.status/v1 from the v2 reading,
@@ -122,13 +122,13 @@ func status(ctx context.Context, env kit.Env, io kit.IO) error {
 // another Mac, is none.
 func (d Deps) vm(ctx context.Context, env kit.Env) (pagemachines.VMOverview, bool) {
 	name := env.Target().Name
-	if d.Fleet == nil || name == "" || !env.Far() {
+	if d.AllMachines == nil || name == "" || !env.Far() {
 		return pagemachines.VMOverview{}, false
 	}
-	f, err := d.Fleet(ctx)
+	f, err := d.AllMachines(ctx)
 	if err != nil {
 		return pagemachines.VMOverview{}, false
 	}
 	h, vm, ok := machines.FindVM(f, name)
-	return pagemachines.VMOverview{Fleet: f, Mac: h, VM: vm}, ok
+	return pagemachines.VMOverview{All: f, Mac: h, VM: vm}, ok
 }

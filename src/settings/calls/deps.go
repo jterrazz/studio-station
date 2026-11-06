@@ -50,7 +50,7 @@ type Deps struct {
 	Mac   string
 	// value: the machines of All machines, for the matrix; nil where none
 	// is reached from (a VM).
-	Fleet Fleet
+	All AllMachines
 	// value: the ports family, which keeps what a setting declares public.
 	Public Public
 }
@@ -65,11 +65,11 @@ type Shell interface {
 }
 
 type Settings interface {
-	Items() []catalog.ConfigItem
-	Lives(it catalog.ConfigItem) bool
+	Items() []catalog.Setting
+	Lives(it catalog.Setting) bool
 	// value: the app a setting needs that is not installed here; empty when
 	// it needs none or has it.
-	Needs(it catalog.ConfigItem) string
+	Needs(it catalog.Setting) string
 	// invariant: Admit refuses, before any effect, a setting this run cannot
 	// apply (root).
 	Admit(name string, interactive bool) error
@@ -79,7 +79,7 @@ type Settings interface {
 }
 
 type Ask interface {
-	Values(item catalog.ConfigItem) (map[string]string, error)
+	Values(item catalog.Setting) (map[string]string, error)
 }
 
 func All(d Deps) []call.Handler {
@@ -89,27 +89,27 @@ func All(d Deps) []call.Handler {
 	}
 }
 
-func asks(it catalog.ConfigItem) bool { return len(it.Inputs) > 0 || it.Interactive }
+func asks(it catalog.Setting) bool { return len(it.Inputs) > 0 || it.Interactive }
 
 // invariant: a setting is named by its catalogue name; one that lives on
 // no machine of this kind is refused before any effect.
-func find(d Deps, name string, living bool) (catalog.ConfigItem, error) {
+func find(d Deps, name string, living bool) (catalog.Setting, error) {
 	for _, it := range d.Settings.Items() {
 		if it.Name != name {
 			continue
 		}
 		if living && !d.Settings.Lives(it) {
-			return it, fail.New(fail.NotForThisMachine, NotForThisMachine, name, map[string]string{"why": settings.PlaceReason(it.Places)})
+			return it, fail.New(fail.NotForThisMachine, NotForThisMachine, name, map[string]string{"why": settings.LivesOnReason(it.Kinds)})
 		}
 		return it, nil
 	}
-	return catalog.ConfigItem{}, fail.New(fail.Refused, Unknown, name, nil)
+	return catalog.Setting{}, fail.New(fail.Refused, Unknown, name, nil)
 }
 
 // invariant: an admin setting is refused, before any effect, to a run
 // without admin rights; the refusal names the Mac, so a run through --on
 // says the ssh line to that Mac.
-func admitted(d Deps, it catalog.ConfigItem, verb string) error {
+func admitted(d Deps, it catalog.Setting, verb string) error {
 	if !it.NeedsRoot || d.Admin {
 		return nil
 	}
@@ -135,7 +135,7 @@ func record(ctx context.Context, d Deps, name string) *settings.Applied {
 
 // value: one setting judged now: observed through its Applier, beside what
 // station recorded and the owner's Off here.
-func judge(ctx context.Context, d Deps, it catalog.ConfigItem, off map[string]bool) (settings.Row, settings.Observation) {
+func judge(ctx context.Context, d Deps, it catalog.Setting, off map[string]bool) (settings.Row, settings.Observation) {
 	lives := d.Settings.Lives(it)
 	var now settings.Observation
 	if lives && !off[it.Name] {
@@ -157,7 +157,7 @@ func judge(ctx context.Context, d Deps, it catalog.ConfigItem, off map[string]bo
 // value: one checked setting judged now: its facts read, each in its
 // budget, beside the owner's Off here and what this Mac should have.
 func judgeChecked(ctx context.Context, d Deps, it catalog.CheckedSetting, off map[string]bool, expect settings.Expectation) settings.Row {
-	lives := d.Settings.Lives(catalog.ConfigItem{Name: it.Name, Places: it.Places})
+	lives := d.Settings.Lives(catalog.Setting{Name: it.Name, Kinds: it.Kinds})
 	facts := map[catalog.Fact]settings.Fact{}
 	if lives && !off[it.Name] && d.Facts != nil {
 		for _, f := range it.Facts {

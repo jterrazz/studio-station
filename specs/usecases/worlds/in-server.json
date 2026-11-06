@@ -1,6 +1,6 @@
 {
     "now": "2026-11-04T10:00:00Z",
-    "here": "infra",
+    "this_mac": "infra",
     "macs": {
         "jterrazz-macbook-pro": {
             "engine": {

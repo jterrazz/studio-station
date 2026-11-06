@@ -8,7 +8,7 @@ import (
 
 func TestURLsHaveOneShapePerModeAndServeState(t *testing.T) {
 	yes, no := true, false
-	l := Lease{VM: "api", GuestPort: 8081, HostPort: 40000, HTTP: &yes}
+	l := Lease{VM: "api", GuestPort: 8081, MacPort: 40000, HTTP: &yes}
 	if u := URLs(l, "macbook.ts.net", ports.HTTPSPort, true); u.Public != "https://macbook.ts.net:40000" || u.Local != "http://127.0.0.1:40000" {
 		t.Fatalf("port mode %+v", u)
 	}

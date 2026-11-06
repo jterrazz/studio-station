@@ -60,7 +60,7 @@ func TestTheOpenSSHConfigKeepsTheContract(t *testing.T) {
 	contracttest.SSHConfig(t, func(*testing.T) contracttest.SSHConfigSubject {
 		disk := files{}
 		return contracttest.SSHConfigSubject{
-			Config:  adapter(disk),
+			Blocks:  adapter(disk),
 			Managed: func(t *testing.T) []string { return managedNames(read(t, disk)) },
 			Foreign: func(t *testing.T, name string) { write(t, disk, "Host "+name+"\n  HostName legacy\n") },
 		}
@@ -73,10 +73,10 @@ func TestTheOwnersOwnLinesComeBackByteForByteOnceStationsBlockGoes(t *testing.T)
 	write(t, disk, mine)
 	c := adapter(disk)
 
-	if err := c.Put(t.Context(), []contract.HostBlock{{Name: "mac-mini", User: "u"}}); err != nil {
+	if err := c.Put(t.Context(), []contract.MachineBlock{{Name: "mac-mini", User: "u"}}); err != nil {
 		t.Fatal(err)
 	}
-	if err := c.Put(t.Context(), []contract.HostBlock{{Name: "mac-mini", User: "agent"}}); err != nil {
+	if err := c.Put(t.Context(), []contract.MachineBlock{{Name: "mac-mini", User: "agent"}}); err != nil {
 		t.Fatal(err)
 	}
 	if err := c.Remove(t.Context(), "mac-mini"); err != nil {

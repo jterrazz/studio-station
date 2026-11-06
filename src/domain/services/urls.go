@@ -16,7 +16,7 @@ func URLs(l Lease, publicHost, httpsMode string, serveOn bool) URLSet {
 	// invariant: one shape everywhere. An HTTP service, or one not yet detected,
 	// carries a scheme so a URL parser reads a host; with Serve off the local URL
 	// is the only one there is; a raw TCP service is the tailnet's bytes, no scheme.
-	port := strconv.Itoa(l.HostPort)
+	port := strconv.Itoa(l.MacPort)
 	u := URLSet{Local: LocalHost + ":" + port}
 	if isHTTP(l) {
 		u.Local = "http://" + u.Local
@@ -37,7 +37,7 @@ func URLs(l Lease, publicHost, httpsMode string, serveOn bool) URLSet {
 }
 
 func ShareOf(l Lease, httpsMode string) ports.Share {
-	s := ports.Share{Port: l.HostPort, Reserved: l.HostPort, Scheme: ports.SchemeHTTPS}
+	s := ports.Share{Port: l.MacPort, Reserved: l.MacPort, Scheme: ports.SchemeHTTPS}
 	switch {
 	case !isHTTP(l):
 		s.Scheme = ports.SchemeTCP

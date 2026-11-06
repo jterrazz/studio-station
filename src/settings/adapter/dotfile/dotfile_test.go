@@ -56,7 +56,7 @@ func TestApplier(t *testing.T) {
 	contracttest.Applier(t, func(*testing.T) contracttest.Opened {
 		files := newMemory()
 		ours := fstest.MapFS{"starship/starship.toml": {Data: []byte("format = \"$all\"\n")}}
-		item := catalog.ConfigItem{Name: "starship", Effect: catalog.Dotfiles{Files: []catalog.Copy{{From: "starship/starship.toml", To: "~/.config/starship.toml"}}}}
+		item := catalog.Setting{Name: "starship", Effect: catalog.Dotfiles{Files: []catalog.Copy{{From: "starship/starship.toml", To: "~/.config/starship.toml"}}}}
 		edit := func(*testing.T) { files.files["/home/u/.config/starship.toml"] = []byte("format = \"mine\"\n") }
 		return contracttest.Opened{Applier: dotfile.New(files, silent{}, dotfile.Options{Home: "/home/u", Ours: ours}), Item: item, Edit: edit}
 	})

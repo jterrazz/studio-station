@@ -90,7 +90,7 @@ type Prefs struct {
 
 type prefsView struct {
 	Here   string
-	Hosts  map[string]model.Host
+	Hosts  map[string]model.MacRecord
 	VMUser string
 }
 
@@ -155,8 +155,8 @@ type (
 	VMState     = model.VMState
 	VM          = model.VM
 	DaemonInfo  = model.EngineView
-	HostView    = model.HostView
-	Fleet       = model.Fleet
+	HostView    = model.MacView
+	Fleet       = model.AllMachines
 	ListSize    = model.ListSize
 	Check       = model.Check
 	ProbeReport = model.ProbeReport
@@ -182,7 +182,7 @@ func (s *Service) vmUser(cfg prefsView) string {
 }
 
 func (s *Service) CheckHost() error {
-	if s.o.Here != catalog.Host {
+	if s.o.Here != catalog.Mac {
 		return &OnlyOnHostError{Here: s.o.Here}
 	}
 	return nil
