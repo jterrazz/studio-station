@@ -59,5 +59,12 @@ The records of decisions this repository alone took go in [`decisions/`](decisio
 - [011 One engine per Mac](decisions/011-one-engine-per-mac.md)
 - [012 Ports are reserved and shared by their Mac](decisions/012-ports-are-reserved-and-shared.md)
 - [013 Every port leaves through Serve](decisions/013-every-port-leaves-through-serve.md)
+- [014 The code is families, each a hexagon](decisions/014-families-and-contracts.md)
+- [015 station's own choices are preferences.json](decisions/015-preferences-json.md)
+- [016 Every machine is reached by its engine's API](decisions/016-api-v2-and-remote-by-api.md)
+- [017 A VM is a server or a workspace](decisions/017-servers-and-workspaces.md)
+- [018 A port is Private or Public](decisions/018-two-port-classes.md)
+- [019 Activity is a section, its history the engine's memory](decisions/019-activity.md)
+- [020 Use cases are proved over a fake world](decisions/020-the-fake-world.md)
 
 A decision spanning several repositories is recorded by the corpus that spans them. What was left for later is `TODO.md` at the repository root.

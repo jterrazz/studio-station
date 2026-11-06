@@ -1,6 +1,6 @@
 # ADR-008: Every VM is temporary or lasting
 
-**Status:** Accepted
+**Status:** Superseded by [ADR-017](017-servers-and-workspaces.md)
 **Date:** 2026-10-31
 
 ## Context

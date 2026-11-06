@@ -1,6 +1,6 @@
 # ADR-011: One daemon per host
 
-**Status:** Accepted
+**Status:** Superseded by [ADR-016](016-api-v2-and-remote-by-api.md)
 **Date:** 2026-11-01
 
 ## Context
