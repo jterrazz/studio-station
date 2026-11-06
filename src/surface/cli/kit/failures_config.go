@@ -23,7 +23,7 @@ func configFailure(err error) (*fail.Error, bool) {
 		if root.Verb == "uninstall" {
 			verb = "off"
 		}
-		return failed(root.Error(), "sudo station settings "+verb+" "+root.Item, err), true
+		return failed(root.Error(), words.SettingsAsRoot(verb, root.Item), err), true
 	case errors.As(err, &place):
 		return usage(place.Error(), "station settings apply "+place.Item+" --on this-mac"), true
 	case errors.As(err, &irreversible):

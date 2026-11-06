@@ -4,6 +4,8 @@ import (
 	"context"
 	"strings"
 
+	"github.com/jterrazz/studio-station/src/surface/cli/words"
+
 	"github.com/spf13/cobra"
 
 	"github.com/jterrazz/studio-station/src/core/machine"
@@ -68,16 +70,16 @@ func Delegates(env Env, c *cobra.Command) (bool, error) {
 }
 
 func refusesOn(path string) bool {
-	words := strings.Fields(path)
-	if len(words) == 0 {
+	fields := strings.Fields(path)
+	if len(fields) == 0 {
 		return false
 	}
-	switch words[0] {
+	switch fields[0] {
 	case "shell", "completion", "help", "daemon", "guest", "use":
 		return true
 	}
-	return len(words) > 1 && (words[0] == "machines" && (words[1] == "supervise" || words[1] == "pipe") ||
-		words[0] == "engine" && (words[1] == "run" || words[1] == "attach"))
+	return len(fields) > 1 && (fields[0] == "machines" && (fields[1] == "supervise" || fields[1] == "pipe") ||
+		fields[0] == "engine" && (fields[1] == "run" || fields[1] == "attach"))
 }
 
 func RefuseOn(env Env) func(*cobra.Command, []string) error {
@@ -93,10 +95,10 @@ func RefuseOn(env Env) func(*cobra.Command, []string) error {
 		}
 		p := path(c)
 		if refusesOn(p) {
-			return usage("--on does not apply to \""+p+"\"", "run it on "+env.On.Machine+" itself: ssh "+env.On.Machine)
+			return usage("--on does not apply to \""+p+"\"", words.RunOnItself(env.On.Machine))
 		}
 		if env.Far() && c.Annotations[owned] == "" && c.HasParent() {
-			return usage("--on does not apply to \""+p+"\"", "run it on "+env.On.Machine+" itself: ssh "+env.On.Machine)
+			return usage("--on does not apply to \""+p+"\"", words.RunOnItself(env.On.Machine))
 		}
 		return nil
 	}

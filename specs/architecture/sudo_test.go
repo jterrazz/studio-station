@@ -16,7 +16,7 @@ func sudoTolerated() []string {
 	return []string{
 		"background/adapter/launchd", "cmd/generate/pages", "images/calls",
 		"machines/calls", "engine", "machines/adapter/macos", "machines/contract/contracttest",
-		"surface/cli/kit", "wire",
+		"wire",
 	}
 }
 

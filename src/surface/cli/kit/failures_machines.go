@@ -45,7 +45,7 @@ func machinesFailure(err error) (*fail.Error, bool) {
 	case errors.As(err, &timeout):
 		return failed(timeout.Error(), "station machines "+timeout.Name, err), true
 	case errors.As(err, &refused):
-		return failed(refused.Error(), "check that sudo needs no password for fdesetup on "+refused.Name, err), true
+		return failed(refused.Error(), words.PasswordlessRestart(refused.Name), err), true
 	case errors.As(err, &terminal):
 		return Translate(fail.New(fail.NeedsTerminal, words.NeedsTerminal, terminal.Verb, nil), ""), true
 	case errors.As(err, &sshConfig):
@@ -162,7 +162,7 @@ func pipeFailure(err error) (*fail.Error, bool) {
 	var running *model.RunningUnderAgentError
 	switch {
 	case errors.As(err, &notHere):
-		return usage(notHere.Error(), "ssh "+notHere.Name+" goes through "+notHere.Host+": station machines"), true
+		return usage(notHere.Error(), words.ReachedThrough(notHere.Name, notHere.Host)), true
 	case errors.As(err, &stopped):
 		return failed(stopped.Error(), "station machines start "+stopped.Name, err), true
 	case errors.As(err, &closed):
