@@ -7,7 +7,7 @@ import (
 	"github.com/jterrazz/studio-station/src/domain/power"
 )
 
-func powerFailure(err error) (*fail.Error, bool) {
+func awakeFailure(err error) (*fail.Error, bool) {
 	var rng *power.RangeError
 	var off *power.OffHostError
 	var none *power.UnsupportedError

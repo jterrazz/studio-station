@@ -56,9 +56,9 @@ func (e engineAPI) StopAll(ctx context.Context) (engine.StopAll, error) {
 	return all, err
 }
 
-func (e engineAPI) Power(ctx context.Context) (power.View, error) {
+func (e engineAPI) AwakeView(ctx context.Context) (power.View, error) {
 	var v power.View
-	err := e.do(ctx, process.Power, nil, &v)
+	err := e.do(ctx, process.AwakeView, nil, &v)
 	return v, err
 }
 

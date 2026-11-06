@@ -194,7 +194,7 @@ public struct StripView: View {
                     }
                 }
             }
-            if strip.battery != nil || strip.power.map({ !$0.isNone }) == true {
+            if strip.battery != nil || strip.awake.map({ !$0.isNone }) == true {
                 HStack(spacing: Token.Space.gap) {
                     if let battery = strip.battery {
                         HStack(spacing: 2) {
@@ -203,8 +203,8 @@ public struct StripView: View {
                         }
                         .fixedSize()
                     }
-                    if let power = strip.power, !power.isNone {
-                        Text("\(Token.Glyph.power) \(Format.show(power.items?.last ?? power))")
+                    if let awake = strip.awake, !awake.isNone {
+                        Text("\(Token.Glyph.awake) \(Format.show(awake.items?.last ?? awake))")
                             .font(.system(size: size, weight: .semibold)).foregroundStyle(palette.accent)
                             .lineLimit(1).fixedSize()
                     }

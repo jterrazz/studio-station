@@ -1,6 +1,6 @@
 {
   "schema": "station.page/v1",
-  "id": "power",
+  "id": "keep-awake",
   "command": "awake",
   "context": {
     "kind": "mac"
@@ -8,8 +8,28 @@
   "state": "ready",
   "sections": [
     {
-      "id": "power",
+      "id": "keep-awake",
       "title": "Awake",
+      "role": "banner",
+      "caption": [
+        {
+          "kind": "list",
+          "items": [
+            {
+              "kind": "text",
+              "text": "awake"
+            },
+            {
+              "kind": "text",
+              "text": "lid"
+            },
+            {
+              "kind": "text",
+              "text": "3h 12m left"
+            }
+          ]
+        }
+      ],
       "columns": [
         {
           "key": "name",
@@ -41,24 +61,67 @@
             "label": "awake",
             "cells": [
               {
-                "kind": "off"
+                "kind": "on"
+              },
+              {
+                "kind": "list",
+                "items": [
+                  {
+                    "kind": "text",
+                    "text": "lid"
+                  },
+                  {
+                    "kind": "text",
+                    "text": "until 14:42 (4h)"
+                  }
+                ]
               },
               {
                 "kind": "text",
-                "text": "the Mac sleeps as macOS decides"
+                "text": "started 10:42 by station awake 4h --lid"
               }
-            ],
-            "hint": {
-              "command": "station awake 4h",
-              "key": "a"
-            }
+            ]
+          }
+        },
+        {
+          "row": {
+            "id": "display",
+            "mark": "ok",
+            "label": "display",
+            "cells": [
+              {
+                "kind": "text",
+                "text": "sleeps"
+              },
+              {
+                "kind": "text",
+                "text": "on lid close: pmset displaysleepnow (no display assertion)"
+              }
+            ]
+          }
+        },
+        {
+          "row": {
+            "id": "clamshell",
+            "mark": "ok",
+            "label": "clamshell",
+            "cells": [
+              {
+                "kind": "text",
+                "text": "held"
+              },
+              {
+                "kind": "text",
+                "text": "back to normal at the end, at every engine start and quit"
+              }
+            ]
           }
         }
       ],
       "counts": [
         {
           "mark": "ok",
-          "n": 1
+          "n": 3
         }
       ]
     },
@@ -92,7 +155,7 @@
         {
           "row": {
             "id": "battery",
-            "mark": "ok",
+            "mark": "attention",
             "label": "battery",
             "cells": [
               {
@@ -100,19 +163,20 @@
                 "items": [
                   {
                     "kind": "text",
-                    "text": "80%"
+                    "text": "28%"
                   },
                   {
                     "kind": "text",
-                    "text": "AC attached"
+                    "text": "on battery"
                   }
                 ]
               },
               {
                 "kind": "text",
-                "text": "ends a session at 20% on battery"
+                "text": "the session ends at 20%"
               }
-            ]
+            ],
+            "reason": "guard"
           }
         },
         {
@@ -169,7 +233,11 @@
       "counts": [
         {
           "mark": "ok",
-          "n": 4
+          "n": 3
+        },
+        {
+          "mark": "attention",
+          "n": 1
         }
       ]
     },
@@ -217,11 +285,11 @@
               "items": [
                 {
                   "kind": "text",
-                  "text": "AC"
+                  "text": "battery"
                 },
                 {
                   "kind": "text",
-                  "text": "80%"
+                  "text": "28%"
                 },
                 {
                   "kind": "text",

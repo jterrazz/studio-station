@@ -10,18 +10,18 @@ import (
 )
 
 const (
-	NoticeEnded       = "power_ended"
+	NoticeAwakeEnded  = "awake_ended"
 	NoticeNeverSleeps = "never_sleeps"
 )
 
-type PowerSlept struct {
+type AwakeOff struct {
 	Ended bool `json:"ended"`
 	After int  `json:"after"`
 }
 
 type StopAll struct {
 	VMs        []Stopped `json:"vms"`
-	PowerEnded bool      `json:"power_ended"`
+	AwakeEnded bool      `json:"awake_ended"`
 	// value: a port of a VM it stopped was shared, and is no more.
 	SharingEnded bool `json:"sharing_ended,omitempty"`
 }
@@ -38,10 +38,10 @@ type Event struct {
 	Notice *Notice         `json:"notice,omitempty"`
 }
 
-func (d *Engine) newPower() *power.Machine {
+func (d *Engine) newAwake() *power.Machine {
 	return power.New(d.o.Power, d.h.Clock, power.Options{
-		Log:    func(m string) { d.logf("power", m) },
-		Notice: func(e power.End) { d.told(NoticeEnded, AwakeStopped(e.Detail)) },
+		Log:    func(m string) { d.logf("awake", m) },
+		Notice: func(e power.End) { d.told(NoticeAwakeEnded, AwakeStopped(e.Detail)) },
 		Told:   func(text string) { d.told(NoticeNeverSleeps, text) },
 		Change: d.hub.changed,
 	})
@@ -64,7 +64,7 @@ func (d *Engine) told(kind, text string) {
 // starts, as held since that start.
 func (d *Engine) neverSleeps(since time.Time) {
 	if d.o.NeverSleeps != nil {
-		d.power.Policy(d.o.NeverSleeps(), since)
+		d.awakeJob.Policy(d.o.NeverSleeps(), since)
 	}
 }
 
@@ -73,47 +73,47 @@ type AwakeKept = power.Kept
 func (d *Engine) AwakeKept() power.Kept {
 	// value: what this engine keeps of Awake, for the stepped engine that
 	// follows it.
-	return d.power.Kept()
+	return d.awakeJob.Kept()
 }
 
 func (d *Engine) RememberAwake(k power.Kept) { d.awake = &k }
 
 func (d *Engine) Suspend() {
-	d.power.Suspend()
+	d.awakeJob.Suspend()
 	d.closeAll()
 }
 
-func (d *Engine) watchPower(ctx context.Context) {
+func (d *Engine) watchAwake(ctx context.Context) {
 	if d.o.Power == nil {
 		return
 	}
 	for ev := range d.o.Power.Watch(ctx) {
-		d.power.Observe(ctx, ev)
+		d.awakeJob.Observe(ctx, ev)
 	}
 }
 
-func (d *Engine) powerAwake(r AwakeIn) (power.Awoken, error) {
-	session, refreshed, err := d.power.Awake(power.Request{Lid: r.Lid, Battery: r.Battery, For: time.Duration(r.For) * time.Second, By: r.By})
+func (d *Engine) keepAwake(r AwakeIn) (power.Awoken, error) {
+	session, refreshed, err := d.awakeJob.Awake(power.Request{Lid: r.Lid, Battery: r.Battery, For: time.Duration(r.For) * time.Second, By: r.By})
 	s := power.Awoken{Session: session, Refreshed: refreshed}
 	var rng *power.RangeError
 	var guard *power.GuardError
 	var none *power.UnsupportedError
 	switch {
 	case errors.As(err, &rng):
-		return s, fault("power_range", rng.Error(), "station awake 4h")
+		return s, fault("awake_range", rng.Error(), "station awake 4h")
 	case errors.As(err, &guard):
 		hint := "station awake"
 		if guard.Guard == power.ReasonLid {
 			hint = "station awake 4h --lid --battery"
 		}
-		return s, fault("power_guard", guard.Error(), hint)
+		return s, fault("awake_guard", guard.Error(), hint)
 	case errors.As(err, &none):
-		return s, fault("power_unsupported", none.Error(), "station awake --on <mac>")
+		return s, fault("awake_unsupported", none.Error(), "station awake --on <mac>")
 	}
 	return s, err
 }
 
-func (d *Engine) powerSleep() PowerSlept {
-	s := d.power.Sleep()
-	return PowerSlept{Ended: s.Ended, After: int(s.After.Seconds())}
+func (d *Engine) awakeOff() AwakeOff {
+	s := d.awakeJob.Sleep()
+	return AwakeOff{Ended: s.Ended, After: int(s.After.Seconds())}
 }

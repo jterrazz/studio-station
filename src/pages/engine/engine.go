@@ -95,10 +95,10 @@ func Stop(r engine.StopReport, thisMac page.Context) page.Page {
 	if len(stopped) > 0 {
 		parts = append(parts, "stopped "+count(len(stopped), "VM")+" ("+strings.Join(stopped, ", ")+")")
 	}
-	switch r.Power {
-	case engine.PowerEnded:
+	switch r.Awake {
+	case engine.AwakeEnded:
 		parts = append(parts, "Awake off")
-	case engine.PowerCleared:
+	case engine.AwakeReleased:
 		parts = append(parts, "the lid released")
 	}
 	if r.Sharing {

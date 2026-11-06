@@ -15,9 +15,9 @@ import (
 )
 
 const (
-	settingPowerPolicy = "restart-after-power-cut"
-	settingNeverSleeps = "never-sleeps"
-	settingAutoLogin   = "autologin"
+	settingRestartAfterPowerCut = "restart-after-power-cut"
+	settingNeverSleeps          = "never-sleeps"
+	settingAutoLogin            = "autologin"
 )
 
 func (r *Reader[App, Item, Misplaced]) machineJobs() []job[App, Item, Misplaced] {
@@ -72,11 +72,11 @@ func (r *Reader[App, Item, Misplaced]) machineJobs() []job[App, Item, Misplaced]
 		},
 		{Key: subject + "/machine/power", Budget: defaultBudget + margin,
 			Do: func(ctx context.Context) func(*sn) {
-				if r.d.ThisMac.Kind != catalog.Mac || r.d.Power == nil {
+				if r.d.ThisMac.Kind != catalog.Mac || r.d.Awake == nil {
 					return func(*sn) {}
 				}
-				p, ok := r.d.Power.Session(ctx)
-				return func(s *sn) { s.Power, s.PowerKnown = p, ok }
+				p, ok := r.d.Awake.Session(ctx)
+				return func(s *sn) { s.Awake, s.AwakeKnown = p, ok }
 			},
 			Late: func(*sn) {},
 		},
@@ -116,7 +116,7 @@ func (r *Reader[App, Item, Misplaced]) readiness(ctx context.Context) []overview
 	}
 	f := machines.ReadinessFacts{
 		Mac:                   r.label(),
-		RestartsAfterPowerCut: on(settingPowerPolicy), NeverSleeps: on(settingNeverSleeps), LogsIn: on(settingAutoLogin),
+		RestartsAfterPowerCut: on(settingRestartAfterPowerCut), NeverSleeps: on(settingNeverSleeps), LogsIn: on(settingAutoLogin),
 		EngineKnown: r.d.ThisMac.Agent != nil,
 	}
 	if f.NeverSleeps.State != catalog.StateOK && r.d.Servers != nil {

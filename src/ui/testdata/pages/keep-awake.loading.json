@@ -1,14 +1,14 @@
 {
   "schema": "station.page/v1",
-  "id": "power",
+  "id": "keep-awake",
   "command": "awake",
   "context": {
     "kind": "mac"
   },
-  "state": "ready",
+  "state": "loading",
   "sections": [
     {
-      "id": "power",
+      "id": "keep-awake",
       "title": "Awake",
       "columns": [
         {
@@ -37,27 +37,19 @@
         {
           "row": {
             "id": "awake",
-            "mark": "attention",
+            "mark": "pending",
             "label": "awake",
             "cells": [
               {
-                "kind": "unknown"
-              },
-              {
-                "kind": "text",
-                "text": "engine stopped"
+                "kind": "pending"
               }
-            ],
-            "reason": "stopped",
-            "hint": {
-              "command": "station engine start"
-            }
+            ]
           }
         }
       ],
       "counts": [
         {
-          "mark": "attention",
+          "mark": "pending",
           "n": 1
         }
       ]

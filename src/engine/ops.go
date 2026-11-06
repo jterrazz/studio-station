@@ -45,7 +45,7 @@ type Peer interface {
 	Hello(ctx context.Context) (Hello, error)
 	VMs(ctx context.Context) ([]VMView, error)
 	StopAll(ctx context.Context) (StopAll, error)
-	Power(ctx context.Context) (power.View, error)
+	AwakeView(ctx context.Context) (power.View, error)
 }
 
 type DownError struct{}
@@ -171,14 +171,14 @@ func (d *Engine) Accounts(ctx context.Context) AccountsView { return d.accounts(
 func (d *Engine) StopAll(ctx context.Context) StopAll {
 	shared := d.sharedVMs()
 	vms := d.stopAll(ctx)
-	all := StopAll{VMs: vms, PowerEnded: d.power.Stop()}
+	all := StopAll{VMs: vms, AwakeEnded: d.awakeJob.Stop()}
 	for _, v := range vms {
 		all.SharingEnded = all.SharingEnded || v.Result == ResultStopped && shared[v.Name]
 	}
 	return all
 }
 
-func (d *Engine) Power() power.View { return d.power.View() }
+func (d *Engine) AwakeView() power.View { return d.awakeJob.View() }
 
 type AwakeIn struct {
 	Lid     bool `json:"lid,omitempty"`
@@ -188,9 +188,9 @@ type AwakeIn struct {
 	By  string `json:"by,omitempty"`
 }
 
-func (d *Engine) Awake(r AwakeIn) (power.Awoken, error) { return d.powerAwake(r) }
+func (d *Engine) Awake(r AwakeIn) (power.Awoken, error) { return d.keepAwake(r) }
 
-func (d *Engine) Sleep() PowerSlept { return d.powerSleep() }
+func (d *Engine) Sleep() AwakeOff { return d.awakeOff() }
 
 func (d *Engine) Refresh(pages []string) error {
 	if err := d.CheckPages(pages); err != nil {

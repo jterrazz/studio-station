@@ -391,7 +391,7 @@ func TestAWorkspaceCreatedFromTheMenuBarAppearsInHomeWhenTheEngineMoves(t *testi
 	t.Cleanup(cancel)
 	o := feeds.Menubar{Calls: w, Clock: newSteps(), Report: func(awake.View) *awake.Report { return nil }}
 	in := engine.FeedInput{Changed: changed}
-	in.Power = nothing(in.Power)
+	in.Awake = nothing(in.Awake)
 	pages := o.Feed()(ctx, in)
 	until(t, pages, "every Mac", func(p page.Page) bool { return row(p, "machines", mini) != nil })
 	w.mu.Lock()
@@ -411,7 +411,7 @@ func TestUpdateAllLeavesHomesNeedsYouOnceTheCallReturns(t *testing.T) {
 	t.Cleanup(cancel)
 	o := feeds.Menubar{Calls: w, Clock: newSteps(), Report: func(awake.View) *awake.Report { return nil }}
 	in := engine.FeedInput{Refresh: refresh}
-	in.Power = nothing(in.Power)
+	in.Awake = nothing(in.Awake)
 	pages := o.Feed()(ctx, in)
 	was := until(t, pages, "2 app updates in Needs you", func(p page.Page) bool { return slices.Contains(needs(p), "2 app updates") })
 	w.mu.Lock()

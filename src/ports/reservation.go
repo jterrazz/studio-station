@@ -6,6 +6,8 @@ import (
 )
 
 type Reservation struct {
+	// value: alias of station.leases/v1's entry, host_port included, until
+	// its store migrates to reservations.json (ARCHITECTURE §12).
 	VM         string    `json:"vm"`
 	GuestPort  int       `json:"guest_port"`
 	MacPort    int       `json:"host_port"`

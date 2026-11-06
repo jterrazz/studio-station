@@ -249,7 +249,7 @@
       ],
       "priority": 4,
       "mutates": true,
-      "id": "power-awake",
+      "id": "awake-keep",
       "run": {
         "call": "awake.keep"
       },

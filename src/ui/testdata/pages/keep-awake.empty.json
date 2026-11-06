@@ -1,14 +1,14 @@
 {
   "schema": "station.page/v1",
-  "id": "power",
+  "id": "keep-awake",
   "command": "awake",
   "context": {
     "kind": "mac"
   },
-  "state": "loading",
+  "state": "ready",
   "sections": [
     {
-      "id": "power",
+      "id": "keep-awake",
       "title": "Awake",
       "columns": [
         {
@@ -37,19 +37,27 @@
         {
           "row": {
             "id": "awake",
-            "mark": "pending",
+            "mark": "ok",
             "label": "awake",
             "cells": [
               {
-                "kind": "pending"
+                "kind": "off"
+              },
+              {
+                "kind": "text",
+                "text": "the Mac sleeps as macOS decides"
               }
-            ]
+            ],
+            "hint": {
+              "command": "station awake 4h",
+              "key": "a"
+            }
           }
         }
       ],
       "counts": [
         {
-          "mark": "pending",
+          "mark": "ok",
           "n": 1
         }
       ]

@@ -1,7 +1,7 @@
 [1;38;2;76;79;105mNeeds you[m  [38;2;108;111;133m5 things need you[m
-  [38;2;156;160;176m[m[38;2;223;142;29m◐[m [1;38;2;76;79;105m2 app updates[m         [38;2;76;79;105mstation apps update[m
-  [38;2;156;160;176m[m[38;2;210;15;57m✗[m [1;38;2;76;79;105mnpm sign-in expired[m   [38;2;76;79;105mnpm login[m
-  [38;2;156;160;176m[m[38;2;223;142;29m◐[m [1;38;2;76;79;105m~/.tart is misplaced[m  [38;2;76;79;105mstation disk move ~/.tart[m
+  [38;2;156;160;176m[m[38;2;223;142;29m◐[m [1;38;2;76;79;105m2 app updates[m              [38;2;76;79;105mstation apps update[m
+  [38;2;156;160;176m[m[38;2;210;15;57m✗[m [1;38;2;76;79;105m1 background task failing[m  [38;2;76;79;105mstation background[m
+  [38;2;156;160;176m[m[38;2;223;142;29m◐[m [1;38;2;76;79;105m122 brew updates waiting[m   [38;2;76;79;105mstation apps update --method brew[m
   [38;2;156;160;176m[m[1;38;2;76;79;105m+ 2 more[m
 [1;38;2;76;79;105mMachines[m
   [38;2;156;160;176m[m[38;2;64;160;43m●[m [1;38;2;76;79;105mThis Mac[m       [38;2;76;79;105mMac[m        [38;2;76;79;105mawake until 18:00[m

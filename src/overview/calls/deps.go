@@ -58,7 +58,7 @@ type Deps[App, Item, Misplaced any] struct {
 	Updates Updates
 	Tailnet Tailnet
 	Engine  Engine
-	Power   Power
+	Awake   Awake
 	// value: the servers this Mac runs; nil where none can run.
 	Servers    Servers
 	Hypervisor Hypervisor
@@ -83,10 +83,10 @@ type Engine interface {
 	Ping(ctx context.Context) (version string, err error)
 }
 
-type Power interface {
-	// value: the daemon's Power session on this host; ok false where Power
-	// cannot be read (a VM, no power management, the daemon down).
-	Session(ctx context.Context) (s overview.PowerState, ok bool)
+type Awake interface {
+	// value: this Mac's keep-awake, held by its engine; ok false where it
+	// cannot be read (a VM, no power management, the engine down).
+	Session(ctx context.Context) (s overview.AwakeState, ok bool)
 }
 
 type Servers interface {

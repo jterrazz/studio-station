@@ -65,7 +65,7 @@ func (o Menubar) Feed() engine.Feed {
 // runs at rest, and the channel closes when the watch ends.
 func (f *menubar) run(ctx context.Context, in engine.FeedInput) {
 	defer close(f.out)
-	f.update(ctx, func(r *pagemenubar.Reading) { r.Power = f.o.Report(in.Power()) })
+	f.update(ctx, func(r *pagemenubar.Reading) { r.Awake = f.o.Report(in.Awake()) })
 	var wg sync.WaitGroup
 	for _, loop := range []func(context.Context, engine.FeedInput){f.sample, f.todo, f.remote, f.local} {
 		wg.Add(1)
@@ -191,7 +191,7 @@ func (f *menubar) local(ctx context.Context, in engine.FeedInput) {
 		}
 		fl, sv, ferr, serr := f.read(ctx, true)
 		f.update(ctx, func(r *pagemenubar.Reading) {
-			r.Power = f.o.Report(in.Power())
+			r.Awake = f.o.Report(in.Awake())
 			if ferr == nil && len(fl.Macs) == 1 {
 				r.All = hereAllMachines(r.All, fl)
 			}

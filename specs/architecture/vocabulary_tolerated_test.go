@@ -10,8 +10,8 @@ func vocabularyTolerated() map[string][]string {
 		// value: the docs, which L58 rewrites in v3's words.
 		"docs":           {"config", "daemon", "fleet", "host", "lasting", "lease", "publish", "service", "temporary", "tools"},
 		"docs/concepts":  {"NAT", "config", "fleet", "host", "lasting", "lease", "lend", "place", "probe", "publish", "reset", "sandbox", "service", "storage", "stray", "temporary", "tool", "tools"},
-		"docs/guides":    {"a check", "fleet", "host", "place", "probe", "publish", "sandbox", "service", "tool", "tools"},
-		"docs/reference": {"NAT", "OrbStack", "a check", "config", "daemon", "fleet", "host", "lease", "lend", "place", "probe", "publish", "service", "storage", "stray", "tool", "tools", "wish"},
+		"docs/guides":    {"a check", "fleet", "host", "place", "power", "probe", "publish", "sandbox", "service", "tool", "tools"},
+		"docs/reference": {"NAT", "OrbStack", "a check", "config", "daemon", "fleet", "host", "lease", "lend", "place", "power", "probe", "publish", "service", "storage", "stray", "tool", "tools", "wish"},
 		"docs/start":     {"clean", "config", "host", "lend", "tools"},
 		// value: the old CLI suite, kept untouched (PLAN rule 4) until its
 		// documents move.
@@ -32,8 +32,8 @@ func vocabularyTolerated() map[string][]string {
 		"src/domain/config":     {"config", "here", "place", "service"},
 		"src/domain/guest":      {"host", "publish", "service"},
 		"src/domain/images":     {"clean", "publish", "service"},
-		"src/domain/machines":   {"config", "daemon", "fleet", "here", "host", "lease", "probe", "service"},
-		"src/domain/power":      {"daemon", "here", "host", "reset", "service"},
+		"src/domain/machines":   {"config", "daemon", "fleet", "here", "host", "lease", "power", "probe", "service"},
+		"src/domain/power":      {"daemon", "here", "host", "power", "reset", "service"},
 		"src/domain/secrets":    {"here", "host", "probe", "service"},
 		"src/domain/services":   {"daemon", "fleet", "here", "host", "lease", "publish", "service"},
 		"src/domain/settings":   {"config", "here", "host", "service"},
@@ -73,9 +73,11 @@ func legacyEncodings() []string {
 		"src/pages/apps AppStatusJSON",
 		"src/pages/apps statusV1Category",
 		"src/pages/home SnapshotJSON",
+		"src/pages/home awakeJSON",
 		"src/pages/home stationJSON",
 		"src/pages/home workspaceJSON",
 		"src/pages/settings ItemJSON",
+		"src/ports Reservation",
 		"src/ports/contract RetiredGroupPorts",
 		"src/setup/contract RetiredGroupName",
 		"src/surface/cli/kit RetiredEngineCommand",

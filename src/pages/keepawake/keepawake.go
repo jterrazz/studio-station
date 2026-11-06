@@ -1,4 +1,4 @@
-package power
+package keepawake
 
 import (
 	"strconv"
@@ -200,7 +200,7 @@ func items(rows []page.Row) []page.Item {
 }
 
 func Session(r power.Report) page.Section {
-	s := page.Section{ID: "power", Title: "Awake", Columns: columns(), Items: items(sessionRows(r))}
+	s := page.Section{ID: "keep-awake", Title: "Awake", Columns: columns(), Items: items(sessionRows(r))}
 	if r.Session != nil && r.Engine == power.DaemonRunning {
 		s.Role = page.Banner
 		s.Caption = []page.Value{page.Texts(append(append([]string{"awake"}, flags(*r.Session)...), left(r))...)}
@@ -214,7 +214,7 @@ func Page(r power.Report, thisMac page.Context) page.Page {
 	for _, g := range gs {
 		rows = append(rows, guardRow(r, g, false))
 	}
-	p := page.Page{ID: "power", Command: "awake", Context: thisMac, Sections: []page.Section{
+	p := page.Page{ID: "keep-awake", Command: "awake", Context: thisMac, Sections: []page.Section{
 		Session(r),
 		{ID: "guards", Title: "Guards", Columns: columns(), Items: items(rows)},
 		{ID: "reading", Title: "Reading", Uncounted: true, Columns: columns(), Items: reading(r.Reading)},

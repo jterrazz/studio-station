@@ -12,8 +12,8 @@ import (
 )
 
 const (
-	PagePower   = "power"
-	PageMenubar = "menubar"
+	PageKeepAwake = "keep-awake"
+	PageMenubar   = "menubar"
 	// value: the menu bar's pages of SPEC §10.2, each watched by its name
 	// and, after a colon, its subject: `menubar.machine:infra`, that
 	// machine's page; `menubar.ports:jterrazz-mac-mini`, the ports of that
@@ -32,7 +32,7 @@ type FeedInput struct {
 	// value: the daemon's own state moved (VMs, guests, leases, Power).
 	Changed <-chan struct{}
 	Refresh <-chan struct{}
-	Power   func() power.View
+	Awake   func() power.View
 	// value: what a page is of, after its page's name (`menubar.machine:infra`,
 	// `menubar.ports:jterrazz-mac-mini`); empty for every other page.
 	Subject string
@@ -152,8 +152,8 @@ func (d *Engine) watchState() {
 }
 
 func (d *Engine) known(id string) bool {
-	if id == PagePower {
-		return d.o.PowerPage != nil
+	if id == PageKeepAwake {
+		return d.o.KeepAwakePage != nil
 	}
 	_, ok := d.o.Feeds[id]
 	if feed, subject := feedOf(id); !ok && subject != "" {
@@ -163,7 +163,7 @@ func (d *Engine) known(id string) bool {
 }
 
 func (d *Engine) CheckPages(pages []string) error {
-	hint := "watch page with the pages menubar, menubar.switcher, menubar.machine:<name>, menubar.ports[:<mac>], menubar.awake, menubar.activity[:<window>] or power"
+	hint := "watch page with the pages menubar, menubar.switcher, menubar.machine:<name>, menubar.ports[:<mac>], menubar.awake, menubar.activity[:<window>] or keep-awake"
 	if len(pages) == 0 {
 		return fault("unknown_page", "the watch names no page", hint)
 	}
@@ -201,7 +201,7 @@ func (l *latest) get(id string) (json.RawMessage, bool) {
 // invariant: a feed's first page is its frame and goes out before any
 // other, never coalesced away by the reads that answer right after it.
 func (d *Engine) feed(ctx context.Context, id string, sub *subscriber, into *latest, first chan<- json.RawMessage) {
-	in := FeedInput{Changed: sub.inlets[id].state, Refresh: sub.inlets[id].refresh, Power: d.power.View}
+	in := FeedInput{Changed: sub.inlets[id].state, Refresh: sub.inlets[id].refresh, Awake: d.awakeJob.View}
 	feed, ok := d.o.Feeds[id]
 	if !ok {
 		var name string
@@ -246,7 +246,7 @@ func (d *Engine) Stream(ctx context.Context, pages []string, write func(any) err
 	frames := map[string]chan json.RawMessage{}
 	var feeds sync.WaitGroup
 	for _, id := range pages {
-		if id != PagePower {
+		if id != PageKeepAwake {
 			frames[id] = make(chan json.RawMessage, 1)
 			feeds.Add(1)
 			go func() {
@@ -266,8 +266,8 @@ func (d *Engine) Stream(ctx context.Context, pages []string, write func(any) err
 	}()
 	last := map[string]string{}
 	pageOf := func(id string) (json.RawMessage, bool) {
-		if id == PagePower {
-			data, err := json.Marshal(d.o.PowerPage(d.power.View()))
+		if id == PageKeepAwake {
+			data, err := json.Marshal(d.o.KeepAwakePage(d.awakeJob.View()))
 			return data, err == nil
 		}
 		return fed.get(id)

@@ -5,6 +5,7 @@ import (
 	"go/ast"
 	"go/parser"
 	"go/token"
+	"go/types"
 	"io/fs"
 	"maps"
 	"os"
@@ -17,9 +18,32 @@ import (
 )
 
 // value: the words of SPEC §2.2 that the code and the docs keep for their
-// own concept: the Tailnet contract, a file's path, the Power contract (the
-// IOKit primitive), a run of blanks.
-func codeWords() []string { return []string{"tailnet", "path", "power", "space"} }
+// own concept: the Tailnet contract, a file's path, a run of blanks.
+func codeWords() []string { return []string{"tailnet", "path", "space"} }
+
+// invariant: the Power contract keeps its name (SPEC §2.2, ARCHITECTURE
+// §4.0): it is the IOKit primitive. Its package, its contract test, its
+// adapters, the platform doors they drive and the world's slice it reads say
+// power; elsewhere a name says it only for a value of that contract. Awake's
+// own pages, ids and fields never do.
+func powerContract(dir, word string) bool {
+	return word == "power" && slices.Contains([]string{
+		"src/awake/contract", "src/awake/contract/contracttest", "src/awake/adapter/fake", "src/awake/adapter/macos",
+		"src/platform/local", "src/platform/darwin", "src/world",
+	}, dir)
+}
+
+func holdsPowerContract(obj types.Object) bool {
+	t := types.Unalias(obj.Type())
+	if sig, ok := t.(*types.Signature); ok && sig.Results().Len() == 1 {
+		t = types.Unalias(sig.Results().At(0).Type())
+	}
+	if p, ok := t.(*types.Pointer); ok {
+		t = p.Elem()
+	}
+	named, ok := t.(*types.Named)
+	return ok && named.Obj().Name() == "Power" && named.Obj().Pkg() != nil && strings.HasSuffix(named.Obj().Pkg().Path(), "/src/awake/contract")
+}
 
 func codeBanned() []banned {
 	return slices.DeleteFunc(bannedWords(), func(b banned) bool {
@@ -181,7 +205,9 @@ func sourceTexts(w *world) []corpusText {
 		if f.test {
 			continue
 		}
-		dir := filepath.Dir(f.rel)
+		// invariant: a file cgo rewrote is read from the build cache, in the
+		// folder of the package it belongs to.
+		dir := "src/" + f.pkg
 		base := strings.TrimSuffix(filepath.Base(f.rel), ".go")
 		out = append(out, corpusText{dir, f.rel, splitText(base)}, corpusText{dir, f.rel, splitText(f.syntax.Name.Name)})
 		skip := map[ast.Node]bool{}
@@ -209,7 +235,7 @@ func sourceTexts(w *world) []corpusText {
 				skip[call.Args[0]] = true
 			}
 			x, ok := n.(*ast.Ident)
-			if !ok || skip[x] || x == f.syntax.Name || f.info.Defs[x] == nil || aliasName(x.Name) {
+			if !ok || skip[x] || x == f.syntax.Name || f.info.Defs[x] == nil || aliasName(x.Name) || holdsPowerContract(f.info.Defs[x]) {
 				return true
 			}
 			out = append(out, corpusText{dir, f.at(x.Pos()), splitText(x.Name)})
@@ -298,7 +324,9 @@ func swiftTexts(root string) ([]corpusText, error) {
 			}
 			at := fmt.Sprintf("%s:%d", rel, i+1)
 			for _, s := range swiftStringRe.FindAllString(line, -1) {
-				out = append(out, corpusText{dir, at, strings.Trim(s, `"`)})
+				if text := strings.Trim(s, `"`); !foreignShape.MatchString(text) {
+					out = append(out, corpusText{dir, at, text})
+				}
 			}
 			for _, m := range swiftDeclRe.FindAllStringSubmatch(line, -1) {
 				out = append(out, corpusText{dir, at, splitText(m[1])})
@@ -329,7 +357,7 @@ func vocabularySaid(texts []corpusText) (said, where map[string][]string) {
 	said, where = map[string][]string{}, map[string][]string{}
 	for _, c := range texts {
 		for _, word := range saysBanned(codeBanned(), []string{c.text}) {
-			if catalogueApp(c.dir, word) {
+			if catalogueApp(c.dir, word) || powerContract(c.dir, word) {
 				continue
 			}
 			if !slices.Contains(said[c.dir], word) {
@@ -377,6 +405,26 @@ func ruleVocabularySource(w *world) []finding {
 
 func TestVocabularySource(t *testing.T) { judge(t, "Vocabulary") }
 
+func TestVocabularySourceNamesAwake(t *testing.T) { judge(t, "VocabularyAwake") }
+
+func TestVocabularyKeepsPowerForItsContractOnly(t *testing.T) {
+	planted := []corpusText{
+		{"src/awake/contract", "src/awake/contract/power.go:1", "power"},
+		{"src/platform/local", "src/platform/local/power_mac.go:1", "new power"},
+		{"src/engine", "src/engine/awake.go:1", "power ended"},
+		{"src/pages/menubar", "src/pages/menubar/menubar.go:1", "power-sleep"},
+		{"apps/menubar/sources/page", "apps/menubar/sources/page/Page.swift:1", "power"},
+	}
+	found := ruleVocabularyIn(planted, func(string) bool { return false })
+	got := make([]string, 0, len(found))
+	for _, f := range found {
+		got = append(got, f.where)
+	}
+	if want := []string{"apps/menubar/sources/page/Page.swift:1", "src/engine/awake.go:1", "src/pages/menubar/menubar.go:1"}; !slices.Equal(got, want) {
+		t.Errorf("the rule reports power at %v, want %v: only the Power contract keeps the word", got, want)
+	}
+}
+
 func TestVocabulary(t *testing.T) {
 	clean, _ := worlds(t)
 	for _, f := range ruleVocabulary(vocabularyTexts(t, clean)) {
@@ -401,12 +449,12 @@ func TestVocabularyBites(t *testing.T) {
 }
 
 func TestVocabularyKeepsItsPhrases(t *testing.T) {
-	for _, text := range []string{"a URL or host:port", "after a power cut", "the Tailnet contract", "a file's path", "Off here", "git config --global", "dclean"} {
+	for _, text := range []string{"a URL or host:port", "after a power cut", "the Tailnet contract", "a file's path", "Off here", "git config --global", "dclean", "Low Power Mode is on", "deleted when it powers off", "waiting for the VM to power off", "no power management here"} {
 		if got := saysBanned(codeBanned(), []string{text}); len(got) > 0 {
 			t.Errorf("%q says %v, a phrase SPEC §2.2 keeps", text, got)
 		}
 	}
-	for _, text := range []string{"lend list", "the daemon", "a probe", "Storage", "temporary VM"} {
+	for _, text := range []string{"lend list", "the daemon", "a probe", "Storage", "temporary VM", "Power session held", "PowerEnded", "power-awake"} {
 		if got := saysBanned(codeBanned(), []string{splitText(text)}); len(got) != 1 {
 			t.Errorf("%q says %v, want one retired word", text, got)
 		}

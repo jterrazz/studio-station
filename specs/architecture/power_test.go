@@ -47,7 +47,7 @@ func unsafePower() []string {
 }
 
 func powerCode(rel string) bool {
-	for _, dir := range []string{"src/awake/", "src/domain/power/", "src/pages/power/", "src/surface/cli/awake/", "src/pages/awake/", "src/platform/local/power_", "src/platform/darwin/power_"} {
+	for _, dir := range []string{"src/awake/", "src/domain/power/", "src/pages/keepawake/", "src/surface/cli/awake/", "src/pages/awake/", "src/platform/local/power_", "src/platform/darwin/power_"} {
 		if strings.HasPrefix(rel, dir) {
 			return true
 		}

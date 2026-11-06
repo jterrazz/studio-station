@@ -34,10 +34,11 @@ type SnapshotJSON struct {
 	Background  []jobJSON                `json:"background"`
 	Gateways    []checkJSON              `json:"gateways"`
 	Tailnet     pageports.TailnetJSON    `json:"tailnet"`
-	Power       *powerJSON               `json:"power,omitempty"`
+	Power       *awakeJSON               `json:"power,omitempty"`
 }
 
-type powerJSON struct {
+// value: alias of station.status/v1's power, byte for byte one release.
+type awakeJSON struct {
 	Held  bool   `json:"held"`
 	Lid   bool   `json:"lid,omitempty"`
 	Until string `json:"until,omitempty"`
@@ -231,10 +232,10 @@ func SnapshotContract(s Overview) SnapshotJSON {
 	for _, step := range s.Setup.Steps {
 		body.Setup.Steps = append(body.Setup.Steps, stepJSON{Name: step.Name, State: string(step.State), Detail: step.Detail})
 	}
-	if s.PowerKnown {
-		body.Power = &powerJSON{Held: s.Power.Held, Lid: s.Power.Lid}
-		if s.Power.Held {
-			body.Power.Until = s.Power.Until.UTC().Format(time.RFC3339)
+	if s.AwakeKnown {
+		body.Power = &awakeJSON{Held: s.Awake.Held, Lid: s.Awake.Lid}
+		if s.Awake.Held {
+			body.Power.Until = s.Awake.Until.UTC().Format(time.RFC3339)
 		}
 	}
 	return body

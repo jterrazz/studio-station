@@ -35,7 +35,7 @@ func readings(memory, disk, free int64) []activity.Reading {
 		Memory: []activity.Process{{PID: 812, Name: catalog.HypervisorApp, Value: 12.4e9}},
 	}
 	used := memory * 31 / 40
-	at := func(i int) time.Time { return powerNow.Add(time.Duration(i-len(cpu)) * 2 * time.Second) }
+	at := func(i int) time.Time { return keepAwakeNow.Add(time.Duration(i-len(cpu)) * 2 * time.Second) }
 	out := make([]activity.Reading, 0, len(cpu)+1)
 	out = append(out, activity.Reading{Sample: activity.Sample{At: at(0), CPUTotal: 1000, MemUsed: used, MemTotal: memory, DiskTotal: disk, DiskFree: free}, Top: top})
 	for i, c := range cpu {
@@ -64,7 +64,7 @@ func twoMacs() machines.Fleet {
 	linux1 := sized(machines.VM{Name: "linux-1", Image: "linux", Version: "3", Mac: thisMacName, Kind: catalog.Linux, Lifetime: machines.Throwaway, State: machines.Running, SizeGB: 20, IP: "192.168.64.5", Guest: "connected", CreatedAt: built}, 4, 4)
 	api := sized(machines.VM{Name: "api", Image: "linux", Version: "3", Mac: thisMacName, Kind: catalog.Linux, Lifetime: machines.Permanent, State: machines.Stopped, SizeGB: 40, CreatedAt: built}, 4, 8)
 	infra := sized(machines.VM{Name: "infra", Image: "linux", Version: "3", Mac: miniName, Kind: catalog.Linux, Lifetime: machines.AlwaysOn, State: machines.Running, SizeGB: 80, IP: "192.168.64.7", Guest: "connected", Want: "running",
-		Check: "https://infra:6443/readyz", Device: "infra", CreatedAt: built, CheckStatus: machines.CheckStatus{State: machines.CheckPassing, At: powerNow.Add(-40 * time.Second)}}, 8, 24)
+		Check: "https://infra:6443/readyz", Device: "infra", CreatedAt: built, CheckStatus: machines.CheckStatus{State: machines.CheckPassing, At: keepAwakeNow.Add(-40 * time.Second)}}, 8, 24)
 	infra.Resources.DiskBytes = 80 * gb
 	running := machines.DaemonInfo{Known: true, Running: true, Version: "v3.0.0"}
 	return machines.Fleet{Macs: []machines.HostView{
@@ -101,21 +101,21 @@ func twoMacsSummary(updates bool) overview.Summary {
 
 func thisMacAwake() *awake.Report {
 	until := time.Date(2026, 11, 3, 18, 0, 0, 0, time.UTC)
-	return &awake.Report{Now: powerNow, Engine: awake.EngineRunning, Mac: thisMacName, ThisMac: true, Reading: thisMacReading(),
-		Session: &awake.Session{Lid: true, StartedAt: powerNow.Add(-time.Hour), Until: until, By: "station awake --until 18:00 --lid"}}
+	return &awake.Report{Now: keepAwakeNow, Engine: awake.EngineRunning, Mac: thisMacName, ThisMac: true, Reading: thisMacReading(),
+		Session: &awake.Session{Lid: true, StartedAt: keepAwakeNow.Add(-time.Hour), Until: until, By: "station awake --until 18:00 --lid"}}
 }
 
 func miniAwake() awake.Report {
-	return awake.Report{Now: powerNow, Engine: awake.EngineRunning, Mac: miniName, NeverSleeps: true, NeverHeld: true, NeverSince: powerNow.Add(-12 * 24 * time.Hour), Servers: []string{"infra"}}
+	return awake.Report{Now: keepAwakeNow, Engine: awake.EngineRunning, Mac: miniName, NeverSleeps: true, NeverHeld: true, NeverSince: keepAwakeNow.Add(-12 * 24 * time.Hour), Servers: []string{"infra"}}
 }
 
 func twoMacsReading(updates bool) pagemenubar.Reading {
 	f, svc, home := twoMacs(), twoMacsPorts(), twoMacsSummary(updates)
-	return pagemenubar.Reading{Home: &home, Samples: samples(), All: &f, Ports: &svc, Power: thisMacAwake(), Macs: []awake.Report{miniAwake()}}
+	return pagemenubar.Reading{Home: &home, Samples: samples(), All: &f, Ports: &svc, Awake: thisMacAwake(), Macs: []awake.Report{miniAwake()}}
 }
 
 func menubarReadings() (frame, quiet, full pagemenubar.Reading) {
-	off := powerReport(power.DaemonRunning, nil, thisMacReading())
+	off := keepAwakeReport(power.DaemonRunning, nil, thisMacReading())
 	off.Engine, off.ThisMac, off.Mac = awake.EngineRunning, true, thisMacName
 	calm := overviewOf(false)
 	calm.Lines = calm.Lines[:1]
@@ -123,8 +123,8 @@ func menubarReadings() (frame, quiet, full pagemenubar.Reading) {
 	f := twoMacs()
 	alone := machines.Fleet{Macs: []machines.HostView{f.Macs[0]}}
 	alone.Macs[0].VMs = nil
-	frame = pagemenubar.Reading{Power: &off}
-	quiet = pagemenubar.Reading{Home: &calm, Samples: samples(), All: &alone, Power: &off}
+	frame = pagemenubar.Reading{Awake: &off}
+	quiet = pagemenubar.Reading{Home: &calm, Samples: samples(), All: &alone, Awake: &off}
 	full = twoMacsReading(true)
 	return frame, quiet, full
 }
@@ -173,11 +173,11 @@ func linux1Page() pagemenubar.Machine {
 		{Section: "settings", Parts: []overview.Part{overview.Count(catalog.StateDegraded, 2, "need a look", "attention")}},
 		{Section: "disk", Parts: []overview.Part{{Word: "2.4 of 20 GB"}}},
 	}}
-	shares := accounts.Report{Now: powerNow, Engine: accounts.DaemonRunning, Machines: []accounts.Machine{{Name: "linux-1", Kind: accounts.KindVM, Lifetime: "throwaway", Running: true, Accounts: []accounts.Account{
-		{Provider: catalog.ProviderGitHub, State: catalog.StateOK, Origin: accounts.OriginLent, Scopes: []string{"read only"}, Shared: &accounts.Lend{Name: "github", At: powerNow.Add(-8 * time.Hour), Until: powerNow.Add(4 * time.Hour)}},
-		{Provider: catalog.ProviderClaude, State: catalog.StateOK, Origin: accounts.OriginLent, Shared: &accounts.Lend{Name: catalog.ClaudeTokenName, At: powerNow, Until: powerNow.Add(12 * time.Hour)}},
+	shares := accounts.Report{Now: keepAwakeNow, Engine: accounts.DaemonRunning, Machines: []accounts.Machine{{Name: "linux-1", Kind: accounts.KindVM, Lifetime: "throwaway", Running: true, Accounts: []accounts.Account{
+		{Provider: catalog.ProviderGitHub, State: catalog.StateOK, Origin: accounts.OriginLent, Scopes: []string{"read only"}, Shared: &accounts.Lend{Name: "github", At: keepAwakeNow.Add(-8 * time.Hour), Until: keepAwakeNow.Add(4 * time.Hour)}},
+		{Provider: catalog.ProviderClaude, State: catalog.StateOK, Origin: accounts.OriginLent, Shared: &accounts.Lend{Name: catalog.ClaudeTokenName, At: keepAwakeNow, Until: keepAwakeNow.Add(12 * time.Hour)}},
 	}}}}
-	return pagemenubar.Machine{Asks: Levels, Name: "linux-1", All: &f, Summary: &inside, Samples: readings(4*gb, 20*gb, 17_600_000_000), Ports: &svc, Accounts: &shares, Now: powerNow}
+	return pagemenubar.Machine{Asks: Levels, Name: "linux-1", All: &f, Summary: &inside, Samples: readings(4*gb, 20*gb, 17_600_000_000), Ports: &svc, Accounts: &shares, Now: keepAwakeNow}
 }
 
 // value: infra's page from This Mac: up 12 days, its four health steps
@@ -188,7 +188,7 @@ func infraPage() pagemenubar.Machine {
 		{Section: "ports", Parts: []overview.Part{{Word: "Public", N: 1, Key: "public", Counted: true}, {Word: "Private", N: 2, Key: "private", Counted: true}}},
 		{Section: "ssh", Parts: []overview.Part{{Word: "admin@infra"}}},
 	}}
-	return pagemenubar.Machine{Asks: Levels, Name: "infra", All: &f, Summary: &inside, Samples: readings(24*gb, 80*gb, 61_000_000_000), Ports: &svc, Now: powerNow}
+	return pagemenubar.Machine{Asks: Levels, Name: "infra", All: &f, Summary: &inside, Samples: readings(24*gb, 80*gb, 61_000_000_000), Ports: &svc, Now: keepAwakeNow}
 }
 
 // value: mac-mini's page as This Mac reads it from the mini's engine: its
@@ -210,7 +210,7 @@ func miniPage(offline bool) pagemenubar.Machine {
 		s.Engine, s.Needs = overview.EngineNone, nil
 		s.Readiness[3] = overview.Check{Name: machines.ItemDiskUnlock, State: catalog.StateDegraded, Value: "waits at pre-boot", Detail: "station machines unlock mac-mini (from the same network)"}
 	}
-	return pagemenubar.Machine{Asks: Levels, Name: miniName, All: &f, Summary: &s, Ports: &svc, Now: powerNow}
+	return pagemenubar.Machine{Asks: Levels, Name: miniName, All: &f, Summary: &s, Ports: &svc, Now: keepAwakeNow}
 }
 
 func MenubarStream() []byte {
@@ -227,7 +227,7 @@ func MenubarStream() []byte {
 		engine.Event{Event: "page", Page: frame},
 		engine.Event{Event: "page", Page: ready},
 		engine.Event{Event: "tick", At: "2026-11-03T10:30:15Z"},
-		engine.Event{Event: "notice", Notice: &engine.Notice{Kind: engine.NoticeEnded, Text: "Power ended: battery 20% on battery"}},
+		engine.Event{Event: "notice", Notice: &engine.Notice{Kind: engine.NoticeAwakeEnded, Text: engine.AwakeStopped("battery 20 %")}},
 	}
 	type answer struct {
 		V   int    `json:"v"`
@@ -262,7 +262,7 @@ func EventsStream() []byte {
 	low := activity.Sample{DiskFree: 3_000_000_000, DiskTotal: 100_000_000_000}
 	events := []engine.Told{
 		engine.Restarting("infra", 3), engine.Looping("infra", loop), engine.PoweredOff("infra"), engine.Back("infra"),
-		{Kind: engine.NoticeEnded, Parts: []string{engine.AwakeStopped("battery 20 %")}},
+		{Kind: engine.NoticeAwakeEnded, Parts: []string{engine.AwakeStopped("battery 20 %")}},
 		{Kind: engine.EventExposed, Parts: []string{ports.Told(exposed[0])}},
 		{Kind: engine.EventDiskLow, Parts: []string{activity.DiskFreeTold("This Mac", low)}},
 	}

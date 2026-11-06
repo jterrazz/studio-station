@@ -9,7 +9,7 @@ import (
 )
 
 func controlPages() []Fixture {
-	stopped := engine.StopReport{Engine: engine.EngineHalted, Power: engine.PowerEnded, Sharing: true, VMs: []engine.Stopped{
+	stopped := engine.StopReport{Engine: engine.EngineHalted, Awake: engine.AwakeEnded, Sharing: true, VMs: []engine.Stopped{
 		{Name: "linux-1", Lifetime: "throwaway", Result: engine.ResultStopped},
 		{Name: "api", Lifetime: "permanent", Result: engine.ResultStopped},
 	}}

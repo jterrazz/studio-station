@@ -78,7 +78,7 @@ func (m *Mac) Appliers() []contract.Applier {
 	return []contract.Applier{
 		procedure{of: catalog.ProcDNS, observe: m.observeDNS, apply: bare(m.applyDNS)},
 		procedure{of: catalog.ProcSpotlight, observe: m.observeSpotlight, apply: bare(m.applySpotlight)},
-		procedure{of: catalog.ProcRestartAfterPowerCut, observe: m.observePower, apply: m.applyPower, undo: m.undoPower},
+		procedure{of: catalog.ProcRestartAfterPowerCut, observe: m.observeRestart, apply: m.applyRestart, undo: m.undoRestart},
 		procedure{of: catalog.ProcAutologin, observe: m.observeAutologin, apply: valued(m.applyAutologin), undo: kept(m.undoAutologin)},
 		procedure{of: catalog.ProcLockAfterLogin, observe: m.observeLock, apply: bare(m.applyLock), undo: kept(m.undoLock)},
 		procedure{of: catalog.ProcSshd, observe: m.observeRemoteLogin, apply: bare(m.applyRemoteLogin), undo: kept(m.undoRemoteLogin)},

@@ -91,7 +91,7 @@ func (m machine) engine(env kit.Env) *engine.Engine {
 			return portscalls.Remember(m.stores.ports(), vm, port, stopped)
 		},
 		State: m.paths.State, ThisMachine: m.kind, Version: m.engineVersion(), StartedAt: m.engineStarted(), PID: os.Getpid(), GuestPort: m.guestPort(),
-		Power: m.powerPort, PowerPage: m.powerPage, Executable: m.sys.Env.Executable(),
+		Power: m.powerPort, KeepAwakePage: m.keepAwakePage, Executable: m.sys.Env.Executable(),
 		NeverSleeps:   func() bool { on, _ := m.stores.neverSleeps().Get(); return on },
 		AccountShares: shares, Peer: m.engineAPI(),
 		Feeds: map[string]engine.Feed{engine.PageMenubar: menubar.Feed(), engine.PageSwitcher: menubar.Switcher(), engine.PageMachine: menubar.Machine(),

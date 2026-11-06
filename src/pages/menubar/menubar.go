@@ -15,7 +15,7 @@ import (
 	"github.com/jterrazz/studio-station/src/page"
 	pageengine "github.com/jterrazz/studio-station/src/pages/engine"
 	pagehome "github.com/jterrazz/studio-station/src/pages/home"
-	pagepower "github.com/jterrazz/studio-station/src/pages/power"
+	pagekeepawake "github.com/jterrazz/studio-station/src/pages/keepawake"
 	"github.com/jterrazz/studio-station/src/ports"
 )
 
@@ -28,8 +28,8 @@ const (
 	ActionOpenStation = "open-station"
 	ActionStopAll     = "stop-all"
 	ActionStart       = "start"
-	ActionPowerAwake  = "power-awake"
-	ActionPowerSleep  = "power-sleep"
+	ActionKeepAwake   = "awake-keep"
+	ActionAwakeOff    = "awake-off"
 	ActionUpdateAll   = "update-all"
 
 	SectionNeeds    = "needs-you"
@@ -44,7 +44,7 @@ type Reading struct {
 	Samples []activity.Reading
 	All     *machines.Fleet
 	Ports   *ports.AllMachines
-	Power   *awake.Report
+	Awake   *awake.Report
 	// value: every other Mac's Awake, as its engine reports it.
 	Macs []awake.Report
 }
@@ -53,7 +53,7 @@ func Page(r Reading, thisMac page.Context) page.Page {
 	p := page.Page{ID: ID, Command: "menubar", Context: thisMac, Strip: strip(r.Samples)}
 	needs := needsYou(r)
 	p.Sections = []page.Section{needs, Tree(r.All, r.Ports, homeLine(r)), awakeTile(r), accountsTile(r.Home)}
-	p.Actions = append([]page.Action{newVM(), openStation(), stopAll(r)}, powerAction(r.Power))
+	p.Actions = append([]page.Action{newVM(), openStation(), stopAll(r)}, awakeAction(r.Awake))
 	if update := updateAll(needs, r.Home); update != nil {
 		p.Actions = append(p.Actions, *update)
 	}
@@ -204,8 +204,8 @@ func updateAll(needs page.Section, home *overview.Summary) *page.Action {
 func homeLine(r Reading) func(h machines.HostView) page.Value {
 	return func(h machines.HostView) page.Value {
 		if h.ThisMac {
-			if r.Power != nil {
-				if w := awakeWords(*r.Power); w != "" {
+			if r.Awake != nil {
+				if w := awakeWords(*r.Awake); w != "" {
 					return page.Text("awake " + w)
 				}
 			}
@@ -239,9 +239,9 @@ func awakeWords(r awake.Report) string {
 func awakeTile(r Reading) page.Section {
 	var parts []page.Value
 	self := ""
-	if r.Power != nil {
-		self = r.Power.Mac
-		parts = append(parts, page.Text(page.ThisMac+" "+cmpWord(awakeWords(*r.Power), "sleeps normally")))
+	if r.Awake != nil {
+		self = r.Awake.Mac
+		parts = append(parts, page.Text(page.ThisMac+" "+cmpWord(awakeWords(*r.Awake), "sleeps normally")))
 	}
 	for _, m := range r.Macs {
 		if !m.ThisMac {
@@ -249,10 +249,10 @@ func awakeTile(r Reading) page.Section {
 		}
 	}
 	value := page.Pending()
-	if r.Power != nil {
+	if r.Awake != nil {
 		value = page.List(parts...)
 	}
-	row := page.Row{ID: pagepower.RowAwake, Label: "Awake", Cells: []page.Value{value}}
+	row := page.Row{ID: pagekeepawake.RowAwake, Label: "Awake", Cells: []page.Value{value}}
 	return page.Section{ID: SectionAwake, Title: "Awake", Role: page.Summary, Columns: columns(), Items: []page.Item{{Row: &row}}}
 }
 
@@ -346,17 +346,17 @@ func stopAll(r Reading) page.Action {
 
 // invariant: the Awake switch is the tile's action, awake with its form
 // while off and sleep while a session holds.
-func powerAction(r *awake.Report) page.Action {
-	rows := []string{pagepower.RowAwake}
+func awakeAction(r *awake.Report) page.Action {
+	rows := []string{pagekeepawake.RowAwake}
 	if r != nil && r.Session != nil && r.Engine == awake.EngineRunning {
-		return page.Action{ID: ActionPowerSleep, Label: "sleep", On: page.OnRow, Rows: rows, Priority: 4, Mutates: true, Run: &page.Run{Call: CallSleep}}
+		return page.Action{ID: ActionAwakeOff, Label: "sleep", On: page.OnRow, Rows: rows, Priority: 4, Mutates: true, Run: &page.Run{Call: CallSleep}}
 	}
 	terms := []int{1, 4, 8}
 	opts := make([]page.Option, 0, len(terms))
 	for _, h := range terms {
 		opts = append(opts, page.Option{Value: strconv.FormatInt(int64(time.Duration(h)*time.Hour), 10), Label: strconv.Itoa(h) + " h"})
 	}
-	return page.Action{ID: ActionPowerAwake, Label: "awake", On: page.OnRow, Rows: rows, Priority: 4, Mutates: true, Run: &page.Run{Call: CallAwake},
+	return page.Action{ID: ActionKeepAwake, Label: "awake", On: page.OnRow, Rows: rows, Priority: 4, Mutates: true, Run: &page.Run{Call: CallAwake},
 		Form: &page.Form{Title: "Awake", Fields: []page.Field{
 			{Key: "For", Label: "Keep awake for", Kind: page.FieldSelect, Default: strconv.FormatInt(int64(4*time.Hour), 10), Options: opts},
 			{Key: "Lid", Label: "Lid", Kind: page.FieldSelect, Default: "Lid=false", Options: []page.Option{

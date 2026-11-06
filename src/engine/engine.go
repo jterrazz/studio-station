@@ -66,7 +66,7 @@ type Options struct {
 	// value: the never_sleeps preference, read at start and every 30 ticks.
 	NeverSleeps func() bool
 	// value: the power page a subscription streams, built by the caller's pages.
-	PowerPage func(power.View) any
+	KeepAwakePage func(power.View) any
 	// value: the other pages a subscription streams (the menu bar's), by id.
 	Feeds map[string]Feed
 	// value: the station binary hello names, the one a terminal opens.
@@ -120,7 +120,7 @@ type Engine struct {
 	issuing      bool
 	started      time.Time
 	note         func(line string)
-	power        *power.Machine
+	awakeJob     *power.Machine
 	awake        *power.Kept
 	hub          hub
 	history      *activity.History
@@ -165,7 +165,7 @@ func New(h system.Host, hv Hypervisor, guests Guests, m Machines, tn Tailnet, st
 		o.GuestPort = 22
 	}
 	d := &Engine{h: h, hv: hv, guests: guests, m: m, tn: tn, st: st, o: o, vms: map[string]*vmState{}, svcs: map[string]*svc{}, heard: map[string][]ports.Listener{}, takeBackFailed: map[string]time.Time{}}
-	d.power = d.newPower()
+	d.awakeJob = d.newAwake()
 	if o.Notifier != nil {
 		d.notifier = o.Notifier(d.logf)
 	}
@@ -222,10 +222,10 @@ func (d *Engine) Run(ctx context.Context, note func(line string)) error {
 		_ = d.h.FS.Remove(sock)
 	}()
 	go d.accept(ctx, l)
-	go d.watchPower(ctx)
+	go d.watchAwake(ctx)
 	for tick := 1; ; tick++ {
 		if err := d.h.Clock.Sleep(ctx, d.o.Tick); err != nil {
-			d.power.Quit()
+			d.awakeJob.Quit()
 			d.closeAll()
 			return nil
 		}
@@ -244,9 +244,9 @@ func (d *Engine) Begin(ctx context.Context, note func(line string)) error {
 		return err
 	}
 	d.note, d.life = note, ctx
-	d.power.Reset()
+	d.awakeJob.Reset()
 	if d.awake != nil {
-		d.power.Restore(*d.awake)
+		d.awakeJob.Restore(*d.awake)
 	}
 	if n := d.h.Run.Reap(ChildrenDir(d.o.State)); n > 0 {
 		d.logf("children", "killed "+strconv.Itoa(n)+" process(es) a killed engine left running")
@@ -331,7 +331,7 @@ func (d *Engine) Serve(ctx context.Context, conn io.ReadWriteCloser) {
 }
 
 func (d *Engine) Stop() {
-	d.power.Quit()
+	d.awakeJob.Quit()
 	d.closeAll()
 }
 
@@ -343,7 +343,7 @@ func (d *Engine) step(ctx context.Context, tick int) {
 	d.tick(ctx)
 	d.sweepShares(ctx)
 	d.watchExposure(ctx)
-	d.power.Tick()
+	d.awakeJob.Tick()
 	d.watchState()
 	for _, job := range d.o.Jobs {
 		job(ctx)

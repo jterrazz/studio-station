@@ -117,7 +117,7 @@ func (c *Control) Read(ctx context.Context) (Reading, error) {
 			}
 		}
 	}
-	if v, err := c.c.Power(ctx); err == nil && v.Session != nil {
+	if v, err := c.c.AwakeView(ctx); err == nil && v.Session != nil {
 		until := v.Session.Until
 		r.AwakeUntil = &until
 	}
@@ -169,8 +169,8 @@ type StopReport struct {
 	VMs []Stopped
 	// value: "ended" (the engine ended the Awake session), "reset" (the CLI
 	// set a dead engine's clamshell back to normal), or "" (nothing held, or
-	// no Power here).
-	Power string
+	// no keep-awake here).
+	Awake string
 	// value: the engine stopped sharing the ports of the VMs it stopped.
 	Sharing bool
 	// value: "stopped" (booted out now), "already stopped", "kept" (a VM
@@ -182,8 +182,8 @@ type StopReport struct {
 }
 
 const (
-	PowerEnded   = "ended"
-	PowerCleared = "released"
+	AwakeEnded    = "ended"
+	AwakeReleased = "released"
 )
 
 const (
@@ -201,15 +201,15 @@ func (c *Control) Stop(ctx context.Context, w Work, by string) (StopReport, erro
 			return r, err
 		}
 		r.VMs, r.Sharing = all.VMs, all.SharingEnded
-		if all.PowerEnded {
-			r.Power = PowerEnded
+		if all.AwakeEnded {
+			r.Awake = AwakeEnded
 		}
 	} else {
 		r.VMs = c.stopDirect(ctx, w)
 		// invariant: a clamshell mask a dead engine left is released here, by the
 		// same call the engine makes, so a stop never leaves the lid held.
 		if c.o.Power != nil && c.o.Power.Clamshell(false) == nil {
-			r.Power = PowerCleared
+			r.Awake = AwakeReleased
 		}
 	}
 	for _, v := range r.VMs {

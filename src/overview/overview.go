@@ -28,9 +28,9 @@ type Snapshot[App, Item, Misplaced any] struct {
 	Tailnet     ports.Status
 	// value: the Mac readiness checklist, empty on a Mac that needs none.
 	Readiness []Check
-	Power     PowerState
-	// value: Power was read (a host that has it, its daemon answering).
-	PowerKnown bool
+	Awake     AwakeState
+	// value: Awake was read (a Mac whose engine answers).
+	AwakeKnown bool
 	// value: a section whose reading has not answered; never past a whole read.
 	AppsPending, SettingsPending bool
 	// value: what failed the reading, when a section's read did.
@@ -105,7 +105,7 @@ type Workspace[Misplaced any] struct {
 	DiskPending bool
 }
 
-type PowerState struct {
+type AwakeState struct {
 	Held, Lid bool
 	Until     time.Time
 }

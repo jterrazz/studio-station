@@ -27,9 +27,9 @@ const (
 	GuestExec = "engine.guest-exec"
 	Accounts  = "engine.accounts"
 	StopAll   = "engine.stop-all"
-	Power     = "engine.power"
-	Awake     = "engine.power-awake"
-	Sleep     = "engine.power-sleep"
+	AwakeView = "engine.awake"
+	KeepAwake = "engine.awake-keep"
+	AwakeOff  = "engine.awake-off"
 	Refresh   = "engine.refresh"
 	// value: the activity this engine keeps, of This Mac and of each VM it
 	// sees, in its memory alone.
@@ -164,9 +164,9 @@ func calls(d *engine.Engine, served []string) []call.Handler {
 		}),
 		own(d, Accounts, func(ctx context.Context, d *engine.Engine, _ struct{}) (any, error) { return d.Accounts(ctx), nil }),
 		own(d, StopAll, func(ctx context.Context, d *engine.Engine, _ struct{}) (any, error) { return d.StopAll(ctx), nil }),
-		own(d, Power, func(_ context.Context, d *engine.Engine, _ struct{}) (any, error) { return d.Power(), nil }),
-		own(d, Awake, func(_ context.Context, d *engine.Engine, in engine.AwakeIn) (any, error) { return d.Awake(in) }),
-		own(d, Sleep, func(_ context.Context, d *engine.Engine, _ struct{}) (any, error) { return d.Sleep(), nil }),
+		own(d, AwakeView, func(_ context.Context, d *engine.Engine, _ struct{}) (any, error) { return d.AwakeView(), nil }),
+		own(d, KeepAwake, func(_ context.Context, d *engine.Engine, in engine.AwakeIn) (any, error) { return d.Awake(in) }),
+		own(d, AwakeOff, func(_ context.Context, d *engine.Engine, _ struct{}) (any, error) { return d.Sleep(), nil }),
 		own(d, Activity, func(_ context.Context, d *engine.Engine, _ struct{}) (any, error) { return activityOf(d), nil }),
 		own(d, KeepSettings, func(_ context.Context, d *engine.Engine, in KeepSettingsIn) (any, error) {
 			d.KeepSettings(in.VM, in.Read)

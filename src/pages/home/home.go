@@ -548,15 +548,15 @@ func diskValue(w Workspace) page.Value {
 	return disk
 }
 
-func powerValue(s Overview) page.Value {
-	if !s.Power.Held {
+func awakeValue(s Overview) page.Value {
+	if !s.Awake.Held {
 		return page.Off()
 	}
 	words := []string{"awake"}
-	if s.Power.Lid {
+	if s.Awake.Lid {
 		words = append(words, "lid")
 	}
-	return page.Texts(append(words, pages.Term(s.Power.Until.Sub(s.GeneratedAt))+" left")...)
+	return page.Texts(append(words, pages.Term(s.Awake.Until.Sub(s.GeneratedAt))+" left")...)
 }
 
 func allMachinesValue(s Overview) page.Value {
@@ -606,8 +606,8 @@ func summary(s Overview, detail []page.Section) page.Section {
 		area("disk", "Disk", page.OK, diskValue(s.Workspace)),
 		area("all-machines", "All machines", pages.MarkOf(s.Station.Engine.State), allMachinesValue(s)),
 	)
-	if s.PowerKnown {
-		items = append(items, area("power", "Awake", page.OK, powerValue(s)))
+	if s.AwakeKnown {
+		items = append(items, area("awake", "Awake", page.OK, awakeValue(s)))
 	}
 	if len(s.Gateways) > 0 {
 		items = append(items, area("gateways", "Gateways", worst(find(detail, "gateways")), counts("gateways")))

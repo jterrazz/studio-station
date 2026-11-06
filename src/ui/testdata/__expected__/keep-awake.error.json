@@ -1,6 +1,6 @@
 {
   "schema": "station.page/v1",
-  "id": "power",
+  "id": "keep-awake",
   "command": "awake",
   "context": {
     "kind": "mac"
@@ -8,28 +8,8 @@
   "state": "ready",
   "sections": [
     {
-      "id": "power",
+      "id": "keep-awake",
       "title": "Awake",
-      "role": "banner",
-      "caption": [
-        {
-          "kind": "list",
-          "items": [
-            {
-              "kind": "text",
-              "text": "awake"
-            },
-            {
-              "kind": "text",
-              "text": "lid"
-            },
-            {
-              "kind": "text",
-              "text": "3h 12m left"
-            }
-          ]
-        }
-      ],
       "columns": [
         {
           "key": "name",
@@ -57,71 +37,28 @@
         {
           "row": {
             "id": "awake",
-            "mark": "ok",
+            "mark": "attention",
             "label": "awake",
             "cells": [
               {
-                "kind": "on"
-              },
-              {
-                "kind": "list",
-                "items": [
-                  {
-                    "kind": "text",
-                    "text": "lid"
-                  },
-                  {
-                    "kind": "text",
-                    "text": "until 14:42 (4h)"
-                  }
-                ]
+                "kind": "unknown"
               },
               {
                 "kind": "text",
-                "text": "started 10:42 by station awake 4h --lid"
+                "text": "engine stopped"
               }
-            ]
-          }
-        },
-        {
-          "row": {
-            "id": "display",
-            "mark": "ok",
-            "label": "display",
-            "cells": [
-              {
-                "kind": "text",
-                "text": "sleeps"
-              },
-              {
-                "kind": "text",
-                "text": "on lid close: pmset displaysleepnow (no display assertion)"
-              }
-            ]
-          }
-        },
-        {
-          "row": {
-            "id": "clamshell",
-            "mark": "ok",
-            "label": "clamshell",
-            "cells": [
-              {
-                "kind": "text",
-                "text": "held"
-              },
-              {
-                "kind": "text",
-                "text": "back to normal at the end, at every engine start and quit"
-              }
-            ]
+            ],
+            "reason": "stopped",
+            "hint": {
+              "command": "station engine start"
+            }
           }
         }
       ],
       "counts": [
         {
-          "mark": "ok",
-          "n": 3
+          "mark": "attention",
+          "n": 1
         }
       ]
     },
@@ -155,7 +92,7 @@
         {
           "row": {
             "id": "battery",
-            "mark": "attention",
+            "mark": "ok",
             "label": "battery",
             "cells": [
               {
@@ -163,20 +100,19 @@
                 "items": [
                   {
                     "kind": "text",
-                    "text": "28%"
+                    "text": "80%"
                   },
                   {
                     "kind": "text",
-                    "text": "on battery"
+                    "text": "AC attached"
                   }
                 ]
               },
               {
                 "kind": "text",
-                "text": "the session ends at 20%"
+                "text": "ends a session at 20% on battery"
               }
-            ],
-            "reason": "guard"
+            ]
           }
         },
         {
@@ -233,11 +169,7 @@
       "counts": [
         {
           "mark": "ok",
-          "n": 3
-        },
-        {
-          "mark": "attention",
-          "n": 1
+          "n": 4
         }
       ]
     },
@@ -285,11 +217,11 @@
               "items": [
                 {
                   "kind": "text",
-                  "text": "battery"
+                  "text": "AC"
                 },
                 {
                   "kind": "text",
-                  "text": "28%"
+                  "text": "80%"
                 },
                 {
                   "kind": "text",

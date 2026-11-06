@@ -793,6 +793,7 @@ func rules() []rule {
 		{"EveryCodeWordedRaised", ruleEveryCodeWorded, "src/surface/cli/words/mutant_unraised.go", "package words\n\nimport \"" + module + "/src/core/fail\"\n\nconst mutantUnraised fail.Code = \"usage.needs-terminal\"\n", "src/surface/cli/words/mutant_unraised.go"},
 		{"NoSubprocessInSample", ruleNoSubprocessInSample, "src/activity/adapter/macos/mutant_exec.go", "package macos\n\nimport _ \"os/exec\"\n", "src/activity/adapter/macos/mutant_exec.go"},
 		{"Vocabulary", ruleVocabularySource, "src/apps/mutant_vocabulary.go", "package apps\n\ntype mutantLease struct{ Fleet string }\n", "src/apps/mutant_vocabulary.go"},
+		{"VocabularyAwake", ruleVocabularySource, "src/ports/mutant_awake.go", "package ports\n\ntype mutantStrip struct {\n\tHeld bool `json:\"power\"`\n}\n\nconst mutantHeld = \"Power session held\"\n", "src/ports/mutant_awake.go"},
 		{"Registries", ruleRegistries, "src/present/mutant_registries.go", "package present\n\nvar mutantRegistry = map[string]int{}\n\nfunc init() { mutantRegistry[\"x\"] = 1 }\n", "src/present/mutant_registries.go"},
 	}
 }

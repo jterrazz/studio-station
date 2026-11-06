@@ -23,7 +23,7 @@ import (
 
 func (m machine) awakeDeps() awakecalls.Deps {
 	return awakecalls.Deps{
-		Power: awakeKeeper{m.power()}, Mac: m.profile.Ref.Name, Label: m.label(m.profile.Ref.Name), Caps: m.profile.Caps,
+		Keeper: awakeKeeper{m.awakeService()}, Mac: m.profile.Ref.Name, Label: m.label(m.profile.Ref.Name), Caps: m.profile.Caps,
 		Servers:     func(context.Context) []string { return m.servers() },
 		NeverSleeps: func() bool { on, _ := m.stores.neverSleeps().Get(); return on },
 	}
@@ -58,7 +58,7 @@ func awakeCommand(env kit.Env, m machine) *cobra.Command {
 // awake, a keep-awake and awake off.
 func awakeAliases(env kit.Env, m machine) []*cobra.Command {
 	return []*cobra.Command{kit.Alias("power", awakecmd.Command(m.awakeCmdDeps(env), env,
-		awakecmd.PowerAwake(m.awakeCmdDeps(env), env),
+		awakecmd.PowerAwakeAlias(m.awakeCmdDeps(env), env),
 		kit.Alias("sleep", awakeoff.Command(awakeoff.Deps{ThisMachine: m.where, Label: m.label}, env), "off"),
 	), "awake")}
 }

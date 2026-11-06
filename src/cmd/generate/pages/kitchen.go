@@ -194,7 +194,7 @@ func kitchen(edit func(*page.Page)) page.Page {
 		ID: "home", Command: "status", Context: page.Context{Machine: "jterrazz-macbook-pro", Kind: "mac", Registered: true},
 		Strip: &page.Strip{
 			CPU: page.Percent(340), Spark: []int{3, 10, 25, 40, 60, 80, 100, 50, 34, 20, 10, 5, 0, 15, 30, 34},
-			Memory: page.Ratio(12400000000, 17200000000), Battery: page.Percent(1000), Power: page.Texts("awake", "3h 12m"),
+			Memory: page.Ratio(12400000000, 17200000000), Battery: page.Percent(1000), Awake: page.Texts("awake", "3h 12m"),
 			Net: []page.Value{page.Text("28.2 KB/s"), page.Text("14.5 KB/s")},
 		},
 		Sections: []page.Section{todo, summary, values, marks, allMachines, disk, prose, peers},

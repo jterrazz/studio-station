@@ -1,4 +1,4 @@
-description: 'a laptop''s battery reads its percent, charging, health and cycles from the power door'
+description: 'a laptop''s battery reads its percent, charging, health and cycles from IOPowerSources'
 fixture: ./__fixtures__/power-battery/
 env: engine
 runs:

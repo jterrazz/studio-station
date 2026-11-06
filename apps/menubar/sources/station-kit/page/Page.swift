@@ -212,7 +212,7 @@ public struct Strip: Codable, Equatable, Sendable {
     public var net_spark: [Int]?
     public var battery: Value?
     public var net: [Value]?
-    public var power: Value?
+    public var awake: Value?
     public var top: Section?
 }
 

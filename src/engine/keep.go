@@ -32,7 +32,7 @@ const EventsStream = "engine.events" // value: the name the events watch opens w
 func Notifies(kind string) bool {
 	// value: the closed list of SPEC §10.4: the events the engine's events
 	// watch streams, which the menu bar posts as its notifications.
-	return slices.Contains([]string{EventRestarting, EventLoop, EventPoweredOff, EventBack, NoticeEnded, EventExposed, EventDiskLow}, kind)
+	return slices.Contains([]string{EventRestarting, EventLoop, EventPoweredOff, EventBack, NoticeAwakeEnded, EventExposed, EventDiskLow}, kind)
 }
 
 type Told struct {
