@@ -23,7 +23,7 @@ Each fact has one owner, and Activity reads it there:
 
 | Fact                                                                                                            | Owner                                                                                             |
 | --------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
-| CPU and load, memory used and pressure, swap, disk read and write, network in and out, boot time, the processes | `activity/contract.Meter`: `macos` (sysctl, IOKit block storage, proc_pidinfo), `linux` (`/proc`) |
+| CPU and load, memory used and pressure, swap, disk read and write, network in and out, boot time, the processes | `activity/contract.Meter`: `macos` (sysctl, IOKit block devices, proc_pidinfo), `linux` (`/proc`) |
 | free space                                                                                                      | `disk/contract.DiskUsage`'s volume                                                                |
 | battery and thermal                                                                                             | `awake/contract.Power`'s reading                                                                  |
 | the fixed size (memory, CPUs, model)                                                                            | `core/contract.Self`                                                                              |

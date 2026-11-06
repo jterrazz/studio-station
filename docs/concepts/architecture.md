@@ -55,7 +55,7 @@ Between machines, and the machine's own door:
   platform/
     local/   Runner, FS, Env, Net, Sockets, Clock: the only importer of os/exec, files, the network;
              localtest/, its scripted fakes
-    darwin/  the only cgo: IOKit power and the kernel tables, with their spec seams
+    darwin/  the only cgo: IOKit (battery, lid, thermal, assertions) and the kernel tables, with their spec seams
 ```
 
 The data, the presentation and the surfaces:
@@ -108,7 +108,7 @@ Each contract has a real adapter, a fake in its family's `adapter/fake/`, and a 
 | `accounts`   | `Identities`, `Vault`, `SecretSource`, `ShareStore`                                             | `cli` (catalogue-driven sign-in reads), `tailscale`; `keychain`; `studio`; `jsonfile`                                                  |
 | `background` | `Jobs`                                                                                          | `launchd`                                                                                                                              |
 | `awake`      | `Power`                                                                                         | `macos` (IOKit through `platform/darwin`, `pmset`)                                                                                     |
-| `activity`   | `Meter`                                                                                         | `macos` (sysctl, IOKit block storage, proc_pidinfo), `linux` (`/proc`)                                                                 |
+| `activity`   | `Meter`                                                                                         | `macos` (sysctl, IOKit block devices, proc_pidinfo), `linux` (`/proc`)                                                                 |
 | `engine`     | `Notifier`                                                                                      | `log` (the engine log)                                                                                                                 |
 | `remote`     | `Endpoint` and `EndpointDialer`                                                                 | `unix` (this Mac's engine socket), `sshstdio` (another Mac: `ssh <mac> station engine attach`)                                         |
 | `core`       | `Self`, `Preferences`                                                                           | `macos`, `linux`; `jsonfile` (`preferences.json`)                                                                                      |
@@ -139,7 +139,7 @@ So there is one way into a VM (its Mac's engine and its one `Guest` connection) 
 | `guest`    | per running VM                                         | holds its one `Guest` connection: dial after boot, redial, close at the end; every other job uses it                |
 | `share`    | on a reservation change, on the loop                   | reconciles what Tailscale Serve shares with the reserved ports                                                      |
 | `expire`   | every minute                                           | takes back a shared account whose term ended                                                                        |
-| `awake`    | on power events, on `never_sleeps`, on the loop        | holds the keep-awake session and Never sleeps (`Power.Hold`), ends them by the guards this Mac's capabilities allow |
+| `awake`    | on a reading change, on `never_sleeps`, on the loop    | holds the keep-awake session and Never sleeps (`Power.Hold`), ends them by the guards this Mac's capabilities allow |
 | `sample`   | every 2 s while a surface watches a machine, else 60 s | feeds Activity's history (`engine/jobs`)                                                                            |
 | `exposure` | every 5 min                                            | reads every listener of this Mac and its VMs; a port reachable outside Tailscale undeclared is told                 |
 
