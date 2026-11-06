@@ -51,7 +51,7 @@ There is no flag to pass a value: a secret never travels in argv or shell histor
 
 ```json
 {
-    "here": "macbook",
+    "name": "macbook",
     "macs": {
         "macbook": {},
         "mac-mini": { "user": "jterrazz.agent", "key": "~/.ssh/id_ed25519", "lan": "192.168.1.20" }
@@ -64,7 +64,7 @@ There is no flag to pass a value: a secret never travels in argv or shell histor
 }
 ```
 
-`here` is this machine's name, `macs` the other Macs it can drive (`machines add` and `machines forget` write it; a file that still keeps them under `hosts`, as station v3.0 did, is read the same and written under `macs` at the next save; `lan` is the address that Mac last answered with on your LAN, which `machines unlock` dials), `vm_user` the one login of every VM in the fleet, `share_list` the secrets whose accounts may be shared with a VM, written by hand ([Secrets](secrets.md#sharing-accounts)), `services` the policy of [published services](services.md#the-policy): `range` the host ports leases take, `max_per_vm` the leases one VM may hold, `ignored_ports` and `min_port` what is never published, `https` `port`, `path` or `off`; every `services` key is optional, the defaults being `40000-40999`, 20, `[22]`, 1024 and `port`. No secret is in it. A key no group names, such as the `tailnet` an earlier round wrote, is dropped at the next save and at setup's layout step. A `v` field names the version of the shape the file was written at; absent, it is version 1, and a file a newer station wrote is refused rather than read.
+`name` is this machine's name (a file station v2 left keeps it under `here`, read once and written as `name`), `macs` the other Macs it can drive (`machines add` and `machines forget` write it; a file that still keeps them under `hosts`, as station v3.0 did, is read the same and written under `macs` at the next save; `lan` is the address that Mac last answered with on your LAN, which `machines unlock` dials), `vm_user` the one login of every VM in the fleet, `share_list` the secrets whose accounts may be shared with a VM, written by hand ([Secrets](secrets.md#sharing-accounts)), `services` the policy of [published services](services.md#the-policy): `range` the host ports leases take, `max_per_vm` the leases one VM may hold, `ignored_ports` and `min_port` what is never published, `https` `port`, `path` or `off`; every `services` key is optional, the defaults being `40000-40999`, 20, `[22]`, 1024 and `port`. No secret is in it. A key no group names, such as the `tailnet` an earlier round wrote, is dropped at the next save and at setup's layout step. A `v` field names the version of the shape the file was written at; absent, it is version 1, and a file a newer station wrote is refused rather than read.
 
 ## Environment
 
