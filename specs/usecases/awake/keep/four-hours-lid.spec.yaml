@@ -1,5 +1,9 @@
 description: 'awake 4h --lid holds one assertion and the clamshell, and the page says until when'
-env: on-battery
+fixture:
+    - ../../../__fixtures__/terminal/
+env:
+    - on-battery
+    - terminal
 runs:
     - command: 'awake 4h --lid'
       exit: 0
@@ -18,3 +22,10 @@ runs:
       exit: 0
       stdout: |
           	Awake	● until 14:00 · lid closed
+    - command: '--version >/dev/null; terminal --size 100x20 /usr/bin/env -u NO_COLOR COLUMNS=100 "$STATION" awake 4h --lid'
+      stdin: |
+          within 20 exit 0
+          screen
+      exit: 0
+      stdout: |
+          ✓ This Mac now stays awake until 14:01 · lid closed

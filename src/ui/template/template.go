@@ -106,7 +106,7 @@ func firstLine(sections []page.Section) int {
 //
 // invariant: an outcome's line leads with its mark, a glyph with its word
 // (SPEC §2.3, §12.1), a step that passed ticked:
-// `✓ linux-1 · stopped, kept`.
+// `✓ This Mac stays awake until 18:00 · lid closed`.
 func summed(st token.Styles, r page.Row, width int, outcome bool) []string {
 	label := r.Label
 	if r.Short != "" {
@@ -119,6 +119,9 @@ func summed(st token.Styles, r page.Row, width int, outcome bool) []string {
 		} else if !c.IsNone() {
 			parts = append(parts, c)
 		}
+	}
+	if r.Sentence && len(parts) > 1 {
+		parts = append([]page.Value{page.Text(label + " " + atom.Show(parts[1]))}, parts[2:]...)
 	}
 	if !outcome || r.Mark == page.Unjudged {
 		return sums(st, parts, width, false)

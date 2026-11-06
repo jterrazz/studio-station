@@ -142,11 +142,14 @@ type Row struct {
 	Label string `json:"label,omitempty"`
 	// value: the label a terminal shows when the full one is for records
 	// (a launchd label without its owner's prefix); the pipe and json keep Label.
-	Short  string  `json:"short,omitempty"`
-	Cells  []Value `json:"cells,omitempty"`
-	Detail Value   `json:"detail,omitzero"`
-	Reason Reason  `json:"reason,omitempty"`
-	Hint   *Hint   `json:"hint,omitempty"`
+	Short string `json:"short,omitempty"`
+	// value: on a terminal, the label is the subject of the row's first
+	// words, one sentence with them (`This Mac stays awake until 18:00`).
+	Sentence bool    `json:"sentence,omitempty"`
+	Cells    []Value `json:"cells,omitempty"`
+	Detail   Value   `json:"detail,omitzero"`
+	Reason   Reason  `json:"reason,omitempty"`
+	Hint     *Hint   `json:"hint,omitempty"`
 }
 
 type Fact struct {
