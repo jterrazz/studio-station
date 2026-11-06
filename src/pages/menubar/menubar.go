@@ -177,13 +177,13 @@ func needsYou(r Reading) page.Section {
 // finding by its words up to a comma.
 func glance(needs []overview.Need) []page.Value {
 	var updates, failing, left int
-	var signins, folders, settings, others []string
+	var accountsOut, folders, settings, others []string
 	for _, n := range needs {
 		switch n.Section {
 		case section.Apps:
 			updates += leading(n.Text)
 		case section.Accounts:
-			signins = append(signins, n.Subject+" sign-in")
+			accountsOut = append(accountsOut, n.Subject+" sign-in")
 		case section.Disk:
 			folders = append(folders, n.Subject)
 		case section.Settings:
@@ -203,7 +203,7 @@ func glance(needs []overview.Need) []page.Value {
 	if updates > 0 {
 		parts = append(parts, counted(updates, "update", "updates"))
 	}
-	parts = append(parts, signins...)
+	parts = append(parts, accountsOut...)
 	parts = append(parts, grouped(folders, "folders to move")...)
 	parts = append(parts, grouped(settings, "settings")...)
 	if failing > 0 {
