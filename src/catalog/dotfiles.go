@@ -18,3 +18,14 @@ const (
 fi
 `
 )
+
+// value: where the tool manager keeps its runtimes (the variable that moves
+// them, its default under home, the folder of its shims), and the global
+// bins under home the shell loader puts on PATH.
+const (
+	ToolDataVar = "MISE_DATA_DIR"
+	ToolData    = ".local/share/mise"
+	ToolShims   = "shims"
+)
+
+var GlobalBins = []string{".local/share/bun/bin", ".local/share/go/bin"}

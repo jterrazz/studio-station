@@ -198,19 +198,20 @@ func widthOf(f *os.File, isTerminal bool) int {
 	return w
 }
 
-// value: the shell loader puts bun's and go's global bins on an interactive PATH;
-// station appends them to its own, so what it installed there answers a
-// non-interactive caller too, and the caller's PATH still wins. A VM's guest is
-// started over ssh with the system's PATH, which also lacks the shell block's
-// ~/.local/bin and mise's runtimes: it appends those first.
+// value: the shell loader puts the global bins of the catalogue on an
+// interactive PATH; station appends them to its own, so what it installed
+// there answers a non-interactive caller too, and the caller's PATH still
+// wins. A VM's guest is started over ssh with the system's PATH, which also
+// lacks the shell block's ~/.local/bin and the tool manager's runtimes: it
+// appends those first.
 func withToolBins(env []string, guest bool) []string {
-	home, mise, path, at := "", "", "", -1
+	home, tools, path, at := "", "", "", -1
 	for i, kv := range env {
 		switch k, v, _ := strings.Cut(kv, "="); k {
 		case "HOME":
 			home = v
-		case "MISE_DATA_DIR":
-			mise = v
+		case catalog.ToolDataVar:
+			tools = v
 		case "PATH":
 			path, at = v, i
 		}
@@ -218,15 +219,17 @@ func withToolBins(env []string, guest bool) []string {
 	if home == "" {
 		return env
 	}
-	if !filepath.IsAbs(mise) {
-		mise = filepath.Join(home, ".local", "share", "mise")
+	if !filepath.IsAbs(tools) {
+		tools = filepath.Join(home, catalog.ToolData)
 	}
 	have := strings.Split(path, ":")
 	var dirs []string
 	if guest {
-		dirs = append(dirs, filepath.Join(home, ".local", "bin"), filepath.Join(mise, "shims"))
+		dirs = append(dirs, filepath.Join(home, ".local", "bin"), filepath.Join(tools, catalog.ToolShims))
 	}
-	dirs = append(dirs, filepath.Join(home, ".local", "share", "bun", "bin"), filepath.Join(home, ".local", "share", "go", "bin"))
+	for _, bin := range catalog.GlobalBins {
+		dirs = append(dirs, filepath.Join(home, bin))
+	}
 	for _, dir := range dirs {
 		if !slices.Contains(have, dir) {
 			if path != "" {
