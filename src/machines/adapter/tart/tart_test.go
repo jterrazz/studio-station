@@ -111,7 +111,9 @@ func newMachine(t *testing.T) *machine {
 	return &machine{run: run, fs: &lockedFS{FS: systemtest.NewFS()}, kernel: &kernel{files: map[int][]string{}}, disks: map[string]string{}}
 }
 
-func (m *machine) hypervisor() contract.Hypervisor { return New(m.run, m.fs, yielding{}, m.kernel, state) }
+func (m *machine) hypervisor() contract.Hypervisor {
+	return New(m.run, m.fs, yielding{}, m.kernel, state)
+}
 
 func (m *machine) listing() system.Output {
 	type row struct{ Source, Name, State string }
