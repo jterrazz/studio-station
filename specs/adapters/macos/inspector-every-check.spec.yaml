@@ -30,3 +30,9 @@ runs:
           ◐	remote-login	on · not expected on a laptop	System Settings > General > Sharing > Remote Login
           ◐	time-machine	no backup yet	System Settings > General > Time Machine
           ◐	macos-updates	1 update waiting	System Settings > General > Software Update
+    - command: '--version >/dev/null; : > .no-destination'
+      exit: 0
+    - command: 'settings | /usr/bin/grep time-machine'
+      exit: 0
+      stdout: |
+          ◐	time-machine	no backup yet	System Settings > General > Time Machine

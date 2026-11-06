@@ -3,55 +3,43 @@ package mas_test
 import (
 	"context"
 	"errors"
-	"regexp"
 	"strings"
 	"testing"
 
+	"github.com/jterrazz/studio-station/src/apps"
 	"github.com/jterrazz/studio-station/src/apps/adapter/mas"
 	"github.com/jterrazz/studio-station/src/apps/contract"
 	"github.com/jterrazz/studio-station/src/apps/contract/contracttest"
 	"github.com/jterrazz/studio-station/src/catalog"
-	"github.com/jterrazz/studio-station/src/core/call"
 	"github.com/jterrazz/studio-station/src/platform/local"
 )
 
-var line = regexp.MustCompile(`^mas "([^"]*)", id: (\d+)$`)
-
-// value: the App Store as these tests play it, and the bundle that installs
-// its lines.
+// value: the App Store as these tests play it: mas installs, updates and
+// removes by id, and a failing store exits 1.
 type store struct {
 	apps  map[string]string
 	fails bool
 }
 
 func (s *store) play(c local.Cmd) (local.Output, error) {
-	args := strings.Join(c.Args, " ")
+	verb, id, _ := strings.Cut(strings.Join(c.Args, " "), " ")
 	switch {
-	case args == "list":
+	case verb == "list":
 		out := make([]string, 0, len(s.apps))
 		for id, version := range s.apps {
 			out = append(out, id+"  App  ("+version+")")
 		}
 		return local.Output{Stdout: strings.Join(out, "\n")}, nil
-	case strings.HasPrefix(args, "uninstall "):
-		delete(s.apps, strings.TrimPrefix(args, "uninstall "))
+	case s.fails:
+		return local.Output{ExitCode: 1, Stderr: "Failed to download"}, nil
+	case verb == "install" || verb == "update":
+		s.apps[id] = "1.0"
+		return local.Output{Stderr: "==> Downloading App"}, nil
+	case verb == "uninstall":
+		delete(s.apps, id)
 		return local.Output{}, nil
 	}
 	return local.Output{ExitCode: 97}, nil
-}
-
-func (s *store) Name() string { return "the bundle" }
-
-func (s *store) Bundle(_ context.Context, lines []string, _ bool, _ call.Progress) error {
-	if s.fails {
-		return errors.New("the bundle exited 1")
-	}
-	for _, l := range lines {
-		if m := line.FindStringSubmatch(l); m != nil {
-			s.apps[m[2]] = "1.0"
-		}
-	}
-	return nil
 }
 
 func TestInstaller(t *testing.T) {
@@ -64,8 +52,24 @@ func TestInstaller(t *testing.T) {
 		if seed.Absent {
 			names = nil
 		}
-		return mas.New(local.Played(s.play, names...), s)
+		return mas.New(local.Played(s.play, names...))
 	})
+}
+
+func TestASignedOutAppStoreRefusesWithTheSignInHint(t *testing.T) {
+	signedOut := local.Played(func(c local.Cmd) (local.Output, error) {
+		if c.Answer <= 0 {
+			t.Fatalf("mas %v ran with no bound on its first word", c.Args)
+		}
+		return local.Output{}, local.ErrSilent
+	}, "mas")
+
+	err := mas.New(signedOut).Install(context.Background(), []catalog.Install{catalog.Mas("Speedtest", 1153157709)}, nil)
+
+	var out *apps.SignedOutError
+	if !errors.As(err, &out) || !strings.Contains(err.Error(), "open the App Store and sign in") {
+		t.Fatalf("a silent App Store ended as %v", err)
+	}
 }
 
 func TestAnAppIsListedByItsIDWithTheVersionInParentheses(t *testing.T) {
@@ -73,7 +77,7 @@ func TestAnAppIsListedByItsIDWithTheVersionInParentheses(t *testing.T) {
 		return local.Output{Stdout: "497799835  Xcode  (26.1)\n409183694  Keynote 14  (14.4)\n"}, nil
 	}, "mas")
 
-	got, err := mas.New(run, nil).Inventory(context.Background())
+	got, err := mas.New(run).Inventory(context.Background())
 
 	if err != nil || got["497799835"] != "26.1" || got["409183694"] != "14.4" {
 		t.Fatalf("inventory %v %v", got, err)
@@ -81,7 +85,7 @@ func TestAnAppIsListedByItsIDWithTheVersionInParentheses(t *testing.T) {
 }
 
 func TestABareUpdateLeavesTheAppStoreItsOwnApps(t *testing.T) {
-	if mas.New(nil, nil).Can().UpdateAll {
+	if mas.New(nil).Can().UpdateAll {
 		t.Error("a bare update reaches the App Store's apps")
 	}
 }

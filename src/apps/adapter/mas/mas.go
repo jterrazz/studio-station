@@ -5,6 +5,7 @@ import (
 	"errors"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/jterrazz/studio-station/src/apps"
 	"github.com/jterrazz/studio-station/src/apps/contract"
@@ -15,12 +16,17 @@ import (
 
 const command = "mas"
 
+// invariant: signed in, the App Store queues a download within seconds and mas
+// says "Downloading"; signed out, it waits on a sign-in no terminal can give
+// and mas says nothing. The bound leaves room for sudo's password.
+const answer = 60 * time.Second
+
 type Mas struct {
 	run    local.Runner
-	bundle contract.Bundler
+	answer time.Duration
 }
 
-func New(run local.Runner, bundle contract.Bundler) *Mas { return &Mas{run: run, bundle: bundle} }
+func New(run local.Runner) *Mas { return &Mas{run: run, answer: answer} }
 
 func (m *Mas) Method() catalog.Method { return catalog.MethodMas }
 
@@ -59,12 +65,34 @@ func (m *Mas) Outdated(context.Context, []string) (map[string]apps.Currency, err
 	return nil, nil
 }
 
-func (m *Mas) Install(ctx context.Context, installs []catalog.Install, p call.Progress) error {
-	return m.bundle.Bundle(ctx, m.lines(installs), false, p)
+func (m *Mas) Install(ctx context.Context, installs []catalog.Install, _ call.Progress) error {
+	// invariant: an App Store app is installed by mas itself, not by the shared
+	// brew bundle: inside the bundle mas's output is held until it ends, so a
+	// signed-out App Store would hang the whole bundle with no word.
+	return m.each(ctx, "install", installs)
 }
 
-func (m *Mas) Update(ctx context.Context, installs []catalog.Install, p call.Progress) error {
-	return m.bundle.Bundle(ctx, m.lines(installs), true, p)
+func (m *Mas) Update(ctx context.Context, installs []catalog.Install, _ call.Progress) error {
+	return m.each(ctx, "update", installs)
+}
+
+func (m *Mas) each(ctx context.Context, verb string, installs []catalog.Install) error {
+	for _, i := range installs {
+		v, ok := i.(catalog.MasInstall)
+		if !ok {
+			return errors.New(i.Key() + " is not an App Store app")
+		}
+		c := local.Command(command, verb, strconv.Itoa(v.ID))
+		c.Answer = m.answer
+		err := local.Attach(ctx, m.run, c)
+		if errors.Is(err, local.ErrSilent) {
+			return &apps.SignedOutError{Store: "the App Store", Waited: m.answer, Hint: "open the App Store and sign in"}
+		}
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func (m *Mas) Remove(ctx context.Context, installs []catalog.Install, _ call.Progress) error {
@@ -78,22 +106,6 @@ func (m *Mas) Remove(ctx context.Context, installs []catalog.Install, _ call.Pro
 		}
 	}
 	return nil
-}
-
-func (m *Mas) lines(installs []catalog.Install) []string {
-	out := make([]string, 0, len(installs))
-	for _, i := range installs {
-		out = append(out, m.Line(i))
-	}
-	return out
-}
-
-func (m *Mas) Line(i catalog.Install) string {
-	v, ok := i.(catalog.MasInstall)
-	if !ok {
-		return ""
-	}
-	return `mas "` + v.Name + `", id: ` + strconv.Itoa(v.ID)
 }
 
 func parseList(stdout string) map[string]string {

@@ -2,6 +2,7 @@ package tools
 
 import (
 	"context"
+	"errors"
 	"slices"
 
 	"github.com/jterrazz/studio-station/src/apps"
@@ -236,11 +237,12 @@ func (s *Service) bundle(ctx context.Context, verb string, list []catalog.Tool, 
 		return out
 	}
 	// invariant: one exit code answers for N tools, so each tool's verdict is
-	// whether the inventory lists it once the bundle has run.
+	// whether the inventory lists it installed once the bundle has run, behind
+	// its newest or not: a bundle uses what is there and upgrades nothing.
 	states := s.states(ctx, list)
 	for _, t := range list {
 		o := Outcome{Name: t.Name, Verb: verb, Result: catalog.StateOK}
-		if states[t.Name] != catalog.StateOK {
+		if !installed(states[t.Name]) {
 			o.Result, o.Detail = catalog.StateBroken, failure
 			if failure == "" {
 				o.Detail = "not listed after " + s.o.Bundler.Name()
@@ -255,7 +257,12 @@ type verbOf func(contract.Installer, context.Context, []catalog.Install, call.Pr
 
 func (s *Service) run(ctx context.Context, verb string, t catalog.Tool, op verbOf) Outcome {
 	o := Outcome{Name: t.Name, Verb: verb, Result: catalog.StateOK}
-	if err := op(s.installer(t), ctx, []catalog.Install{s.install(t)}, nil); err != nil {
+	err := op(s.installer(t), ctx, []catalog.Install{s.install(t)}, nil)
+	var signedOut *apps.SignedOutError
+	switch {
+	case errors.As(err, &signedOut):
+		o.Result, o.Detail = catalog.StateBroken, signedOut.Error()
+	case err != nil:
 		o.Result, o.Detail = catalog.StateBroken, s.failed(verb, []catalog.Tool{t}, err)
 	}
 	return o

@@ -7,7 +7,11 @@ Library/Caches/com.apple.*
 Library/Application Support/com.apple.*
 Library/Containers/com.apple.*
 Library/Group Containers/group.com.apple.*
+Library/Group Containers/com.apple.*
 Library/Application Scripts/group.com.apple.*
+Library/Application Scripts/com.apple.*
+Library/PersonalizationPortrait
+Library/Shortcuts
 Library/Daemon Containers
 Library/Biome
 Library/Trial
@@ -18,3 +22,5 @@ Library/HomeKit
 Library/DataDeliveryServices
 Library/Sharing/**
 Library/**/*.sb-*-*
+# sshd keeps one agent socket per session of the suite under ~/.ssh/agent.
+.ssh/agent

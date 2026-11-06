@@ -224,7 +224,7 @@ var (
 		},
 		Installed: []string{"{data}/mise/installs", "{data}/mise/shims"},
 		Clean: []Action{
-			runIf("mise", "mise", "cache", "clear"), runIf("mise", "mise", "prune", "--tools"),
+			runIf("mise", "mise", "cache", "clear"), runIf("mise", "mise", "prune", "--tools", "--yes"),
 			onMac(remove("~/Library/Caches/mise/*", "~/Library/Caches/sigstore-rust/*")),
 			onLinux(remove("{cache}/mise/*", "{cache}/sigstore-rust/*")),
 		},

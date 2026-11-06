@@ -16,3 +16,4 @@ Install and upgrade were hand-dispatched per package kind, twice, and disagreed.
 - Packages a manager holds that the catalogue does not name are no longer upgraded by station.
 - One table is the whole dispatch; adding a method is adding a row.
 - A trusted tap is visible in the catalogue and reviewed like any entry.
+- 2026-11-06: mas left the bundle. Inside it mas's output is held until it ends, so a signed-out App Store hung the whole bundle, setup included, with no word. mas installs and updates by itself, one app per run, and the 60 s it may stay silent is how station reads a signed-out App Store.

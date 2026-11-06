@@ -120,7 +120,9 @@ var backupStamp = regexp.MustCompile(`(\d{4}-\d{2}-\d{2}-\d{6})(\.backup)?/?$`)
 
 // outside: `tmutil latestbackup` prints the path of the last backup, named
 // for its local time (`2026-10-26-101010.backup`); a Mac with no backup says
-// `No machine directory found` or has no destination.
+// `No machine directory found` or has no destination. With no destination at
+// all, macOS 26 prints `Failed to mount backup destination` and exits 0, so
+// `tmutil destinationinfo` is asked whether one is configured.
 func (i *Inspector) timeMachine(ctx context.Context) (settings.Fact, error) {
 	r, err := i.ask(ctx, local.Command("tmutil", "latestbackup"))
 	if err != nil {
@@ -128,12 +130,21 @@ func (i *Inspector) timeMachine(ctx context.Context) (settings.Fact, error) {
 	}
 	printed := strings.TrimSpace(r.out.Stdout)
 	if m := backupStamp.FindStringSubmatch(printed); r.ok() && m != nil {
-		at, err := time.ParseInLocation("2006-01-02-150405", m[1], time.Local)
-		if err == nil {
+		if at, parseErr := time.ParseInLocation("2006-01-02-150405", m[1], time.Local); parseErr == nil {
 			return settings.Fact{State: catalog.StateOK, Value: at.UTC().Format(time.RFC3339)}, nil
 		}
 	}
 	if said := printed + r.out.Stderr; r.found && (strings.Contains(said, "No machine directory") || strings.Contains(said, "No destinations") || strings.Contains(said, "No backups")) {
+		return settings.Fact{State: catalog.StateAbsent, Value: "never"}, nil
+	}
+	if !r.found {
+		return settings.Unread(), nil
+	}
+	d, err := i.ask(ctx, local.Command("tmutil", "destinationinfo"))
+	if err != nil {
+		return settings.Fact{}, err
+	}
+	if strings.Contains(d.out.Stdout+d.out.Stderr, "No destinations configured") {
 		return settings.Fact{State: catalog.StateAbsent, Value: "never"}, nil
 	}
 	return settings.Unread(), nil

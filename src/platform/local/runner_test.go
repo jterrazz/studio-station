@@ -1,10 +1,14 @@
 package local
 
 import (
+	"bytes"
+	"context"
+	"errors"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strconv"
+	"strings"
 	"syscall"
 	"testing"
 	"time"
@@ -37,5 +41,28 @@ func TestReapKillsOnlyTheProcessThatWasRecorded(t *testing.T) {
 	}
 	if _, err := os.Stat(file); !os.IsNotExist(err) {
 		t.Fatal("the record outlives its reap")
+	}
+}
+
+func TestACommandSilentPastItsAnswerBoundIsStoppedWithWhatItStarted(t *testing.T) {
+	var said bytes.Buffer
+	r := &runner{dirs: []string{"/bin"}, stdout: &said, stderr: &said}
+	start := time.Now()
+
+	_, err := r.Attach(context.Background(), Cmd{Name: "sh", Args: []string{"-c", "sleep 30 & sleep 30"}, Answer: 200 * time.Millisecond}, ToStderr)
+
+	if !errors.Is(err, ErrSilent) || time.Since(start) > 4*time.Second {
+		t.Fatalf("a silent command ran %s and ended as %v", time.Since(start), err)
+	}
+}
+
+func TestACommandThatAnswersInTimeMayThenTakeItsTime(t *testing.T) {
+	var said bytes.Buffer
+	r := &runner{dirs: []string{"/bin"}, stdout: &said, stderr: &said}
+
+	ran, err := r.Attach(context.Background(), Cmd{Name: "sh", Args: []string{"-c", "echo Downloading; sleep 1"}, Answer: 300 * time.Millisecond}, ToStderr)
+
+	if err != nil || ran.ExitCode != 0 || !strings.Contains(said.String(), "Downloading") {
+		t.Fatalf("an answering command was stopped: %v %+v %q", err, ran, said.String())
 	}
 }

@@ -31,5 +31,5 @@ runs:
                     ServerAliveCountMax 3
                     UserKnownHostsFile ~/.local/state/station/known_hosts/w
                     StrictHostKeyChecking accept-new
-                    ProxyCommand ssh y -- sh -c 'PATH="$HOME/.local/bin:/usr/local/bin:$PATH" exec station "$@"' station machines pipe w
+                    ProxyCommand ssh y -- "sh -c 'PATH=\"\$HOME/.local/bin:/usr/local/bin:\$PATH\" exec station \"\$@\"' station machines pipe w"
                   # <<< jterrazz machine w <<<

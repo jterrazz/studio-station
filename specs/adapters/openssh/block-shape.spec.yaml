@@ -15,5 +15,5 @@ runs:
             IdentityFile ~/.ssh/id_ed25519
           Host w
             IdentityFile ~/.ssh/id_ed25519
-            ProxyCommand ssh y -- sh -c 'PATH="$HOME/.local/bin:/usr/local/bin:$PATH" exec station "$@"' station machines pipe w
+            ProxyCommand ssh y -- "sh -c 'PATH=\"\$HOME/.local/bin:/usr/local/bin:\$PATH\" exec station \"\$@\"' station machines pipe w"
           0

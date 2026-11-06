@@ -11,6 +11,7 @@ import (
 var (
 	ErrNotFound    = errors.New("command not found")
 	ErrTimeout     = errors.New("command timed out")
+	ErrSilent      = errors.New("command said nothing")
 	ErrCrossDevice = errors.New("another volume: a rename cannot move it")
 	ErrWildcard    = errors.New("refused: station never listens on every interface")
 )
@@ -29,7 +30,10 @@ type Cmd struct {
 	Env     []string
 	Stdin   string
 	Timeout time.Duration
-	Track   string
+	// value: how long an attached command may say nothing before its first
+	// word; past it the command is stopped and its run fails as ErrSilent.
+	Answer time.Duration
+	Track  string
 }
 
 type Output struct {

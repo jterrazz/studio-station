@@ -12,7 +12,7 @@ runs:
     - command: 'shell zsh | /usr/bin/grep -c ''functions\[compdef\]'''
       exit: 0
       stdout: |
-          1
+          2
     - command: 'shell zsh | /usr/bin/grep -c ''starship init zsh'''
       exit: 0
       stdout: |
