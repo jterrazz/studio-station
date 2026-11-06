@@ -46,6 +46,8 @@ const ServeOffDetail = "Serve is off on Tailscale: turn on HTTPS certificates in
 
 const SignedOutDetail = TailnetProduct + " is signed out" // value: why nothing is shared on a Mac signed out of the tailnet.
 
+const SignedOutLocalOnly = SignedOutDetail + " on This Mac: ports are local only"
+
 var PublicHostEnv = ProfileEnv{Name: "STATION_PUBLIC_HOST", Value: "{host}"}
 
 // value: the two Tailscale app variants, measured 2026-11-01: the Standalone

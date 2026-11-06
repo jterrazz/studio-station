@@ -463,6 +463,9 @@ func (d *Daemon) hostView(vm string) services.HostView {
 	return out
 }
 
+// invariant: a Mac signed out of the tailnet refuses a share the owner asks
+// for, but a workspace's profile ports are reserved local only, so its create
+// goes on.
 func (d *Daemon) reserve(ctx context.Context, vm string, port int, pinned bool, profile string) (services.View, error) {
 	if _, err := d.find(vm); err != nil {
 		return services.View{}, err
@@ -490,7 +493,7 @@ func (d *Daemon) reserve(ctx context.Context, vm string, port int, pinned bool, 
 		s.st, acts = services.Next(s.st, services.EvListen, d.h.Clock.Now())
 		d.apply(ctx, s, acts)
 	}
-	if d.self.Backend != ports.Running {
+	if d.self.Backend != ports.Running && profile == "" {
 		return services.View{}, ports.SignedOut(d.m.HereName())
 	}
 	return d.view(l, s, p.HTTPS), nil

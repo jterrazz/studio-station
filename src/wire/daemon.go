@@ -208,8 +208,18 @@ func (d hostDaemon) Reserve(ctx context.Context, vm string, port int, profile st
 	}
 	return machines.Reserved{
 		GuestPort: v.GuestPort, HostPort: v.HostPort, Profile: profile, URL: v.URLs.Public, PublicHost: hostOf(v.URLs.Public),
-		ServeOff: strings.Contains(v.Detail, catalog.ServeOffDetail) || strings.Contains(v.Detail, catalog.SignedOutDetail),
+		Off: localOnlyBecause(v.Detail),
 	}, nil
+}
+
+func localOnlyBecause(detail string) string {
+	switch {
+	case strings.Contains(detail, catalog.SignedOutDetail):
+		return catalog.SignedOutLocalOnly
+	case strings.Contains(detail, catalog.ServeOffDetail):
+		return catalog.ServeOffDetail
+	}
+	return ""
 }
 
 func hostOf(url string) string {
