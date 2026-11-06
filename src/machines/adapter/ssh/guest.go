@@ -66,8 +66,13 @@ func (d dialer) pin(file, name string) func(ssh.PublicKey) error {
 	}
 }
 
-func acceptNew[A any](check func(string, A, ssh.PublicKey) error, name string, pin func(ssh.PublicKey) error) func(string, A, ssh.PublicKey) error {
+// invariant: a known_hosts file that cannot be read refuses at the
+// handshake, so a VM that does not answer is told as such first.
+func acceptNew[A any](check func(string, A, ssh.PublicKey) error, unreadable error, name string, pin func(ssh.PublicKey) error) func(string, A, ssh.PublicKey) error {
 	return func(_ string, remote A, key ssh.PublicKey) error {
+		if unreadable != nil {
+			return unreadable
+		}
 		err := check(name+":22", remote, key)
 		var unknown *knownhosts.KeyError
 		if errors.As(err, &unknown) && len(unknown.Want) == 0 {
@@ -136,11 +141,8 @@ func (d dialer) Dial(ctx context.Context, t contract.GuestTarget) (contract.Gues
 	if t.KnownHosts == "" {
 		cfg.HostKeyCallback = ssh.InsecureIgnoreHostKey() //nolint:gosec // outside: the trust of a fresh clone is its image key, as above.
 	} else {
-		check, err := d.knownHosts(t.KnownHosts)
-		if err != nil {
-			return nil, err
-		}
-		cfg.HostKeyCallback = acceptNew(check, t.VM, d.pin(t.KnownHosts, t.VM))
+		check, unreadable := d.knownHosts(t.KnownHosts)
+		cfg.HostKeyCallback = acceptNew(check, unreadable, t.VM, d.pin(t.KnownHosts, t.VM))
 		cfg.HostKeyAlgorithms = d.pinnedAlgorithms(t.KnownHosts, t.VM)
 	}
 	addr := t.Address.String()
