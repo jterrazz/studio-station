@@ -1,4 +1,4 @@
-description: 'a server''s Overview counts its ports as its Mac classes them: 443 declared Public, 6443 and 2379 Private'
+description: 'a server''s Overview counts its ports in its Mac''s classes: 443 Public, 6443 and 2379 Private'
 env: two-macs
 runs:
     - command: 'world listen infra "*:443" nginx'
