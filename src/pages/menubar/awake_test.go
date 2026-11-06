@@ -86,3 +86,20 @@ func TestAwakeSendsTheEndItHoldsUntil(t *testing.T) {
 		}
 	}
 }
+
+// invariant: under Keep awake, This Mac's line says the end without the
+// title's word (vision panel e: `until 18:00 · lid closed · 3 h 58 min left`).
+func TestKeepAwakeSaysTheEndWithoutAwake(t *testing.T) {
+	now := time.Date(2026, 11, 3, 14, 2, 0, 0, time.UTC)
+	s := &awake.Session{StartedAt: now, Until: now.Add(3*time.Hour + 58*time.Minute), Lid: true}
+	r := awake.Report{Now: now, Engine: awake.EngineRunning, Mac: "this", ThisMac: true, Reading: awake.Reading{Source: "ac"}, Caps: machine.Capabilities{Engine: true, Lid: true}, Session: s}
+	p := Awake(pageawake.AllMachines{Now: now, Zone: time.UTC, Reports: []awake.Report{r}}, page.Context{Machine: "this"})
+	row := p.Sections[0].Items[0].Row
+	var words []string
+	for _, v := range row.Cells[0].Items {
+		words = append(words, v.Text)
+	}
+	if want := []string{"until 18:00", "lid closed", "3h 58m left"}; !slices.Equal(words, want) {
+		t.Fatalf("This Mac's line says %q, want %q", words, want)
+	}
+}

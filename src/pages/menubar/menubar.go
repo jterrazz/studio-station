@@ -482,8 +482,8 @@ func newVM() page.Action {
 		Run: &page.Run{Call: CallCreate, In: map[string]string{"Request.Image": "linux", "Request.Network": "nat"}},
 		Form: &page.Form{Title: "New VM", Fields: []page.Field{
 			{Key: "Request.Lifetime", Label: "Will it last?", Kind: page.FieldSelect, Default: "throwaway", Options: []page.Option{
-				{Value: "throwaway", Label: "Throwaway", Note: "deleted when it powers off from inside"},
-				{Value: "permanent", Label: "Permanent", Note: "kept until you delete it"},
+				{Value: "throwaway", Label: "Throwaway", Note: "Deleted when it powers off from inside."},
+				{Value: "permanent", Label: "Permanent", Note: "Kept until you delete it."},
 			}},
 			{Key: "Request.Size.MemoryBytes", Label: "Memory", Kind: page.FieldSelect, Default: gigabytes(4), Options: []page.Option{{Value: gigabytes(4), Label: "4 GB"}, {Value: gigabytes(8), Label: "8 GB"}}},
 		}}}
@@ -568,7 +568,7 @@ func ask(levels Levels, gesture string, k machine.Kind, name, question, verb str
 	case LevelNone:
 		return nil
 	case LevelTypeName:
-		values = append(values, page.Text("Type "+name+" to "+verb+" it"))
+		values = append(values, page.Text("Type "+name+" to "+verb+" it."))
 		return &page.Confirm{Question: question, Lines: values, Danger: true, Type: name, Yes: titled(verb)}
 	}
 	return &page.Confirm{Question: question, Lines: values, Yes: titled(verb)}

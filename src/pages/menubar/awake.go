@@ -98,6 +98,11 @@ func awakeColumns() []page.Column {
 func thisMac(r awake.Report) page.Section {
 	row := pageawake.Row(r)
 	row.Short = page.ThisMac
+	if len(row.Cells) > 0 && len(row.Cells[0].Items) > 0 {
+		if rest, ok := strings.CutPrefix(row.Cells[0].Items[0].Text, "Awake until "); ok {
+			row.Cells[0].Items[0].Text = "until " + rest
+		}
+	}
 	return page.Section{ID: SectionThisMac, Title: page.ThisMac, Uncounted: true, Columns: awakeColumns(), Items: []page.Item{{Row: &row}}}
 }
 

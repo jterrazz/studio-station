@@ -294,7 +294,7 @@ public struct Segments: View {
                         .padding(.vertical, 5)
                         .background {
                             if o.on {
-                                RoundedRectangle(cornerRadius: 8, style: .continuous).fill(Token.Fill.raised(scheme)).shadow(color: .black.opacity(0.12), radius: 1.5, y: 1)
+                                RoundedRectangle(cornerRadius: 8, style: .continuous).fill(Token.Fill.picked(scheme)).shadow(color: .black.opacity(0.12), radius: 1.5, y: 1)
                             }
                         }
                         .contentShape(Rectangle())
