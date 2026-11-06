@@ -17,7 +17,7 @@ runs:
       stdout: |
           ┃ Forget mac-mini?
           ┃
-          mac-mini · forgotten · nothing changed on it
+          ✓ mac-mini · forgotten · nothing changed on it
     - command: 'machines'
       exit: 0
       stdout: |

@@ -44,7 +44,7 @@ func body(st token.Styles, p page.Page, width int) []string {
 		}
 		switch {
 		case i == first && len(s.Items) == 1 && s.Items[0].Row != nil && !s.Joined:
-			lines = append(lines, summed(st, *s.Items[0].Row, width)...)
+			lines = append(lines, summed(st, *s.Items[0].Row, width, p.ID == page.Outcome)...)
 			if h := s.Items[0].Row.Hint; h != nil && !elsewhere(p, i, h.Command) {
 				lines = append(lines, atom.Spaces(token.Margin+token.Indent)+molecule.PageHint(st, *h, 0))
 			}
@@ -103,7 +103,11 @@ func firstLine(sections []page.Section) int {
 
 // value: a page summed up by one machine's row reads as its first line,
 // `This Mac · 108 apps for this Mac · 2 updates` (vision 07 "station apps").
-func summed(st token.Styles, r page.Row, width int) []string {
+//
+// invariant: an outcome's line leads with its mark, a glyph with its word
+// (SPEC §2.3, §12.1), a step that passed ticked:
+// `✓ This Mac stays awake until 18:00 · lid closed`.
+func summed(st token.Styles, r page.Row, width int, outcome bool) []string {
 	label := r.Label
 	if r.Short != "" {
 		label = r.Short
@@ -116,7 +120,19 @@ func summed(st token.Styles, r page.Row, width int) []string {
 			parts = append(parts, c)
 		}
 	}
-	return sums(st, parts, width, false)
+	if r.Sentence && len(parts) > 1 {
+		parts = append([]page.Value{page.Text(label + " " + atom.Show(parts[1]))}, parts[2:]...)
+	}
+	if !outcome || r.Mark == page.Unjudged {
+		return sums(st, parts, width, false)
+	}
+	glyph := atom.Glyph(r.Mark)
+	if r.Mark == page.OK {
+		glyph = token.Tick
+	}
+	lines := sums(st, parts, width-atom.Width(glyph)-1, false)
+	lines[0] = atom.Spaces(token.Margin) + atom.Tone(st, r.Mark).Render(glyph) + " " + strings.TrimPrefix(lines[0], atom.Spaces(token.Margin))
+	return lines
 }
 
 // invariant: a first line is text, as vision 07 draws it, and never cut: a

@@ -15,7 +15,7 @@ runs:
       stdout: |
           ┃ Restart mac-mini? infra pauses until it is back
           ┃
-          mac-mini · back · infra running
+          ✓ mac-mini · back · infra running
     - command: '--version >/dev/null; /usr/bin/jq -c ''.macs["jterrazz-mac-mini"].engine.started_at > "2026-11-04"'' world.json'
       exit: 0
       stdout: |

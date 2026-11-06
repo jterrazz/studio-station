@@ -12,7 +12,7 @@ runs:
       exit: 0
       stdout: |
           On mac-mini:
-          infra · stopped · wanted state: Stopped
+          ✓ infra · stopped · wanted state: Stopped
 
           → station machines start infra --on mac-mini
     - command: 'world reboot jterrazz-mac-mini'

@@ -1,5 +1,9 @@
 description: 'awake off ends the keep-awake: the assertion goes and the lid sleeps the Mac again'
-env: two-macs
+fixture:
+    - ../../../__fixtures__/terminal/
+env:
+    - two-macs
+    - terminal
 runs:
     - command: 'awake 4h --lid'
       exit: 0
@@ -18,3 +22,17 @@ runs:
       stdout: |
           ○	jterrazz-macbook-pro	Sleeps normally
           ●	jterrazz-mac-mini	Never sleeps · always-on Mac policy	last slept: never in 12d 1h · hosts infra (server)
+    - command: '--version >/dev/null; terminal --size 100x20 /usr/bin/env -u NO_COLOR COLUMNS=100 "$STATION" awake 4h --lid'
+      stdin: |
+          within 20 exit 0
+          screen
+      exit: 0
+      stdout: |
+          ✓ This Mac stays awake until 14:01 · lid closed
+    - command: '--version >/dev/null; terminal --size 100x20 /usr/bin/env -u NO_COLOR COLUMNS=100 "$STATION" awake off'
+      stdin: |
+          within 20 exit 0
+          screen
+      exit: 0
+      stdout: |
+          ✓ This Mac sleeps normally again

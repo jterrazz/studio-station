@@ -10,7 +10,7 @@ runs:
           scrollback
       exit: 0
       stdout: |
-          Installed 2 apps on This Mac
+          ✓ Installed 2 apps on This Mac
 
           Changes
             ● fd   10.3.0  brew
