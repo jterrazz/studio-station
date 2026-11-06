@@ -562,7 +562,7 @@ struct MachineContent: View {
 
     // value: the action the header's switch runs: Stop while it runs,
     // Start while it does not.
-    var power: Action? { page.action("stop") ?? page.action("start") }
+    var toggle: Action? { page.action("stop") ?? page.action("start") }
 
     func header(_ s: Section) -> some View {
         let row = s.items?.first?.row
@@ -578,8 +578,8 @@ struct MachineContent: View {
             Spacer(minLength: 0)
             if let row {
                 let ink = mark == .absent ? palette.muted : palette.of(mark)
-                StateSwitch(row.cells.flatMap { $0.first }.map { Format.show($0) } ?? "", ink: ink, on: mark != .absent, busy: power.map { state.running == $0.id } ?? false,
-                            tap: power.map { a in { perform(a, handlers) } })
+                StateSwitch(row.cells.flatMap { $0.first }.map { Format.show($0) } ?? "", ink: ink, on: mark != .absent, busy: toggle.map { state.running == $0.id } ?? false,
+                            tap: toggle.map { a in { perform(a, handlers) } })
                     .disabled(state.running != nil)
             }
         }
@@ -623,7 +623,7 @@ struct MachineContent: View {
                     }
                 }
                 if s.id == "shared" {
-                    Text(Self.lent).font(.system(size: Token.Space.small)).foregroundStyle(palette.muted).fixedSize(horizontal: false, vertical: true).padding(.top, 6)
+                    Text(Self.shared).font(.system(size: Token.Space.small)).foregroundStyle(palette.muted).fixedSize(horizontal: false, vertical: true).padding(.top, 6)
                 }
             }
         }
@@ -654,7 +654,7 @@ struct MachineContent: View {
 
     // value: the calm line under the accounts a VM holds (SPEC §5.7: never
     // a token shown, every share ends by itself).
-    static let lent = "Copies of this Mac's secrets, never shown. Each is taken back when its time runs out."
+    static let shared = "Copies of this Mac's secrets, never shown. Each is taken back when its time runs out."
 
     func words(_ s: Section) -> String {
         (s.caption ?? []).map { Format.show($0) }.joined(separator: Token.Glyph.sep)

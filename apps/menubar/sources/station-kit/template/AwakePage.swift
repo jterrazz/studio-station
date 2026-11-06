@@ -18,12 +18,12 @@ public struct AwakePage: View {
     var act: Act { Act(state: state, handlers: handlers) }
 
     public var body: some View {
-        let here = page.section("this-mac")
-        let on = here?.rows.first?.mark == .ok
+        let mac = page.section("this-mac")
+        let on = mac?.rows.first?.mark == .ok
         VStack(alignment: .leading, spacing: Token.Space.gap + 2) {
             PushedHeader(back: "This Mac", title: "Awake", subtitle: "Every Mac\(Token.Glyph.sep)this one first",
                          symbol: on ? Token.Symbol.awakeOn : Token.Symbol.awakeOff, tint: on ? palette.warn : nil, id: Navigation.awake, action: handlers.back)
-            if let here, let row = here.rows.first { thisMac(here, row) }
+            if let mac, let row = mac.rows.first { thisMac(mac, row) }
             if let guards = page.section("guards") { guardsCard(guards) }
             if let others = page.section("other-macs") {
                 GroupCard(others.title ?? "") {
