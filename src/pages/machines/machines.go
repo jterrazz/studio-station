@@ -433,7 +433,7 @@ func CreateForm(lifetime string, macs []MacChoice) page.Form {
 }
 
 func BuildConfirm(image string) page.Confirm {
-	return page.Confirm{Question: "Image " + image + " is not built here. Build " + image + " now? (~3 min)"}
+	return page.Confirm{Question: "Image " + image + " is not built on This Mac. Build " + image + " now? (~3 min)"}
 }
 
 type SSHJSON struct {

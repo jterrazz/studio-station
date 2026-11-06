@@ -28,6 +28,8 @@ const (
 	Stop        Action = "stop"
 	Delete      Action = "delete"
 	Erase       Action = "erase"
+	// value: build the image a create needs first, when this Mac has none.
+	BuildImage Action = "build-image"
 )
 
 type Level string

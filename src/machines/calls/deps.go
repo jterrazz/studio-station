@@ -10,10 +10,18 @@ import (
 
 type Deps struct {
 	Machines Machines
-	Kind     machine.Kind
+	// value: this Mac's images, a missing one built before a create the
+	// owner confirmed.
+	Images ImageBuilds
+	Kind   machine.Kind
 	// value: this Mac reports a battery: a server made here stops whenever
 	// it sleeps.
 	Laptop bool
+}
+
+type ImageBuilds interface {
+	// value: builds image on this Mac, each step's label to step as it starts.
+	Build(ctx context.Context, image string, step func(label string)) error
 }
 
 type Machines interface {

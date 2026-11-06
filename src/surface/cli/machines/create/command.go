@@ -10,7 +10,6 @@ import (
 
 	"github.com/jterrazz/studio-station/src/core/call"
 	"github.com/jterrazz/studio-station/src/core/machine"
-	imagescalls "github.com/jterrazz/studio-station/src/images/calls"
 	"github.com/jterrazz/studio-station/src/machines"
 	machinescalls "github.com/jterrazz/studio-station/src/machines/calls"
 	"github.com/jterrazz/studio-station/src/page"
@@ -22,9 +21,9 @@ type Deps struct {
 	// value: the flags' sizes, parsed as the hypervisor takes them.
 	Resources func(cpus int, memory, disk string) (machines.Resources, error)
 	// value: every refusal a question cannot answer; unbuilt when the only
-	// one is the image, not built yet.
+	// one is the image, not built yet, which the call asks to build first.
 	Check func(ctx context.Context, r machines.CreateRequest) (unbuilt bool, err error)
-	// value: the refusal of an image the owner chose not to build.
+	// value: the refusal of an image not built, off a terminal without --yes.
 	NotBuilt func(image string) error
 	// value: refuses this machine when the call's rule says no, before any
 	// check of the request.
@@ -42,9 +41,8 @@ type Input struct {
 	// value: v2's --always-on, kept hidden for one release (SPEC §4.3).
 	AlwaysOn bool
 	// value: v2's --lifetime, kept hidden for one release (SPEC §4.3).
-	Lifetime   string
-	request    machines.CreateRequest
-	buildFirst bool
+	Lifetime string
+	request  machines.CreateRequest
 	// value: another Mac chosen on a terminal, the create sent there.
 	mac string
 }
@@ -57,6 +55,11 @@ func Command(d Deps, env kit.Env) *cobra.Command {
 			"  station machines create api --permanent --memory 12G\n" +
 			"  station machines create infra --server --check https://infra:6443/readyz --on mac-mini",
 		Args: cobra.MaximumNArgs(1),
+		Asks: true,
+		Ask: func(in *Input) (bool, error) {
+			return env.Prompt.Confirm(pagemachines.BuildConfirm(in.request.Image))
+		},
+		Refuse: func(in *Input) error { return d.NotBuilt(in.request.Image) },
 		Declare: func(f *pflag.FlagSet, in *Input) {
 			f.BoolVar(&in.Permanent, "permanent", false, "kept until you delete it; without it, deleted when it powers off from inside")
 			f.BoolVar(&in.Server, "server", false, "a server: always on, set up by your own tooling, never by station (default 4 CPU, 8G, 50G)")
@@ -114,12 +117,10 @@ func Command(d Deps, env kit.Env) *cobra.Command {
 					return err
 				}
 			}
-			unbuilt, err := d.Check(ctx, in.request)
-			if unbuilt && d.Ask != nil {
-				in.buildFirst = true
-				return nil
+			if unbuilt, err := d.Check(ctx, in.request); !unbuilt {
+				return err
 			}
-			return err
+			return nil
 		},
 		Run: func(ctx context.Context, in *Input, io kit.IO) error {
 			if d.Ask != nil {
@@ -131,22 +132,21 @@ func Command(d Deps, env kit.Env) *cobra.Command {
 			if in.mac != "" {
 				target = machine.Ref{Name: in.mac}
 			}
-			if in.buildFirst && in.mac == "" {
-				if _, err := call.Invoke(ctx, env.Calls, env.Target(), imagescalls.Build, imagescalls.BuildIn{Names: []string{in.request.Image}}, nil); err != nil {
-					return err
-				}
-			}
 			steps := kit.Steps(io)
 			var created machines.Created
-			var err error
 			schema := call.Schema(machinescalls.CreateWorkspace.Name)
 			if in.Server {
-				r := in.request
 				schema = call.Schema(machinescalls.CreateServer.Name)
-				created, err = call.Invoke(ctx, env.Calls, target, machinescalls.CreateServer, machinescalls.CreateServerIn{Name: r.Name, Image: r.Image, Network: r.Network, Resources: r.Resources, Check: r.Check}, steps)
-			} else {
-				created, err = call.Invoke(ctx, env.Calls, target, machinescalls.CreateWorkspace, machinescalls.CreateIn{Request: in.request}, steps)
 			}
+			err := io.Confirmed(func(answer string) (err error) {
+				r := in.request
+				if in.Server {
+					created, err = call.Invoke(ctx, env.Calls, target, machinescalls.CreateServer, machinescalls.CreateServerIn{Name: r.Name, Image: r.Image, Network: r.Network, Resources: r.Resources, Check: r.Check, Confirm: answer}, steps)
+				} else {
+					created, err = call.Invoke(ctx, env.Calls, target, machinescalls.CreateWorkspace, machinescalls.CreateIn{Request: r, Confirm: answer}, steps)
+				}
+				return err
+			})
 			steps.Stop()
 			if err != nil {
 				return err
@@ -195,15 +195,6 @@ func ask(ctx context.Context, d Deps, in *Input) error {
 		if h.Name == answers["mac"] && !h.ThisMac {
 			in.mac = h.Name
 			return nil
-		}
-	}
-	if in.buildFirst {
-		build, err := d.Ask.Confirm(pagemachines.BuildConfirm(in.request.Image))
-		if err != nil {
-			return err
-		}
-		if !build {
-			return d.NotBuilt(in.request.Image)
 		}
 	}
 	return nil

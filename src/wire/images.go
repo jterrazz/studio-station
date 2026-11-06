@@ -146,3 +146,11 @@ func (b imageBuild) Run(ctx context.Context, as imagescalls.Login, line, stdin s
 	ran, err := b.BuildVM.Run(ctx, process.BuildLogin(as), line, stdin)
 	return imagescalls.Ran(ran), err
 }
+
+// value: the image a create builds first, once the owner said yes.
+type createImages struct{ b imageBuilder }
+
+func (c createImages) Build(ctx context.Context, image string, step func(label string)) error {
+	_, err := c.b.Build(ctx, []string{image}, "", step)
+	return err
+}

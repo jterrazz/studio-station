@@ -152,15 +152,6 @@ func requires(fn ast.Node, info *types.Info) bool {
 	return found
 }
 
-// invariant: the allowlist of confirm-in-usecase: the leaves whose own
-// question is an offer of what to do, not a confirmation a call asks. It
-// only shrinks.
-func offersTolerated() map[string]string {
-	return map[string]string{
-		"surface/cli/machines/create": "builds the missing image first, or not",
-	}
-}
-
 // value: the method obj is, as <package>.<type>.<method>, or "".
 func methodOf(obj types.Object) string {
 	fn, ok := obj.(*types.Func)
@@ -208,7 +199,7 @@ func leafAsks(f *file) [][2]token.Pos {
 }
 
 // value: why a selector of a surface decides a confirmation, or "".
-func decides(f *file, n *ast.SelectorExpr, asks [][2]token.Pos, offers bool) string {
+func decides(f *file, n *ast.SelectorExpr, asks [][2]token.Pos) string {
 	obj := f.info.Uses[n.Sel]
 	if obj != nil && obj.Pkg() != nil && obj.Pkg().Path() == module+"/src/core/confirm" && obj.Name() == "Yes" && f.pkg != "surface/cli/kit" {
 		return "a surface answers a confirmation before its call asks (confirm.Yes)"
@@ -217,7 +208,7 @@ func decides(f *file, n *ast.SelectorExpr, asks [][2]token.Pos, offers bool) str
 		return ""
 	}
 	inAsk := slices.ContainsFunc(asks, func(span [2]token.Pos) bool { return n.Pos() >= span[0] && n.End() <= span[1] })
-	if !inAsk && !offers && f.pkg != "surface/cli/kit" {
+	if !inAsk && f.pkg != "surface/cli/kit" {
 		return "a leaf puts a question outside its Leaf's Ask: only kit asks, once the call has"
 	}
 	return ""
@@ -244,22 +235,16 @@ func ruleConfirmInUsecase(w *world) []finding {
 			out = append(out, finding{"confirm-in-usecase", f.rel, "a surface decides a confirmation (confirm.Require): only a use case does"})
 		}
 		asks := leafAsks(f)
-		_, offers := offersTolerated()[f.pkg]
 		ast.Inspect(f.syntax, func(node ast.Node) bool {
 			n, isSel := node.(*ast.SelectorExpr)
 			if !isSel {
 				return true
 			}
-			if what := decides(f, n, asks, offers); what != "" {
+			if what := decides(f, n, asks); what != "" {
 				out = append(out, finding{"confirm-in-usecase", f.at(n.Pos()), what})
 			}
 			return true
 		})
-	}
-	for _, pkg := range slices.Sorted(maps.Keys(offersTolerated())) {
-		if !slices.ContainsFunc(w.files, func(f *file) bool { return f.pkg == pkg && !f.test }) {
-			out = append(out, finding{"confirm-in-usecase", "specs/architecture/calls_test.go", "src/" + pkg + " is gone: remove it from offersTolerated"})
-		}
 	}
 	return out
 }

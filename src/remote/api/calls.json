@@ -286,6 +286,10 @@
       "name": "machines.create-server",
       "schema": "station.machines.create-server/v1",
       "where": "in-engine",
+      "confirm": "build-image",
+      "errors": [
+        "confirm.yes-needed"
+      ],
       "in": "CreateServerIn",
       "out": "Created"
     },
@@ -293,6 +297,10 @@
       "name": "machines.create-workspace",
       "schema": "station.machines.create-workspace/v1",
       "where": "in-engine",
+      "confirm": "build-image",
+      "errors": [
+        "confirm.yes-needed"
+      ],
       "in": "CreateIn",
       "out": "Created"
     },
