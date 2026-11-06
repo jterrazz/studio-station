@@ -1,6 +1,6 @@
 # ADR-006: Tart is the engine, behind a port
 
-**Status:** Accepted
+**Status:** Superseded by [ADR-014](014-families-and-contracts.md)
 **Date:** 2026-10-31
 
 ## Context

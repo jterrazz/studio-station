@@ -1,6 +1,6 @@
 # ADR-001: station mirrors the studio CLI's layers
 
-**Status:** Accepted
+**Status:** Superseded by [ADR-014](014-families-and-contracts.md)
 **Date:** 2026-10-31
 
 ## Context

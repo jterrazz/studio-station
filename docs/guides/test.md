@@ -1,15 +1,24 @@
 # Testing
 
-Two suites prove a change: Go tests (the module tests and the boundary test of the layers), and end-to-end specs that drive the real `station` binary and state what it printed.
+Three tiers prove station, each with one purpose. Tier 1 is `make check`: the Go tests (the architecture rules, the contract suites, the few module tests a spec cannot reach), the use-case stories over a fake world, and the adapter documents against stub programs. Tiers 2 and 3 run the real binary on real VMs of this Mac, outside the gate. Every use case of the product is proved by a story in the owner's words, and a test exists only because a real regression would turn it red.
 
 | Section                  | Answers                                               |
 | ------------------------ | ----------------------------------------------------- |
+| The three tiers          | What each tier proves, and where it runs              |
 | The two suites           | What `make test` runs, and in which order             |
 | A scenario is a document | The `<case>.spec.yaml` form and how it is regenerated |
 | The fenced run           | Why no spec reaches the real machine                  |
 | A use case over a world  | `specs/usecases/`, the spec build and its fake world  |
 | The stubs                | How a spec scripts a system program                   |
 | What CI runs             | The gate a pull request passes                        |
+
+## The three tiers
+
+| Tier | Runs                                                                                       | Proves                                                                                                                          | Where                          |
+| ---- | ------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------- | ------------------------------ |
+| 1    | `go test`, then `specs/usecases/`, `specs/adapters/`, `specs/cli/`, `specs/tui/` on Vitest | the tree and its rules; every contract's adapters and fake alike; every outcome of every call over a world; each adapter's argv | `make check`, CI, every commit |
+| 2    | `make e2e-machine KIND=linux`                                                              | a Linux workspace made, set up and reached for real, by this build's engine                                                     | this Mac, by hand              |
+| 3    | `make e2e-machine KIND=macos`                                                              | a fresh macOS VM playing a new Mac: install, setup, every method, the footprint                                                 | this Mac, by hand              |
 
 ## The two suites
 
@@ -18,11 +27,11 @@ make test      # go test ./src/... ./specs/..., then typescript test: the specs 
 npm test       # the specs alone
 ```
 
-The Go tests come first. The module tests are `*_test.go` files next to the code they judge, kept only for what no session of the binary reaches honestly: a state the terminal driver cannot observe (the TUI loading in `Init`, a busy screen, the renderer's colours), a timing budget, root, a pure algorithm whose edge cases are cheaper at its own level (the renderer goldens: every page fixture of `src/ui/testdata/pages/`, written by `make generate` from the real page functions, rendered by every renderer of `src/ui/render/` and compared with its file in `src/ui/testdata/__expected__/`; `go test ./src/ui/... -update` rewrites them). The boundary test, `specs/architecture/`, proves each of its rules still bites by adding one violating file in memory: `layers_test.go` owns the import table and the forbidden symbols of today's layers, `imports_test.go` the import table of the families.
+The Go tests come first. The module tests are `*_test.go` files next to the code they judge, kept only for what no session of the binary reaches honestly: a state the terminal driver cannot observe (the TUI loading in `Init`, a busy screen, the renderer's colours), a timing budget, root, a pure algorithm whose edge cases are cheaper at its own level (the renderer goldens: every page fixture of `src/ui/testdata/pages/`, written by `make generate` from the real page functions, rendered by every renderer of `src/ui/render/` and compared with its file in `src/ui/testdata/__expected__/`; `go test ./src/ui/... -update` rewrites them). The architecture test, `specs/architecture/`, proves each of its rules still bites by judging one violating file in memory; its rules are [Architecture](../concepts/architecture.md#who-may-import-whom)'s. Each contract's suite, `src/<family>/contract/contracttest/`, runs against its real adapter (over `platform/local/localtest`'s scripted door) and its fake alike, so a fake cannot drift from what it stands for.
 
 Then `make test` runs the CLI specs under `specs/cli/` on Vitest, through `@jterrazz/test`. There is exactly one runner, and every spec drives one binary, `.artifacts/go/station-test`, stamped with the version `git describe` prints: the spec build (`-tags world`), which runs the real adapters unless a document hands it a world ([below](#a-use-case-over-a-world)). `make test` builds it once before the runner starts, so no worker links it while another drives a session (with one build per worker, nine links ran beside the first sessions). Run directly, `specs/cli/cli.specification.ts` rebuilds it when it is missing or when any file under `src/` is newer than it, beside the binary and renamed into its own file, so a worker never executes a half-written file. It is an mtime check, so editing the CLI and re-running the suite always exercises the change instead of a stale build.
 
-`vitest.config.ts` is the one line `@jterrazz/test` derives from `studio.config.ts`: its `cli` project collects `specs/cli/`, `specs/adapters/` and `specs/usecases/`, and every `*.spec.yaml` there becomes a one-test module driving that runner. A document of `specs/adapters/<tech>/` proves one adapter speaks its program (its argv, its parsing, against the stub CLIs a fixture carries): `.calls` assertions belong there, and nowhere else once a family has moved. The runner's defaults are [the fenced run](#the-fenced-run).
+`vitest.config.ts` is the one line `@jterrazz/test` derives from `studio.config.ts`: its `cli` project collects `specs/cli/`, `specs/adapters/`, `specs/usecases/` and `specs/tui/` (one screen of the TUI over a world), and every `*.spec.yaml` there becomes a one-test module driving that runner. A document of `specs/adapters/<tech>/` proves one adapter speaks its program (its argv, its parsing, against the stub CLIs a fixture carries): `.calls` assertions belong there, and nowhere else once a family has moved. The runner's defaults are [the fenced run](#the-fenced-run).
 
 ## A scenario is a document
 
@@ -50,6 +59,25 @@ No spec reaches the real machine. The runner sets `HOME` to the run's working di
 ## A use case over a world
 
 A document of `specs/usecases/<family>/<verb>/<outcome>.spec.yaml` tells one outcome of one call (`machines/stop` is `machines.stop`; `engine/<job>` is an engine job; `root/`, `remote/`, `output/`, `errors/`, `migrate/` and `security/` hold what spans calls) against a seeded fake world, and asserts what the owner reads, never an argv. It names its world as an env set, `env: two-macs`: the runner registers one per file of `specs/usecases/worlds/`, which points `$STATION_WORLD` at `world.json` in the run's directory and seeds it from that file at the first run. Every run then reads and writes that one world, so a document can say what the world became by reading it back through the CLI.
+
+A story reads as the owner's session: commands, what they printed, then a world event and what the owner reads after it.
+
+```yaml
+# specs/usecases/machines/stop/server-confirmed-stays-stopped.spec.yaml (shortened)
+description: "a server stopped with its name typed wants to stay stopped: its Mac's reboot does not start it"
+env: [two-macs, terminal]
+runs:
+    - command: '... machines stop infra --on mac-mini --confirm=infra'
+      stdout: |
+          On mac-mini:
+          ✓ infra · stopped · wanted state: Stopped
+    - command: 'world reboot jterrazz-mac-mini'
+    - command: 'machines --on jterrazz-mac-mini'
+      stdout: |
+          ○	infra	Server	jterrazz-mac-mini	Stopped · always on	8 CPU	24 GB
+```
+
+The worlds are the files of `specs/usecases/worlds/` (`two-macs`, `one-mac`, `mini-offline`, `in-workspace`, `in-server`, `on-battery`, `serve-off`...), each the ground of many stories. A world event is the hidden `station world <event> [args]` of the spec build, from the closed list of `src/world/events.go`: a Mac's `reboot`, `power-cut`, `unlock`, `offline` and `online`, `engine-crash`; a VM's `crash`, `poweroff-inside`, `reboot-inside`, `address`; `listen` and `unlisten` a port, `container-run`; `edit` a file by hand; `unplug`, `plug`, `close-lid`, `open-lid`, `thermal`, `battery`, `low-power`; `advance` the clock; `fault` and `hold` a contract's method; `upgrade` a Mac's station; `slow`; `reads` a fact; `certificate`. An event changes only the world; what station does about it is what the next command shows.
 
 The world (`src/world`) holds what is outside station, one slice per family: each Mac's engine (its job, when it started and when the owner stopped it), preferences, the files a store has not read yet (a hand edit, a file station v2 left) and station's other stores, its Self, its battery and lid reading, what listens on it, its tailnet node, its installers, meter (its counters, and how much each grows a second on the world's clock), disk, jobs, vault, facts and ssh config, its images and VMs (what station keeps of a VM, beside its disk, its run and when it began and ended on the world's clock, its guest and what listens in it), and the faults scripted for the fakes. Under `$STATION_WORLD` the spec build wires every family's `adapter/fake` over its Mac's slice instead of the real adapters (`src/wire/world_on.go`, the one file that knows the tag; `release_test.go` fails when a family's fake is not linked), runs each Mac's engine inside the command, stepped over the world's clock until it is quiet (the clock moves only for the command that waits, a tick and an advance: what the engine runs in its own lifetime waits for it), and reaches another Mac of the world in-process, through the wire form. A world event is a run of the hidden `world` command, `command: 'world reboot jterrazz-mac-mini'`; its closed list is USE-CASES.md §0.2; an event no fake models yet is refused as such. `world edit <machine> <file>` gives a file of station the text on its stdin, as a hand edit would. `world fault Hypervisor.Boot [2 times]` fails that contract's method the next calls (every call, without a count) in the fakes that obey it: `Hypervisor.Boot`, `Installer.<verb>`, `Bundler.Bundle`, `Jobs.Install`, `Jobs.Start`, `Listeners.Read` (what listens on a Mac cannot be read, so its ports read fails), `Tailnet.Share`, `Unlocker.PlannedRestart`, `CheckRunner.Run`, a server's check that stops answering, `Meter.Sample`, a Meter that does not answer, and `EndpointDialer.Dial`, a Mac whose ssh answers with no station there.
 

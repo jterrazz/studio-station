@@ -71,4 +71,4 @@ The setting `backup-exclusions` keeps `~/.cache` and `~/.local/share/station/vms
 ## Related
 
 - [Footprint](footprint.md): every path, generated from the table.
-- [Configuration](configuration.md): the settings and the environment variables.
+- [Settings](settings.md): the settings; [Preferences](preferences.md): the environment variables.

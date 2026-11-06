@@ -168,7 +168,7 @@ case_pass
 
 
 case_begin claude-token-share AU-13
-# outside: how the studio CLI reaches a VM is not designed (docs/reference/secrets.md),
+# outside: how the studio CLI reaches a VM is not designed (docs/reference/accounts.md),
 # so the VM's credential store is the stub's file store.
 vm_ssh ws1 'cat > /tmp/studio && sudo -n install -m 755 /tmp/studio /usr/local/bin/studio' < "$suite/linux/vm-studio" || fail "put the VM's studio"
 st accounts share claude --with ws1 >> "$log" 2>&1 || fail "accounts share exited $?"

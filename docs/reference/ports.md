@@ -6,10 +6,9 @@
 | --------------------- | ------------------------------------------------------------ |
 | How a port gets a URL | The guest, the reserved port, the sharing                    |
 | The commands          | `ports`, `ports share`, `ports stop-sharing`                 |
-| The policy            | The `services` keys of `preferences.json`                    |
+| The policy            | The `ports` group of `preferences.json`                      |
 | Serve and HTTPS       | Serve on or off, the `port` and `path` modes, the admin step |
 | Profiles              | How Expo and Vite learn their public URL                     |
-| The engine protocol   | `station.api/v2`, for every client                           |
 
 ## How a port gets a URL
 
@@ -77,10 +76,10 @@ The engine's exposure job reads what listens on its Mac and its VMs at its start
 The Mac owns it, in `preferences.json`; every key is optional and no command edits them:
 
 ```json
-"services": { "range": "40000-40999", "max_per_vm": 20, "ignored_ports": [22], "min_port": 1024, "https": "port" }
+"ports": { "range": "40000-40999", "max_per_vm": 20, "ignored_ports": [22], "min_port": 1024, "https": "port" }
 ```
 
-The engine reads the file again when it changes. [Configuration](configuration.md) has the rest of `preferences.json`.
+The engine reads the file again when it changes. [Preferences](preferences.md) has the rest of `preferences.json`.
 
 ## Serve and HTTPS
 
@@ -116,46 +115,9 @@ A server that must know its own public URL gets it from its environment. A profi
 
 With Serve off they hold the local URL, `http://127.0.0.1:<host port>`, and the public name `127.0.0.1`, and `machines create` says so on a `◐ ports` row. So `npx expo start` in a VM writes the shared https URL into its manifests, and Vite accepts requests for the public name, with no flag. A server on another port composes its URL itself: `PORT=3000 BASE_URL=$(station ports share 3000) npm start`. Same-origin traffic (HMR websockets, relative URLs) needs nothing: it rides the same port of the Mac. A server whose setting has no environment variable gets its line here.
 
-## The engine protocol
-
-`station.api/v2`: JSON lines over the unix socket `~/.local/state/station/engine.sock` (mode 0600; the engine listens on no TCP port, and the reserved ports' forwarders bind `127.0.0.1` only), one frame per line. A request names a `call` or a `watch` under its `id`; the answer is `progress` frames, then one `out` or one `error`. The calls of one connection are answered in the order they came. The CLI is one client, the menu bar another.
-
-```text
-→ {"v":2,"id":"7","call":"machines.create-workspace","in":{"Request":{"Image":"linux","Lifetime":"throwaway"}}}
-← {"v":2,"id":"7","progress":{"task":"Booting linux-1"}}
-← {"v":2,"id":"7","out":{"VM":{"Name":"linux-1"}}}
-→ {"v":2,"id":"8","call":"engine.stop","in":{"Confirm":"inf"}}
-← {"v":2,"id":"8","error":{"type":"needs-confirmation","code":"confirm.yes-needed","subject":"stop","message":"refusing without --yes: stop","hint":"re-run with --yes"}}
-```
-
-The engine serves every call of [`calls.json`](../../src/remote/api/calls.json) (the registry `make generate` projects: each call's name, its output schema, its section, where it runs, its confirmation and the errors it declares), run on this Mac as the CLI runs it, and its own calls, which the CLI's reads and the VMs' guests ask of its live state:
-
-| call                                                       | in                                | out                                                                                                                                                                                                                                                             |
-| ---------------------------------------------------------- | --------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `engine.hello`                                             |                                   | `version pid started_at executable` and `calls`, the names of `calls.json` it serves                                                                                                                                                                            |
-| `engine.vms`                                               |                                   | each VM's `name state run_pid guest ip detail`                                                                                                                                                                                                                  |
-| `engine.vm-run`                                            | `vm`                              | supervises a new record; answers when its guest is connected                                                                                                                                                                                                    |
-| `engine.vm-start` / `engine.vm-stop` / `engine.vm-restart` | `vm`                              | any VM                                                                                                                                                                                                                                                          |
-| `engine.vm-delete` / `engine.vm-forget`                    | `vm`                              | the VM, its files, blocks, reserved ports and serve entries / its watch only                                                                                                                                                                                    |
-| `engine.guest-exec`                                        | `vm, line, stdin`                 | `code stdout stderr` of a command run over the VM's guest connection                                                                                                                                                                                            |
-| `engine.accounts`                                          |                                   | each running VM's accounts, read by its guest                                                                                                                                                                                                                   |
-| `engine.services`                                          |                                   | this Mac's `station.services/v1` object                                                                                                                                                                                                                         |
-| `engine.reserve`                                           | `vm, guest_port, pinned, profile` | the reserved port (an existing one is returned)                                                                                                                                                                                                                 |
-| `engine.release`                                           | `vm, guest_port`                  | the released reserved port                                                                                                                                                                                                                                      |
-| `engine.stop-all`                                          |                                   | `vms` (each VM's result) and `awake_ended`                                                                                                                                                                                                                      |
-| `engine.awake`                                             |                                   | the keep-awake `session`, `last_end`, `reading` and `guards`                                                                                                                                                                                                    |
-| `engine.awake-keep`                                        | `lid, battery, for, by`           | the session (`for` in seconds), `refreshed` when one held                                                                                                                                                                                                       |
-| `engine.awake-off`                                         |                                   | `ended`, `after` (seconds)                                                                                                                                                                                                                                      |
-| `engine.activity`                                          |                                   | `since` (the engine's start) and each machine's `last` reading, `fine` and `coarse`                                                                                                                                                                             |
-| `engine.refresh`                                           | `pages`                           | `{}`: each page it names is read again now (the menu bar's Needs you, a machine's page, the switcher)                                                                                                                                                           |
-| watch `page`                                               | `pages` (named below)             | an `out` per update: the opening `stream pages`, then `event` `page`, `tick`, `notice`                                                                                                                                                                          |
-| watch `engine.watch`                                       | `machines` (none is This Mac)     | the opening `machines`; while it stays open those machines are sampled every 2 s                                                                                                                                                                                |
-| watch `engine.events`                                      |                                   | the opening `stream engine.events`, then an `event` `notice` per event of SPEC §10.4's closed list alone (`server_restarting`, `server_loop`, `server_powered_off`, `server_back`, `awake_ended`, `port_exposed`, `disk_low`), each in its notification's words |
-
-An error carries its `type` (which decides the exit code), its `code` (a call's own, `call.unknown`, `call.bad-frame` for a line that is no v2 frame, or the engine's: `unknown_vm`, `temporary`, `not_running`, `range_full`, `max_per_vm`, `guest_timeout`, `internal`, `awake_guard`, `awake_range`, `awake_unsupported`, `unknown_page`), its `subject` and `detail`, a `message` and a `hint`, worded as the CLI prints them. A watch takes its connection: a later line on it gets no answer, so a client sends its calls on a second connection. The first page is the frame (pending values), then a page whenever one changes, coalesced over 250 ms and never resent unchanged; a client that does not read for 5 s is dropped. The pages are `menubar` (Home), `menubar.switcher`, `menubar.machine:<name>` (one machine's page, `menubar.machine:infra`), `menubar.ports[:<mac>]` (every Mac's ports, or one Mac's), `menubar.awake`, `menubar.activity[:6m|1h|24h]` (This Mac over that window, 1 h unless named) and `power`. Each is read only while a client watches it. Home: the Strip every 2 s, the machines (each Mac's Awake with them) every 30 s, Needs you every 15 min or on `refresh`, this Mac's VMs, reserved ports and Awake at once. The switcher: the machines when it opens, then every 30 s, when the engine's state moves or on `refresh`. A machine's page: its activity every 2 s and the rest every 30 s, when the engine's state moves or on `refresh`, each read on that machine, so another Mac's page is that Mac's engine's answer, relayed by this one. Ports and Awake: when they open, then every 30 s, when the engine's state moves or on `refresh`, each Mac's through its engine. Activity: every 2 s over its window. A machine is sampled every 60 s, and every 2 s only while a client holds `engine.watch` on it, as the menu bar does while its popover is open: a watch of pages or events alone never makes it so. Inside a VM, the guest's socket serves `engine.services`, `engine.reserve` and `engine.release` in the same frames, relayed to its Mac's engine.
-
 ## Related
 
 - [Machines](machines.md): the engine, and how a VM is reached by ssh.
-- [Configuration](configuration.md): `preferences.json`.
+- [The API](api.md): the engine's calls `ports.share` and the reservations ride.
+- [Preferences](preferences.md): `preferences.json`.
 - [Glossary](../concepts/glossary.md): port, reserved port, share, profile, public name.

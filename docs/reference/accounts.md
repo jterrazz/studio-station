@@ -1,6 +1,6 @@
-# Secrets
+# Accounts
 
-A secret travels only as far as its tier allows: kept on the Mac, shared with a VM as a copy for a time, or bound inside one VM.
+`station accounts` is who is signed in on a machine, and what is shared with its VMs: names and scopes, never a token. A secret travels only as far as its tier allows: kept on the Mac, shared with a VM as a copy for a time, or bound inside one VM.
 
 | Section          | Answers                                                             |
 | ---------------- | ------------------------------------------------------------------- |
@@ -70,4 +70,5 @@ The alternative is a bound login: run `claude /login` inside a permanent workspa
 ## Related
 
 - [Machines](machines.md): `delete`.
-- [Configuration](configuration.md): `claude-token`.
+- [Settings](settings.md): `claude-token`.
+- [Preferences](preferences.md): `share_list`.

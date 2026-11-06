@@ -19,7 +19,7 @@ func secretsFailure(err error) (*fail.Error, bool) {
 	case errors.As(err, &offMac):
 		return usage(offMac.Error(), "station accounts share <account> --with <vm> --on <mac>"), true
 	case errors.As(err, &noStudio):
-		return failed(noStudio.Error(), "see docs/reference/secrets.md#studio-in-a-vm", err), true
+		return failed(noStudio.Error(), "see docs/reference/accounts.md#studio-in-a-vm", err), true
 	case errors.As(err, &step):
 		return failed(step.Error(), "check the VM: station machines "+step.VM, err), true
 	}

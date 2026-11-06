@@ -30,7 +30,7 @@ func preferenceGroups() []string {
 	return []string{
 		setupcontract.GroupName, machinescontract.GroupMacs, machinescontract.GroupVMUser,
 		accountscontract.GroupShareList, accountscontract.GroupV2ShareList, setupcontract.GroupUserEmail, setupcontract.GroupUserName,
-		portscontract.GroupPorts, settingscontract.GroupOffHere,
+		portscontract.GroupPorts, settingscontract.GroupOffHere, awakecontract.GroupNeverSleeps,
 	}
 }
 

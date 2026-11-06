@@ -1,6 +1,6 @@
 # ADR-013: Every service leaves through Serve
 
-**Status:** Accepted
+**Status:** Superseded by [ADR-018](018-two-port-classes.md)
 **Date:** 2026-11-01
 
 Supersedes [ADR-012](012-ports-are-reserved-and-shared.md).

@@ -1,180 +1,239 @@
 # Architecture
 
-`station` is one Go binary in layers: an input layer parses argv, a command invokes one call of a family, a pure page function turns the result into a document, and one output layer prints it. The layers mirror the estate's TypeScript `studio` CLI, and a test refuses an import that crosses them.
+`station` is one Go binary whose tree names what it does: one top-level package per family (`machines`, `apps`, `settings`, `ports`, `awake`...), and inside each the same four parts, its model, its contracts, its calls and its adapters. A surface (the CLI, the TUI, the engine's server, the menu bar through it) turns a gesture into a call, the Router decides on which machine the call runs, and a pure page function turns its result into what is printed. The architecture test holds the tree and the direction of every import ([ADR-014](../decisions/014-families-and-contracts.md)).
 
-| Section                   | Answers                                                         |
-| ------------------------- | --------------------------------------------------------------- |
-| The layers                | The packages under `src/` and what each one holds               |
-| Who may import whom       | The direction dependencies flow, and the test that owns it      |
-| The path of a request     | What happens between argv and the bytes on the terminal         |
-| The error block           | The one error shape, and the exit codes                         |
-| Fang behind the CLI       | Why help, errors and completion can be removed without a change |
-| The catalogue and methods | Why a feature is a value, and the one method table              |
-| The two sources of truth  | The catalogue in the binary, the state on the machine           |
-| The compiler              | The one source layer this repository projects                   |
+| Section                    | Answers                                                           |
+| -------------------------- | ----------------------------------------------------------------- |
+| The tree                   | The packages under `src/`, families first                         |
+| The hexagon in each family | Model, contracts, calls, adapters; strategies; what applies where |
+| The contracts              | Every contract, the family that owns it, its adapters             |
+| The Router                 | Where a call runs: this process, the target, a Mac's engine       |
+| The engine                 | The process on each Mac, its jobs and its events                  |
+| The fake world             | The spec build, and the world every fake reads                    |
+| The path of a request      | What happens between argv and the bytes on the terminal           |
+| Who may import whom        | The rules of `specs/architecture/`                                |
+| The error model            | The one error shape, its types, the exit codes                    |
+| The catalogue              | Why a feature is a value                                          |
+| The state                  | The stores station keeps on a machine                             |
+| The compiler               | What `make generate` projects                                     |
 
-## The layers
+## The tree
+
+The families, each with its model, `contract/`, `calls/` and `adapter/<tech>/`:
 
 ```text
 src/
-  cmd/station/    process entry: reads argv, environment and the three streams once, calls wire
-  cmd/generate/   the compiler: projects the catalogue into the toolbelt skill and the footprint page, and the registry into calls.json
-  wire/           the composition root: builds adapters and services, resolves every environment
-                  variable into a typed option, builds the cobra tree and Fang, maps an error to an exit code
-  surface/cli/    the cobra tree, one folder per command word: input -> call -> page
-    kit/          how a leaf and a group are declared; how a leaf answers the confirmation its call asks; the wording of every domain error
-    words/        the wording of every fail.Code a call raises
-  machines/ apps/ settings/ disk/ ports/ accounts/ background/ awake/ images/ activity/ overview/ setup/
-                  the families: each a pure model, its contract/, its calls/ and its adapter/<tech>/
-  engine/         the per-Mac process: its model (events, the API's calls and frames)
-    calls/        engine.read, engine.start, engine.stop, and the refusals a surface words
-    process/      the engine itself: its runs, its guest sessions, its socket, the guards it holds, its station.api/v2 server
+  machines/  apps/  settings/  disk/  ports/  accounts/  background/  awake/  activity/  images/
+  overview/  the Overview's read (overview/calls), which composes every section's own read
+  setup/     setup.run, the one bootstrap call, and the preferences groups it writes
+  engine/    the engine's model (its events, its own calls), engine/calls, engine/contract (the Notifier)
+    process/ the engine itself: its runs, its guest connections, its jobs, its socket and its server
+    jobs/    the sample job, which feeds Activity's history
+    feeds/   the menu bar's pages, built over watches
 ```
 
-The ports and the data:
-
-```text
-  machines/adapter/
-    tart/         the Engine adapter, over Runner
-    ssh/          the connection to a VM, over x/crypto/ssh, dialed through platform/local's Sockets
-  platform/
-    local/        the host's door (Runner, FS, Env, Net, Sockets, Clock, Host) and its real
-                  adapters: the only importer of os/exec, files, the network
-      localtest/  scripted fakes of that door, and a loopback listener, for tests
-    darwin/       the only cgo: IOKit power assertions, the lid, power sources, notify(3);
-                  the power door and the kernel tables an adapter is handed, with their spec seams
-```
-
-The data and its presentation:
-
-```text
-  catalog/        pure data: tools and their storage rows, config items, managers, images, the embedded dotfiles and recipes
-  page/           the page language: one semantic page (sections, rows, groups, values, marks, reasons, actions), Seal and station.page/v1
-  pages/          one page function per page: domain data to a page, pure (tools today)
-  ui/             the design system: token, atom, molecule, organism, template, and the renderers tty, pipe, json and tui
-  output/         the only place that knows a terminal: picks tty, pipe or json and renders a page through ui/render, and the one error block
-  surface/tui/    the unified Bubble Tea app
-```
-
-The shared kernel, which every family will share and which does no I/O:
+The shared kernel, which does no I/O:
 
 ```text
   core/
-    machine/      a machine's Ref, Kind and Profile, the capabilities it reports, the Verdict of every applicability rule
-    section/      the sections and section.For(kind), the one table of which kind shows which
-    finding/      one Needs you line, and finding.Rank, its one order
-    confirm/      the graded confirmations: confirm.For(action, kind) and confirm.Require
-    call/         a use case as a Call, Bind (the gate before every call), the Registry, the Router interface
-    contract/     the contracts every family shares: Self, Clock, Preferences
-    store/        what every store shares: its unreadable and unwritable errors, its version, the Migrator setup runs
-    fail/         the error type: its type and code, or today's message, hint and exit
+    machine/   a machine's Ref, Kind, System, Capabilities and Profile, and the Verdict of a rule
+    section/   the sections and section.For(kind), the one table of which kind shows which
+    finding/   one Needs you line, and finding.Rank, its one order
+    confirm/   the graded confirmations: confirm.For(action, kind) and confirm.Require
+    call/      a use case as a Call or a Watch, Bind and Gate, the Registry, the Router; lanes/, the read pool
+    contract/  the contracts every family shares: Self, Preferences
+    store/     what every store shares: its errors, its version, the Migrator setup runs
+    fail/      the error: its type, its code, its words
+    adapter/   macos and linux (Self), jsonfile (Preferences), fake
 ```
 
-The plumbing between machines and processes, which does no I/O of its own:
+Between machines, and the machine's own door:
 
 ```text
-  remote/         the Router: a call of this machine runs in this process; given this Mac's engine, one that needs its state runs there
-    api/          station.api/v2: the frames (call, watch, progress, out, error) and the client of a socket
-    serve/        the server of those frames over any connection: the engine's unix socket, never TCP
+  remote/    the Router; api/ (station.api/v2 frames, the client, calls.json); serve/ (their server);
+             each/ (a call fanned out to many machines); contract/ and adapter/ (unix, sshstdio)
+  platform/
+    local/   Runner, FS, Env, Net, Sockets, Clock: the only importer of os/exec, files, the network;
+             localtest/, its scripted fakes
+    darwin/  the only cgo: IOKit (battery, lid, thermal, assertions) and the kernel tables, with their spec seams
 ```
 
-Beside `src/`, `specs/` holds the proofs:
+The data, the presentation and the surfaces:
 
 ```text
-specs/
-  architecture/   the test of the layers
-  cli/            the end-to-end spec documents
+  catalog/   pure data: apps and their disk rows, settings, managers, images, profiles, dotfiles, recipes
+  page/      the page language: sections, rows, values, marks, reasons, actions; station.page/v1
+  pages/     one package per page: a family's result to a page, pure
+  ui/        token, atom, molecule, organism, template; render/ (tty, pipe, json, tui); help/
+  output/    the only place that knows a terminal: picks the form, prints the one error block
+  surface/
+    cli/     the cobra tree, one folder per noun and verb; kit/; words/ (every code's words)
+    tui/     the Bubble Tea app and its screens/
+  world/     the fake world: data only, and its closed list of events
+  wire/      the composition root: adapters, stores, the Profile, the Registry, the Router, Fang
+  cmd/       station/ (process entry: argv, environment, streams, once), generate/ (the compiler)
 ```
 
-A leaf folder `surface/cli/<noun>/<verb>/` holds two files: `input.go` (argv to a typed input) and `command.go` (one call through the router, one page, one answer). A leaf never prints: it answers through `kit.IO`, and the `output` layer decides the form.
+Beside `src/`: `apps/menubar` (Swift, a client of the engine's socket), `specs/` (the proofs, [Test](../guides/test.md)), `skills/` (what this repository ships to agents).
 
-Page functions live in `pages/<page>/` (presenters, for the pages not migrated yet, in `present/<subject>/`), not in the leaf folder, because the TUI renders the same page, read through the CLI's own words with `--page`: a `tui` to `cli` import would couple the TUI to cobra. How a page looks in each medium is the kit's alone; the design system's rules (the kit's levels, glyphs only in `ui/token`, only pages build pages, no layout outside `ui/`) are rules 13 to 21 of the architecture test, which lists the packages not migrated yet in an allowlist that only shrinks.
+## The hexagon in each family
 
-## Who may import whom
+Every family has the same four parts, named the same way, so a reader sees the business first and the plumbing second:
 
-The import table of today's layers and the list of forbidden symbols are Go literals in [`specs/architecture/layers_test.go`](../../specs/architecture/layers_test.go); the families' import table is one in [`specs/architecture/imports_test.go`](../../specs/architecture/imports_test.go), and a package one table rules the other skips. This page draws the direction and does not restate the rules.
+| Part              | Holds                                                                                                    | May import                                                       |
+| ----------------- | -------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------- |
+| the root          | the model and its rules: values, judgements (`settings.Judge`, `awake.Active(caps)`), no I/O             | `core/*`, `catalog`, other families' models                      |
+| `contract/`       | one interface per need (`Hypervisor`, `Jobs`, `Meter`...), its preference group, and `contracttest/`     | the model, `core`                                                |
+| `calls/`          | the use cases, each a `call.Call` or `call.Watch` named `<family>.<verb>`, and `All`, the family's list  | the model, its contracts, other families' `contract` and `calls` |
+| `adapter/<tech>/` | one adapter per technology (`tart`, `launchd`, `brew`...); `fake/`, over the world; `jsonfile/`, a store | its contract, `platform/local`                                   |
 
-```text
-cmd/station ─> wire ─> surface/cli ─> kit ─> domain ─> system <─ platform/local
-               │       │                     │         ▲
-               │       └─> present <─────────┘         └── machines/adapter/tart
-               ├─> output ─> theme
-               ├─> prompt ─> theme/forms
-               └─> surface/tui ─> present, domain, output
-catalog: imported by domain, present, surface, prompt; imports nothing of the module
-```
+A call declares its name, its section (empty for a call of no section: `machines.*`, `images.*`, `engine.*`, `setup.run`), its `Where`, its `Applies` (a `machine.Applies` rule over the target's Profile), the confirmation it may require, the error codes it may end in, and its `Run`. `wire` binds each family's `All` to its dependencies and hands them to the Registry. Before every call the gate runs (`call.Gate`): the target's kind must list the call's section in `core/section.For`, and the call's own `Applies` must say yes; a no is `not-for-this-machine`, exit 2, with the reason in words.
 
-What the test holds, in short: `domain` reaches the machine only through `system` ports; only `platform/local` imports `os/exec`, the network and the process environment; only `output` writes bytes and only `ui/token` holds a colour; only `wire` imports Fang; the catalogue holds values and no function; every domain error type has its wording in `surface/cli/kit`. Each rule has a mutation test, so a rule that stops biting fails the gate.
+What a machine can do is its `core/machine.Profile`, built once by `wire`: its kind and system from `Self`, its battery, lid and thermal from `awake/contract.Power`, a job manager, a hypervisor and an engine from what it wires. A rule reads the capabilities, never a model name: a desktop Mac has no battery guard because it reports no battery, and a Linux workspace has no Background because it reports no job manager.
 
-The tree is moving to families first (machines, apps, settings, ports, awake...), each with its model, `contract/`, `calls/` and `adapter/<tech>/`. Fourteen rules hold that tree: `tree-screams` (`tree_test.go`), `imports` (`imports_test.go`), `technology-words` (`words_test.go`), `no-model-names` (`models_test.go`), `one-way-into-a-vm` (`vm_test.go`: a VM is reached by its engine's one `Guest` connection alone, no `scp`, an `ssh` exec only to a Mac) `one-writer-per-store` (`stores_test.go`: only `wire` builds a store's `jsonfile` adapter, and a store or a preference group is written only by its family's calls) `no-outbound-literals` (`outbound_test.go`: no package a machine's read runs through, the Overview and the adapters of the contracts it reads, spells an internet address, so a read calls no third-party server), `tui-loading-law` (`tui_test.go`: the TUI's one read runs only inside a command, never in a view), and three in `calls_test.go`: `calls-gated` (every exported Call or Watch is in its family's `All`, named `<family>.<verb>` once, today's words allowlisted, and sets its `Applies`), `confirm-in-usecase` (a call naming a confirmation requires it in its `Run`; no surface requires one, answers one before its call asks, or puts a question but kit's `Ask`) and `every-code-worded` (every `fail.Code` has its words in `surface/cli/words`, and nothing worded is never raised); `contracts-are-whole` (`contracts_test.go`: every interface of a `contract` package has a real adapter and a fake in its family's `adapter/fake`, and a suite of its `contracttest` that both run), `coverage` (`coverage_test.go`: every call tells a story of each outcome it declares under `specs/usecases/`) and `spec-build-never-ships` (`release_test.go`: the release binary links no world and no fake, and the spec build links every family's fake). `imports` also keeps a surface off the engine model: it reaches the engine through `src/engine/calls`. All but `no-outbound-literals` list today's offenders (`imports` the packages moved into the new tree as they were) in an allowlist that only shrinks: a line that is no longer true fails the gate until it is removed.
+A strategy is a contract with several adapters chosen per item at run time, through one registry in the contract package: `Installers` of `src/apps/contract/` (per catalogue method), `settings/contract.Appliers` (per effect), `ports/contract.PublicRoutes` (per `--via` route). No other code switches on a method, an effect or a route. The `Hypervisor` is one contract with one real adapter, `tart`; the spec build runs the VM stories a second time over a fake `vz`, so a second hypervisor is a folder and a line in `wire`. A family may import another family's `contract` (Settings' `lock-after-login` writes through `background/contract.Jobs`), never its adapters.
 
-`src/world` is the fake world: data only, one slice per family on each of its Macs and VMs, and the closed list of its events. The spec build (`-tags world`, never shipped) is the one build that wires it: under `$STATION_WORLD`, `wire/world_on.go` hands every family's `adapter/fake` over this Mac's slice where the release build's `wire/world_off.go` keeps the real adapter, and steps each Mac's engine in the command. How a use case is told over it is [Testing](../guides/test.md#a-use-case-over-a-world)'s.
+## The contracts
 
-`wire` builds this machine's `core/machine.Profile` once: its kind and system from `Self` (`core/adapter/macos` tells a Mac from a macOS VM, `core/adapter/linux`), its battery, lid and thermal from `awake/contract.Power`, and what else it can do from the adapters it wires. A rule reads those capabilities, never a model name: the Awake guards a Mac has are `awake.Active(caps)`, so a desktop Mac has no battery guard because it reports no battery. A machine's disk is `disk/contract.DiskUsage` (`apfs` on macOS, `posix` on Linux).
+Each contract has a real adapter, a fake in its family's `adapter/fake/`, and a suite in its `contract/contracttest/` that both pass; the rule `contracts-are-whole` fails a contract missing any of the three.
 
-`station overview` is the Overview's read: `overview.read` (`overview/calls`) is a watch that composes each section's own read through the Router, in the one order `core/section.For` gives the machine's kind, so its first value has every line pending and each answer fills its own line; Needs you is every read's findings ranked by `core/finding.Rank`. It owns no fact. `pages/home` renders it, and its JSON is `station.overview.read/v1`. For a VM, `station overview --on <vm>` (and `station machines <vm>`) runs the same read inside the VM, through its Mac, and `pages/machines` puts it between the Mac's view of the VM (its first line, its health). The hidden alias `station status --json` still prints `station.status/v1` from the v2 reading, the one reader of it left (the TUI's Home and the menu bar draw `overview.Summary`): its facts are `settings/contract.Inspector`'s (the kernel, the network, the protections and updates, by `macos` or `linux`; the owner's git, gpg, GitHub and ssh key, by `cli`), its counters `activity/contract.Meter`'s, composed through the `core/call/lanes` pool.
+| Family       | Contracts                                                                                       | Adapters                                                                                                                               |
+| ------------ | ----------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| `machines`   | `Hypervisor`, `Guest` and `GuestDialer`, `CheckRunner`, `SSHConfig`, `Unlocker`, `MachineStore` | `tart`; `ssh` (one x/crypto connection per VM), `dial`; `openssh` (the `~/.ssh/config` block); `macos`; `jsonfile`                     |
+| `images`     | `ImageSource`, `ImageStore`                                                                     | `oci` (ghcr); `jsonfile`                                                                                                               |
+| `apps`       | `Installer` (strategy), `Bundler`, `Lined`                                                      | `brew`, `mas`, `mise`, `npm`, `bun`, `uv`, `skills`, `script`, `shell`, `app` (presence only)                                          |
+| `settings`   | `Applier` (strategy), `Inspector`, `AppliedStore`                                               | `dotfile`, `touch`, `gitaliases`, `zshblock`, `defaults`, `vault`, `neversleeps`, `docker`, `git`, `macos`; `cli`, `linux`; `jsonfile` |
+| `disk`       | `DiskUsage`                                                                                     | `apfs` (macOS), `posix` (Linux), `docker`                                                                                              |
+| `ports`      | `Listeners`, `Tailnet`, `PublicRoute` (strategy), `ReservationStore`, `DeclarationStore`        | `lsof` (macOS), `procnet` (Linux), `docker`, `guest`; `tailscale`; `cloudflare`, `funnel`, `lan`; `jsonfile`                           |
+| `accounts`   | `Identities`, `Vault`, `SecretSource`, `ShareStore`                                             | `cli` (catalogue-driven sign-in reads), `tailscale`; `keychain`; `studio`; `jsonfile`                                                  |
+| `background` | `Jobs`                                                                                          | `launchd`                                                                                                                              |
+| `awake`      | `Power`                                                                                         | `macos` (IOKit through `platform/darwin`, `pmset`)                                                                                     |
+| `activity`   | `Meter`                                                                                         | `macos` (sysctl, IOKit block devices, proc_pidinfo), `linux` (`/proc`)                                                                 |
+| `engine`     | `Notifier`                                                                                      | `log` (the engine log)                                                                                                                 |
+| `remote`     | `Endpoint` and `EndpointDialer`                                                                 | `unix` (this Mac's engine socket), `sshstdio` (another Mac: `ssh <mac> station engine attach`)                                         |
+| `core`       | `Self`, `Preferences`                                                                           | `macos`, `linux`; `jsonfile` (`preferences.json`)                                                                                      |
+
+Not a contract, on purpose: the activity history and the engine's run registry live in `engine/process` and are reached through the small consumer-side interfaces a family's `calls` declares (`machines/calls.Runs`, `activity/calls.History`); there is nothing to swap and nothing to fake. Infrastructure is not a contract either: `Runner`, `FS`, `Env`, `Net`, `Sockets` and `Clock` are `platform/local`'s, importable by adapters only, so no call and no model can run a command or open a file.
+
+## The Router
+
+Every surface reaches a call through `core/call.Router` (`Invoke`, `Watch`); `call.Invoke[D, In, Out]` keeps the call's dependencies out of the surface's sight. `remote.Router`, which `wire` builds from the Registry and the two `EndpointDialer`s, resolves a call by its `Where` and its target:
+
+| Target                         | `Where`              | Runs                                                                                                  |
+| ------------------------------ | -------------------- | ----------------------------------------------------------------------------------------------------- |
+| any                            | `in-process`         | in this process; the call itself may fan out to many machines through `remote/each`                   |
+| this machine                   | `at-target`          | in this process                                                                                       |
+| a VM of this Mac               | `at-target`          | this Mac's engine, over its socket, which relays the frame to the VM's guest over its one connection  |
+| this Mac, or a VM of this Mac  | `in-engine`          | this Mac's engine, over its unix socket                                                               |
+| another Mac, or one of its VMs | any but `in-process` | that Mac's engine, dialed by `ssh <mac> station engine attach`, which resolves the frame the same way |
+
+So there is one way into a VM (its Mac's engine and its one `Guest` connection) and one way to another Mac (`sshstdio`); station never runs `ssh <vm>` ([ADR-016](../decisions/016-api-v2-and-remote-by-api.md)). The far side returns data, and this binary renders it with its own pages, so `station apps --on linux-1` looks exactly like `station apps` on linux-1. Each connection opens with `Hello`: the far version and the calls it serves; a call it does not serve is `far-too-old`, with the command that updates it. A confirmation travels in the call's input and the far side judges it with the same `confirm.For`. When this Mac's engine is down an action that needs it is refused with `engine-stopped`; a read never is, it returns what it can read and the `Engine stopped` finding, exit 0. Inside a VM, station targets the VM itself, and its few `in-engine` calls (`ports.share`) reach its Mac's engine through the socket the engine offers inside the VM over the same guest connection, so a VM holds no key to its Mac. All machines is `remote/each.Do`: 4 machines at a time, 5 s each, an unreachable Mac a finding of its own. The frames are [The API](../reference/api.md)'s.
+
+## The engine
+
+`engine/` is the process launchd keeps alive on each Mac (`station engine run`, the agent `com.jterrazz.station.engine`). It is a family like the others, plus a process: `engine` holds its model (its `Event`s, the names and shapes of its own calls), `engine/calls` its calls (`engine.read`, `engine.start`, `engine.stop`), `engine/contract` the `Notifier`. `engine/process` is the engine itself: it holds the runs of every VM, the one guest connection of each running VM, the Awake session, the activity history, the reservations' listeners and the event bus, serves `remote/serve` on its socket, and runs its jobs. The jobs hold no product rule of their own: each calls its family's rules and calls.
+
+| Job        | Runs                                                   | Does                                                                                                                |
+| ---------- | ------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------- |
+| `keep`     | when a run ends, at start, on the engine's loop        | keeps each VM in its wanted state: a server boots again after its wait; the health steps after every boot           |
+| `guest`    | per running VM                                         | holds its one `Guest` connection: dial after boot, redial, close at the end; every other job uses it                |
+| `share`    | on a reservation change, on the loop                   | reconciles what Tailscale Serve shares with the reserved ports                                                      |
+| `expire`   | every minute                                           | takes back a shared account whose term ended                                                                        |
+| `awake`    | on a reading change, on `never_sleeps`, on the loop    | holds the keep-awake session and Never sleeps (`Power.Hold`), ends them by the guards this Mac's capabilities allow |
+| `sample`   | every 2 s while a surface watches a machine, else 60 s | feeds Activity's history (`engine/jobs`)                                                                            |
+| `exposure` | every 5 min                                            | reads every listener of this Mac and its VMs; a port reachable outside Tailscale undeclared is told                 |
+
+An event (`engine.Event`: its name, its machine, its text, its severity) is the one channel the `Notifier` and the menu bar read: `server_restarting`, `server_loop`, `server_powered_off`, `server_back`, `awake_ended`, `port_exposed`, `disk_low`. The menu bar's pages are built in `engine/feeds` over watches, and streamed to it as `station.page/v1`.
+
+## The fake world
+
+`src/world` is the fake world: one serialisable value holding, for each Mac and VM, one slice per family, the image registry, the clock, and the faults scripted for the fakes; its events are a closed list (`reboot`, `power-cut`, `crash`, `listen`, `advance`, `unplug`...). The spec build (`-tags world`, never shipped) is the one build that wires it: under `$STATION_WORLD`, `wire/world_on.go` hands every family's `adapter/fake` over its machine's slice where the release build's `wire/world_off.go` keeps the real adapter, and steps each Mac's engine over the world's clock. How a use case is told over it is [Test](../guides/test.md#a-use-case-over-a-world)'s, and why is [ADR-020](../decisions/020-the-fake-world.md).
 
 ## The path of a request
 
 `station apps install node`:
 
-1. `cmd/station` hands argv and the environment to `wire.Run`.
-2. `wire` builds the families' calls over the real adapters and the cobra tree, and runs it under Fang.
-3. The leaf `surface/cli/apps/install` binds argv to an `Input`, then validates it against the catalogue and the preferences (refusals are exit 2, before any question, any read and any effect).
-4. The leaf invokes one call, `apps.install` of `src/apps/calls`, through the router `wire` built from every family's `All`: this machine's calls run in this process, past the gate of the target's section table and the call's own `Applies`. The call orders dependencies, runs each method's installer from the `Installers` registry and reads the inventory back.
-5. A call that confirms decides it in its own `Run` (`confirm.Require`); when it refuses with `NeedsConfirmation`, kit answers: `--yes`, or the leaf's question on a terminal (its `Ask`), or a refusal, then invokes it once more with the answer. No surface decides whether to ask.
-6. The leaf hands the result to its page function, `pages/apps` for `station apps`, which returns a `page.Page`, and to its contract value for `--json`.
-7. `output` prints it in the form the stream allows, through `ui/render`: tty with colour, pipe as tab-separated records, json (the contract), or the page itself as `station.page/v1` under the hidden `--page`. The form is decided once per stream; `NO_COLOR` degrades a terminal to the pipe form.
+1. `cmd/station` hands argv, the environment and the streams to `wire.Run`.
+2. `wire` builds this machine's Profile, the stores, every family's calls over the real adapters, the Registry and the Router, then the cobra tree, and runs it under Fang.
+3. The leaf `surface/cli/apps/install` binds argv to the call's input; argv's own refusals exit 2 before any question, any read and any effect.
+4. The leaf invokes `apps.install` through the Router. The target is this machine (`--on` and `station use` change it), so the call runs in this process, past the gate. The call orders the dependencies, runs each method's installer from the `Installers` registry, and reads the inventory back.
+5. A call that confirms decides it in its own `Run` (`confirm.Require`); when it refuses with `needs-confirmation`, kit answers: `--yes`, the leaf's question on a terminal, or a refusal, then invokes it once more with the answer. No surface decides whether to ask.
+6. The leaf hands the result to its page function (`pages/apps`), which returns a `page.Page`, and to its JSON document for `--json`.
+7. `output` prints it in the form the stream allows: tty with colour, pipe as tab-separated records, json (`station.<call>/v1`), or the page itself as `station.page/v1` under the hidden `--page` (what the TUI renders). `NO_COLOR` degrades a terminal to the pipe form.
 
-Multi-step behaviour (install then configure, restart then wait) lives in the use case, so a leaf and a TUI action make the same one call.
+Multi-step behaviour (install then configure, restart then wait) lives in the call, so a CLI leaf, a TUI key and a menu-bar click make the same one call.
 
-## The error block
+## Who may import whom
 
-Every failure prints one block on stderr and nothing else writes an error:
+The rules are Go tests under [`specs/architecture/`](../../specs/architecture/); each proves it still bites by judging one violating file in memory, and each rule that lists today's offenders keeps them in an allowlist that only shrinks: a line no longer true fails the gate until it is removed. This page names them and restates none.
+
+| Rule                                                                     | File                                                   | Holds                                                                                                                                                                   |
+| ------------------------------------------------------------------------ | ------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `tree-screams`                                                           | `tree_test.go`                                         | the top of `src/` is families and the named shared packages; inside a family, only its four parts; every call sets `Applies`                                            |
+| `imports`                                                                | `imports_test.go`                                      | the families' import table: a model reaches no platform, an adapter only its own contract, a surface the engine only through `engine/calls`                             |
+| the layers                                                               | `layers_test.go`                                       | the presentation's table (page, pages, ui, output, surfaces, wire) and who may hold a symbol: `os/exec`, files, the clock, a colour, Fang, cgo                          |
+| `technology-words`, `no-model-names`                                     | `words_test.go`, `models_test.go`                      | a technology is named only in its adapter; no rule reads a Mac's model name                                                                                             |
+| `contracts-are-whole`                                                    | `contracts_test.go`                                    | every contract has a real adapter, a fake and a suite both pass                                                                                                         |
+| `calls-gated`, `confirm-in-usecase`, `every-code-worded`                 | `calls_test.go`                                        | every call is in its family's `All` once, named `<family>.<verb>`; a confirmation is required by its call alone; every `fail.Code` has its words in `surface/cli/words` |
+| `one-way-into-a-vm`                                                      | `vm_test.go`                                           | a VM is reached by its engine's one `Guest` connection: no `scp`, no `ssh` exec but to a Mac                                                                            |
+| `one-writer-per-store`                                                   | `stores_test.go`                                       | only `wire` builds a store's `jsonfile`, and a store or a preference group is written only by its family's calls                                                        |
+| `no-outbound-literals`                                                   | `outbound_test.go`                                     | a machine's read calls no third-party server                                                                                                                            |
+| `no-remote-reexec`, `engine-no-tcp`                                      | `remote_test.go`, `tcp_test.go`                        | no command is executed again on another machine to read its text; the engine listens on no TCP port                                                                     |
+| `no-sudo-literal`, `no-subprocess-in-sample`, `fixtures-carry-no-secret` | `sudo_test.go`, `sample_test.go`, `fixtures_test.go`   | station never runs sudo (a fix names the command for you); the sample job runs no program; no fixture holds a token                                                     |
+| `tui-loading-law`                                                        | `tui_test.go`                                          | the TUI's reads run only inside a command, never in a view                                                                                                              |
+| `coverage`                                                               | `coverage_test.go`                                     | every call tells a story of each outcome it declares under `specs/usecases/`                                                                                            |
+| `spec-build-never-ships`                                                 | `release_test.go`                                      | the release binary links no world and no fake; the spec build links every family's fake                                                                                 |
+| the words                                                                | `banned_test.go`, `vocabulary_test.go`, `help_test.go` | the retired words never come back in a page, a help line or an error word                                                                                               |
+| the calls' list                                                          | `api_test.go`                                          | `calls.json` is what the Registry holds                                                                                                                                 |
+
+## The error model
+
+Every failure is one `core/fail` error: its type, its code (`confirm.mismatch`, `account.not-signed-in`), its subject, and its words, kept in `surface/cli/words` (one per code) and `surface/cli/kit` (`failures_<family>.go`, for the errors a family's adapters raise). It prints as one block on stderr, and nothing else writes an error:
 
 ```text
 Error: no app named "nope"
 Hint: station apps
 ```
 
-The exit code comes from the returned error, never from a call to exit inside a command:
+With `--json` the same error is also the `station.error/v1` document on stdout. The exit code comes from the type, never from a call to exit inside a command:
 
-| Code | Means                                                                                                           |
-| ---- | --------------------------------------------------------------------------------------------------------------- |
-| 0    | Done, or a read that found findings (an unreachable machine is a finding)                                       |
-| 1    | An operation failed, or a confirmation was declined                                                             |
-| 2    | A refusal: argv, the catalogue, the preferences or the machine kind said no, before any question and any effect |
-| 130  | Interrupted; no block is printed                                                                                |
+| Code | Types                                                                                  |
+| ---- | -------------------------------------------------------------------------------------- |
+| 0    | done, or a read that found findings (an unreachable machine is a finding)              |
+| 1    | `failed`, `unreachable`, `engine-stopped`, `far-too-old`, `declined`                   |
+| 2    | `refused`, `not-found`, `not-for-this-machine`, `needs-confirmation`, `needs-terminal` |
+| 130  | `interrupted`; no block is printed                                                     |
 
-A bare group with nothing to list prints its menu on stderr and exits 2, with no block. The wording of every domain error (message and one hint) lives in `surface/cli/kit`'s `failures_<noun>.go` files, and the layer test requires one for every exported error type.
+Fang renders the help, the version and the completion script, and handles the interrupt, behind the CLI's own error layer: `wire` is its only importer, so removing it is one call. `station --version` prints `station <version> (<commit>)`, stamped by the linker from the tag ([ADR-005](../decisions/005-the-version-is-stamped-from-the-tag.md)).
 
-## Fang behind the CLI
+## The catalogue
 
-Fang renders the help, the version and the completion script, and handles the interrupt. It sits behind the CLI's own error layer: its error handler only calls the CLI's writer, and `wire` is the only importer. Removing Fang is replacing one call in `wire` by cobra's own execute plus the same failure call; no command changes.
+The catalogue is values in `src/catalog/`: apps (agent skills included) and each app's disk row, settings, managers, images, ports' profiles. A value carries no function, and a test says so: behaviour chosen by data belongs to a family, picked by the value's type from a closed union. **Add to the catalogue, not to command code**: one app entry gives the app a row in `station apps`, a count in the Overview, an install, a remove, an update and its Disk row, because all of them read the same value. Every entry says where it lives on (`mac-only`, `every-machine`, `vms-only`), so one binary lists and installs only what fits its machine. Which folder a change opens is [Develop](../guides/develop.md#where-a-change-goes)'s.
 
-`station --version` prints `station version <version> (<commit>)`. The version is stamped by the linker from the tag, in the Makefile and the release workflow ([ADR-005](../decisions/005-the-version-is-stamped-from-the-tag.md)).
+## The state
 
-## The catalogue and methods
+The binary holds the catalogue; the machine holds its own state, in the XDG folders, each store one contract of its family with one `jsonfile` adapter, built by `wire` alone:
 
-The catalogue is values in `src/catalog/`: apps (agent skills included), settings, managers, images, and each app's disk row. A catalogue value carries no function, and a test says so, because behaviour chosen by data belongs to the domain, chosen by the value's type from a closed union.
+| Store              | Family     | File                                                                              |
+| ------------------ | ---------- | --------------------------------------------------------------------------------- |
+| `Preferences`      | `core`     | `~/.config/station/preferences.json` ([Preferences](../reference/preferences.md)) |
+| `DeclarationStore` | `ports`    | `~/.config/station/public.json`                                                   |
+| `MachineStore`     | `machines` | `~/.local/state/station/vms/`                                                     |
+| `ImageStore`       | `images`   | `~/.local/state/station/images/`                                                  |
+| `ShareStore`       | `accounts` | `~/.local/state/station/shares.json`                                              |
+| `ReservationStore` | `ports`    | `~/.local/state/station/leases.json`                                              |
+| `AppliedStore`     | `settings` | `~/.local/state/station/applied/`                                                 |
 
-The rule this repository is built on: **add to the catalogue, not to command code**. One app entry gives the same app a row in `station apps`, a line in `station overview`, an install, a remove and an update path, because all of them read the same value. Which file a change opens is [Develop](../guides/develop.md)'s table.
-
-How an app installs is one registry, `Installers` in `src/apps/contract/`: one adapter per method under `src/apps/adapter/<method>/`, with its install, uninstall, update and inventory commands, and what it can do (its abilities, whether it keeps a list, whether its installs ride the bundle). No other code switches on a method; the machine kinds that accept a method are the catalogue's. `brew bundle` installs and upgrades every method it covers; uninstall is each method's native command ([ADR-002](../decisions/002-brew-bundle-installs-native-commands-uninstall.md)). The model is [Apps and skills](../reference/apps-and-skills.md)'s.
-
-Every catalogue entry says where it lives on, the kinds of machine it may live on, so one binary on a Mac, a Linux VM and a macOS VM lists and installs only what fits there ([Glossary](glossary.md)).
-
-## The two sources of truth
-
-The binary holds the catalogue: what station knows how to install and configure. The machine holds its own state, in the XDG folders: `~/.config/station/preferences.json` (this machine's name, the hosts, the tailnet choice, the share list), the account shares in `shares.json`, the VM records and image records under `~/.local/state/station/`. Nothing else is consulted for that, and no path inside the clone matters: the dotfiles and the VM recipes are embedded in the binary, so a deleted or moved clone breaks nothing. [Footprint](../reference/footprint.md) lists every file.
+Each store carries its version; `station setup` runs every store's `Migrator`, and a store written by a newer station is refused rather than read. Nothing else is consulted, and no file inside the clone matters: the dotfiles and the VM recipes are embedded. [Footprint](../reference/footprint.md) lists every file station writes.
 
 ## The compiler
 
-This repository is an application in the sense of the [repo-structure doctrine](repo-structure.md): it authors a corpus, routes to it from `CLAUDE.md` and `skills/`, and generates no API reference. Its one source layer worth projecting is the app catalogue, and `make generate` (`src/cmd/generate/`) renders it between the `GENERATED` markers of `skills/studio-toolbelt/SKILL.md`. The projection is committed and a test fails when it drifts ([Apps and skills](../reference/apps-and-skills.md)).
+This repository is an application in the sense of the [repo-structure doctrine](repo-structure.md): it authors a corpus and generates no API reference. Its compiler is `make generate` (`src/cmd/generate/`), which writes, from the catalogue and the Registry: the rosters between the `GENERATED` markers of `skills/studio-toolbelt/SKILL.md`, `docs/reference/footprint.md` whole, the page fixtures of `src/ui/testdata/pages/` from the real page functions, the menu bar's recorded streams, and `src/remote/api/calls.json`. Each projection is committed, and a test fails when one drifts.
 
 ## Related
 
-- [Design system](design-system.md): the palette, the marks and the documents the output layer prints.
-- [Develop](../guides/develop.md): the gestures and the table of which file a change opens.
-- [Test](../guides/test.md): the suites that prove the layers and the behaviour.
-- [ADR-001](../decisions/001-station-mirrors-the-studio-cli-layers.md): why the layers mirror the `studio` CLI, and where they deliberately differ.
+- [Design system](design-system.md): what the pages look like in each form.
+- [Develop](../guides/develop.md): which folder a change opens.
+- [Test](../guides/test.md): the suites that prove the tree and the behaviour.
+- [The API](../reference/api.md): `station.api/v2` and `calls.json`.
+- [ADR-014](../decisions/014-families-and-contracts.md): why the tree is families.
