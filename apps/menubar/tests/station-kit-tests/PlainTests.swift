@@ -10,7 +10,7 @@ import XCTest
 final class PlainTests: XCTestCase {
     func bitmap(_ view: some View, contrast: ColorSchemeContrast = .standard) throws -> Bitmap {
         let themed = view.stationTheme(.dark).environment(\.stationNow, Snapshot.now).environment(\.stationStill, true)
-            .environment(\._colorSchemeContrast, contrast)
+            .stationAccessibility(contrast: contrast)
         let renderer = ImageRenderer(content: themed)
         renderer.scale = 1
         return try XCTUnwrap(renderer.cgImage.flatMap(Bitmap.init))
@@ -45,6 +45,15 @@ final class PlainTests: XCTestCase {
         XCTAssertGreaterThan(middle, 0)
         XCTAssertLessThan(middle, 40, "a tile is a faint fill, never a painted card")
         let stroked = try bitmap(group, contrast: .increased)
+        XCTAssertEqual(alpha(stroked, x: stroked.width / 2, y: stroked.height / 2), 0)
+        XCTAssertGreaterThan(lit(stroked, row: stroked.height / 2), 0)
+    }
+
+    func testTheMacsIncreaseContrastReachesTheTileThroughThePanelRoot() throws {
+        let group = Color.clear.frame(width: 80, height: 40).stationTile()
+        let renderer = ImageRenderer(content: group.stationSystemAccessibility().stationTheme(.dark).environment(\._colorSchemeContrast, .increased))
+        renderer.scale = 1
+        let stroked = try XCTUnwrap(renderer.cgImage.flatMap(Bitmap.init))
         XCTAssertEqual(alpha(stroked, x: stroked.width / 2, y: stroked.height / 2), 0)
         XCTAssertGreaterThan(lit(stroked, row: stroked.height / 2), 0)
     }

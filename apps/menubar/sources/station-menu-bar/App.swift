@@ -27,6 +27,7 @@ struct StationMenuBarApp: App {
         MenuBarExtra {
             Popover(model.state, handlers: handlers)
                 .stationSystemTheme()
+                .stationSystemAccessibility()
                 .onAppear { model.opened() }
                 .onDisappear { model.closed() }
         } label: {

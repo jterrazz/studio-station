@@ -34,8 +34,8 @@ struct PanelGlass: ViewModifier {
 struct TileGround: ViewModifier {
     let padding: EdgeInsets
     let tint: Color?
-    @Environment(\.accessibilityReduceTransparency) private var reduce
-    @Environment(\.colorSchemeContrast) private var contrast
+    @Environment(\.stationReduceTransparency) private var reduce
+    @Environment(\.stationContrast) private var contrast
     @Environment(\.colorScheme) private var scheme
 
     func body(content: Content) -> some View {
@@ -184,7 +184,7 @@ public struct IconTile: View {
     let pulse: Bool
     @Environment(\.stationPalette) private var palette
     @Environment(\.stationStill) private var still
-    @Environment(\.colorSchemeContrast) private var contrast
+    @Environment(\.stationContrast) private var contrast
 
     public init(_ symbol: String, active: Bool = false, tint: Color? = nil, size: CGFloat = Token.Tile.icon, pulse: Bool = false) {
         self.symbol = symbol
