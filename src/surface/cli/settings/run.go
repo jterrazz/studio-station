@@ -45,13 +45,13 @@ func RunGit(env kit.Env) *cobra.Command {
 	for _, a := range catalog.GitShortcuts.Aliases {
 		leaves = append(leaves, gitLeaf(env, oldGitWord(a.Name), a.Name))
 	}
-	return kit.Group("git", "Git shortcuts, now git's own aliases", "", env, leaves...)
+	return kit.Group(catalog.GitShortcutsGroup, "Git shortcuts, now git's own aliases", "", env, leaves...)
 }
 
 func gitLeaf(env kit.Env, old, alias string) *cobra.Command {
 	return kit.AliasShell(kit.Command(kit.Leaf[runGitIn]{
 		Use:     old,
-		Short:   "git " + alias,
+		Short:   catalog.GitShortcutLine(alias),
 		Args:    cobra.ArbitraryArgs,
 		RawArgs: true,
 		Bind: func(in *runGitIn, args []string) error {
@@ -62,7 +62,7 @@ func gitLeaf(env kit.Env, old, alias string) *cobra.Command {
 			_, err := call.Invoke(ctx, env.Calls, env.Target(), settingscalls.Git, settingscalls.GitIn{Alias: alias, Words: in.Words}, nil)
 			return err
 		},
-	}, env), "git "+alias)
+	}, env), catalog.GitShortcutLine(alias))
 }
 
 type runContainersIn struct{}
