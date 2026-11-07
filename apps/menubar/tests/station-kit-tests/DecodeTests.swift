@@ -11,6 +11,15 @@ final class DecodeTests: XCTestCase {
         }
     }
 
+    func testAPageThatSetsEveryFieldOfTheLanguageDecodesWhole() throws {
+        let data = try Data(contentsOf: Tree.root.appendingPathComponent("src/page/testdata/every-field.json"))
+        let page = try Page.decode(data)
+        let sent = try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? NSDictionary)
+        let kept = try XCTUnwrap(JSONSerialization.jsonObject(with: page.encoded()) as? NSDictionary)
+        XCTAssertEqual(kept, sent, "the kit drops or changes a field the engine sends")
+        XCTAssertEqual(try Page.decode(page.encoded()), page)
+    }
+
     func testADocumentOfAnotherSchemaIsRefused() {
         XCTAssertThrowsError(try Page.decode(Data(#"{"schema":"station.status/v1"}"#.utf8)))
     }
