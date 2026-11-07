@@ -44,18 +44,24 @@ public struct ActivityPage: View {
                 }
             }
             if let top = page.section("processes") {
-                VStack(alignment: .leading, spacing: 2) {
+                let memory = Self.memory(top)
+                VStack(alignment: .leading, spacing: Token.Space.gap) {
                     HStack(spacing: Token.Space.gap) {
                         SectionHeader(top.title ?? "")
                         Spacer(minLength: 0)
                         ForEach(["CPU", "Memory"], id: \.self) { key in
                             Text(key.uppercased()).font(.system(size: Token.Size.caption, weight: .semibold)).tracking(Token.Size.caption * Token.Size.tracking)
-                                .foregroundStyle(.secondary).frame(width: 52, alignment: .trailing)
+                                .foregroundStyle(.secondary).frame(width: Self.column, alignment: .trailing)
                         }
                     }
-                    ForEach(Array(top.rows.prefix(5).enumerated()), id: \.offset) { _, r in
-                        process(top, r)
+                    .padding(.trailing, Token.Tile.rowPadding.trailing)
+                    VStack(alignment: .leading, spacing: 0) {
+                        ForEach(Array(top.rows.prefix(5).enumerated()), id: \.offset) { i, r in
+                            if i > 0 { RowSeparator() }
+                            process(top, r, memory: memory)
+                        }
                     }
+                    .stationRows()
                 }
             }
         }
@@ -96,7 +102,7 @@ public struct ActivityPage: View {
         let height: CGFloat = lead ? 56 : 30
         return VStack(alignment: .leading, spacing: 4) {
             HStack(alignment: .firstTextBaseline) {
-                Text(r.label ?? "").font(.subheadline.weight(lead ? .semibold : .regular)).foregroundStyle(lead ? .primary : .secondary)
+                Text(r.label ?? "").font(.subheadline.weight(.semibold)).foregroundStyle(.primary)
                 Spacer(minLength: Token.Space.gap)
                 Text(words).font(.subheadline.weight(.medium)).foregroundStyle(.primary).lineLimit(1).monospacedDigit()
                     .contentTransition(.numericText())
@@ -144,21 +150,32 @@ public struct ActivityPage: View {
         "Not among the busiest by \(key == "cpu" ? "CPU" : key)"
     }
 
-    func process(_ s: Section, _ r: Row) -> some View {
+    // value: the width of the CPU and Memory columns, their header's and
+    // their figures'.
+    static let column: CGFloat = 56
+
+    // value: the memory column's figures by process, each in the unit of
+    // the largest.
+    public static func memory(_ s: Section) -> [String: String] {
+        let sized = s.rows.compactMap { r in s.cell(r, "memory").map { (r.id ?? "", $0.n ?? 0) } }
+        return Dictionary(zip(sized.map(\.0), Format.column(sized.map(\.1))), uniquingKeysWith: { a, _ in a })
+    }
+
+    func process(_ s: Section, _ r: Row, memory: [String: String]) -> some View {
         HStack(spacing: Token.Space.gap) {
-            Text(r.label ?? "").font(.body).foregroundStyle(.primary).lineLimit(1)
-            if let what = s.cell(r, "what") { Text(Format.show(what)).font(.subheadline).foregroundStyle(.secondary) }
+            Text(r.label ?? "").font(.system(size: Token.Size.text)).foregroundStyle(.primary).lineLimit(1)
+            if let what = s.cell(r, "what") { Text(Format.show(what)).font(.subheadline).foregroundStyle(.secondary).lineLimit(1) }
             Spacer(minLength: 0)
             ForEach(["cpu", "memory"], id: \.self) { key in
-                if let v = s.cell(r, key) {
-                    Text(Format.show(v)).font(.subheadline).foregroundStyle(.secondary).monospacedDigit().frame(width: 52, alignment: .trailing)
+                if let v = key == "memory" ? memory[r.id ?? ""] : s.cell(r, key).map({ Format.show($0) }) {
+                    Text(v).font(.subheadline).foregroundStyle(.secondary).monospacedDigit().lineLimit(1).frame(width: Self.column, alignment: .trailing)
                 } else {
-                    Text(Token.Glyph.missing).font(.system(size: Token.Space.small)).foregroundStyle(.tertiary).frame(width: 52, alignment: .trailing)
+                    Text(Token.Glyph.missing).font(.system(size: Token.Space.small)).foregroundStyle(.tertiary).frame(width: Self.column, alignment: .trailing)
                         .help(Self.missing(key))
                 }
             }
         }
-        .padding(.horizontal, 4)
-        .frame(minHeight: 30)
+        .padding(Token.Tile.rowPadding)
+        .frame(minHeight: 36)
     }
 }

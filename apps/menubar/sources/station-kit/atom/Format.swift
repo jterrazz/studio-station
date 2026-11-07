@@ -20,6 +20,18 @@ public enum Format {
         return String(format: "%.1f %@B", value, String(suffixes[suffix]))
     }
 
+    // value: a column of sizes, each said in the unit of the largest.
+    public static func column(_ sizes: [Int64]) -> [String] {
+        guard let top = sizes.max(), top >= 1000 else { return sizes.map(bytes) }
+        var div = 1000.0
+        var suffix = 0
+        while Double(top) / div >= 999.95 && suffix < suffixes.count - 1 {
+            div *= 1000
+            suffix += 1
+        }
+        return sizes.map { String(format: "%.1f %@B", Double($0) / div, String(suffixes[suffix])) }
+    }
+
     // invariant: a total that is a whole number of GiB is memory, said as
     // macOS says it (16 GB for 16 GiB), its part counted the same way;
     // any other total in powers of 1000, as a disk's.
