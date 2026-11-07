@@ -37,4 +37,21 @@ final class TidyTests: XCTestCase {
         XCTAssertEqual(SectionHeader.cased("Private\(Token.Glyph.sep)shared on Tailscale\(Token.Glyph.sep)2"), "PRIVATE\(Token.Glyph.sep)SHARED ON TAILSCALE\(Token.Glyph.sep)2")
         XCTAssertEqual(SectionHeader.cased("linux-1"), "LINUX-1")
     }
+
+    // invariant: a machine's line keeps its identity when a VM is inserted
+    // above it: the api line is the same line before and after, so it is
+    // never drawn for a moment with the icon of the line it replaced.
+    func testAMachineLineKeepsItsIdentityWhenAVMIsInserted() throws {
+        let before = try Self.home(linux: "running", api: "stopped")
+        let after = try Self.home(linux: "running", api: "stopped", extra: #"{"row":{"id":"new-vm","mark":"pending","label":"new-vm","cells":[{"kind":"text","text":"Workspace"}]}},"#)
+        func keys(_ p: Page) throws -> [String] {
+            MachineTree.keyed(MachineTree(section: try XCTUnwrap(p.section("machines")), kinds: false, only: nil, open: { _ in }).lines()).map(\.key)
+        }
+        let was = try keys(before), now = try keys(after)
+        XCTAssertEqual(Set(now).count, now.count)
+        XCTAssertEqual(Set(was).count, was.count)
+        let wasAt = try XCTUnwrap(was.firstIndex(of: "row:api")), nowAt = try XCTUnwrap(now.firstIndex(of: "row:api"))
+        XCTAssertNotEqual(wasAt, nowAt)
+        XCTAssertTrue(now.contains("row:new-vm"))
+    }
 }

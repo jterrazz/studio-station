@@ -171,12 +171,22 @@ struct MachineTree: View {
     enum Line {
         case caption(String)
         case row(Row, nested: Bool, symbol: String)
+
+        // value: a line's own identity, its machine's name or its caption's
+        // words, never its place: a VM inserted above keeps every other line
+        // drawn as itself, its icon included.
+        var key: String {
+            switch self {
+            case let .caption(text): "caption:\(text)"
+            case let .row(row, _, _): "row:\(row.id ?? row.label ?? "")"
+            }
+        }
     }
 
     var body: some View {
         let all = lines()
         VStack(alignment: .leading, spacing: 0) {
-            ForEach(Array(all.enumerated()), id: \.offset) { i, l in
+            ForEach(Self.keyed(all), id: \.key) { i, _, l in
                 switch l {
                 case let .caption(text):
                     GroupCaption(text)
@@ -190,6 +200,17 @@ struct MachineTree: View {
             }
         }
         .stationRows()
+    }
+
+    // value: the lines with their identities, a key seen again (a second
+    // Mac's Workspaces) told apart by how many times it came before.
+    static func keyed(_ lines: [Line]) -> [(i: Int, key: String, line: Line)] {
+        var seen: [String: Int] = [:]
+        return lines.enumerated().map { i, l in
+            let n = seen[l.key, default: 0]
+            seen[l.key] = n + 1
+            return (i, n == 0 ? l.key : "\(l.key)#\(n)", l)
+        }
     }
 
     func shown(_ r: Row) -> Bool { only == nil || only!.contains(r.id ?? "") }
