@@ -1,0 +1,8 @@
+{
+    "group": "home",
+    "id": "home.empty",
+    "note": "Today's Home with no VM yet: This Mac alone, nothing needs you.",
+    "pages": ["../../../src/ui/testdata/pages/menubar.empty.json"],
+    "schema": "station.story/v1",
+    "status": "today"
+}

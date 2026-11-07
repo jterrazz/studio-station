@@ -1,0 +1,8 @@
+{
+    "group": "mac",
+    "id": "mac.this.overview",
+    "note": "Today This Mac has no page of its own: Home is This Mac's page, with what needs you.",
+    "pages": ["../../../src/ui/testdata/pages/menubar.full.json"],
+    "schema": "station.story/v1",
+    "status": "today"
+}

@@ -1,0 +1,11 @@
+{
+    "group": "shell",
+    "id": "menubar.down",
+    "note": "Today's status item with a server down: the slashed Orbit, whatever the count.",
+    "pages": ["../../../src/ui/testdata/pages/menubar.home.infra-down.json"],
+    "schema": "station.story/v1",
+    "status": "today",
+    "ui": {
+        "statusItem": true
+    }
+}

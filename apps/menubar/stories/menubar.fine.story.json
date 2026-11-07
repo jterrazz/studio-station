@@ -1,0 +1,11 @@
+{
+    "group": "shell",
+    "id": "menubar.fine",
+    "note": "Today's status item when nothing needs you: the bare Orbit.",
+    "pages": ["../../../src/ui/testdata/pages/menubar.home.one-mac.json"],
+    "schema": "station.story/v1",
+    "status": "today",
+    "ui": {
+        "statusItem": true
+    }
+}

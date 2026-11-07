@@ -1,0 +1,8 @@
+{
+    "group": "server",
+    "id": "server.down",
+    "note": "Today a down server has no page of its own: Home shows infra down on mac-mini.",
+    "pages": ["../../../src/ui/testdata/pages/menubar.home.infra-down.json"],
+    "schema": "station.story/v1",
+    "status": "today"
+}

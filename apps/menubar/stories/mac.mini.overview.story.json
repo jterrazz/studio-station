@@ -1,0 +1,8 @@
+{
+    "group": "mac",
+    "id": "mac.mini.overview",
+    "note": "Today's page of mac-mini: what needs you there, its readiness and its VMs.",
+    "pages": ["../../../src/ui/testdata/pages/menubar.mac.mini.json"],
+    "schema": "station.story/v1",
+    "status": "today"
+}

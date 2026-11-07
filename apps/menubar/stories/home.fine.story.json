@@ -1,0 +1,8 @@
+{
+    "group": "home",
+    "id": "home.fine",
+    "note": "Today's Home on This Mac alone with nothing to fix.",
+    "pages": ["../../../src/ui/testdata/pages/menubar.home.one-mac.json"],
+    "schema": "station.story/v1",
+    "status": "today"
+}

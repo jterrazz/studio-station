@@ -1,0 +1,8 @@
+{
+    "group": "awake",
+    "id": "awake.all",
+    "note": "Today's Awake page: This Mac, its guards and the other Macs.",
+    "pages": ["../../../src/ui/testdata/pages/menubar.awake.two-macs.json"],
+    "schema": "station.story/v1",
+    "status": "today"
+}

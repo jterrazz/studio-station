@@ -1,0 +1,8 @@
+{
+    "group": "server",
+    "id": "server.healthy",
+    "note": "Today's page of the server infra: up, its four health checks pass, its activity.",
+    "pages": ["../../../src/ui/testdata/pages/menubar.vm.infra.json"],
+    "schema": "station.story/v1",
+    "status": "today"
+}

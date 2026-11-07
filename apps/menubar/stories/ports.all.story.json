@@ -1,0 +1,8 @@
+{
+    "group": "ports",
+    "id": "ports.all",
+    "note": "Today's Ports page: the summary, the port that needs you, the public and the private ports.",
+    "pages": ["../../../src/ui/testdata/pages/menubar.ports.mini.json"],
+    "schema": "station.story/v1",
+    "status": "today"
+}

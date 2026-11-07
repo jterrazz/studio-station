@@ -1,0 +1,8 @@
+{
+    "group": "find",
+    "id": "find.empty",
+    "note": "Today's switcher stands where Find will: every machine, nothing typed.",
+    "pages": ["../../../src/ui/testdata/pages/menubar.switcher.two-macs.json"],
+    "schema": "station.story/v1",
+    "status": "today"
+}

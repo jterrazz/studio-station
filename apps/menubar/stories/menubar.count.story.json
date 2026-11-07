@@ -1,0 +1,11 @@
+{
+    "group": "shell",
+    "id": "menubar.count",
+    "note": "Today's status item with something needing you: the Orbit with its dot cut in, five things counted by its label.",
+    "pages": ["../../../src/ui/testdata/pages/menubar.home.two-macs.json"],
+    "schema": "station.story/v1",
+    "status": "today",
+    "ui": {
+        "statusItem": true
+    }
+}

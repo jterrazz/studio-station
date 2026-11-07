@@ -1,0 +1,8 @@
+{
+    "group": "workspace",
+    "id": "workspace.working",
+    "note": "Today's page of the workspace linux-1: the machine, its activity, what runs inside, its ports.",
+    "pages": ["../../../src/ui/testdata/pages/menubar.vm.linux-1.json"],
+    "schema": "station.story/v1",
+    "status": "today"
+}
