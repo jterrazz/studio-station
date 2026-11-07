@@ -113,6 +113,19 @@ final class StoryTests: XCTestCase {
         XCTAssertEqual(failures, [])
     }
 
+    // invariant: what a status item's golden cannot show, its count, is
+    // what VoiceOver says of it.
+    func testEveryStatusItemStorySaysItsStateInItsLabel() throws {
+        let labels = try stories().filter { $0.ui.statusItem == true }.reduce(into: [String: String]()) {
+            $0[$1.id] = MenuBarIcon.of(connection: $1.state.connection, page: $1.state.page).label
+        }
+        XCTAssertEqual(labels, [
+            "menubar.count": "station: 5 things need you",
+            "menubar.down": "station: a server is down",
+            "menubar.fine": "station: nothing needs you",
+        ])
+    }
+
     func testEveryTargetStoryIsAsTallAsThePrototypesPanel() throws {
         let stories = try stories()
         var measured: [String: Double] = [:]
