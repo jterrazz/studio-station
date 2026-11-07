@@ -58,6 +58,23 @@ struct MachineContent: View {
         Self.doing(state.running ?? state.settling) == "Stopping" || head?.rows.first?.reason == "stopped"
     }
 
+    // value: the server restarts: its checks are run again after it.
+    var restarting: Bool { Self.doing(state.running ?? state.settling) == "Restarting" }
+
+    // value: a server's health checks as drawn: while it restarts, each
+    // waits for the boot that follows, never the last boot's answer.
+    public static func checks(_ s: Section, restarting: Bool) -> [Row] {
+        guard restarting else { return s.rows }
+        return s.rows.map { r in
+            var r = r
+            r.mark = .pending
+            r.cells = r.cells?.map { v in
+                (v.kind == "list" ? v.items ?? [] : [v]).first { Format.show($0).hasPrefix("http") } ?? Value(kind: "none")
+            }
+            return r
+        }
+    }
+
     public static func measures(_ s: Section, stopping: Bool) -> [(label: String, value: Value?, spark: [Int]?)] {
         s.rows.map { r in (r.label ?? "", stopping ? nil : r.cells?.first, stopping ? nil : r.cells?.dropFirst().first?.points) }
     }
@@ -151,7 +168,7 @@ struct MachineContent: View {
         case "health":
             SectionHeader(s.header)
             Rows {
-                ForEach(Array(s.rows.enumerated()), id: \.offset) { _, r in health(r) }
+                ForEach(Array(Self.checks(s, restarting: restarting).enumerated()), id: \.offset) { _, r in health(r) }
             }
         case "inside":
             Rows {

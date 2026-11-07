@@ -38,4 +38,17 @@ final class PlayRound2Tests: XCTestCase {
         let reachable = try Page.decode(Data(#"{"schema":"station.page/v1","id":"menubar.ports","sections":[{"id":"needs-you","title":"Needs you: reachable outside Tailscale, not declared public","items":[{"row":{"id":"n","mark":"broken","label":"mac-mini","cells":[]}}]},{"id":"public","items":[{"row":{"id":"a","mark":"attention","label":"infra","cells":[]}}]}]}"#.utf8))
         XCTAssertEqual(PortsPage.needing(reachable).count, 0)
     }
+
+    // invariant: while a server restarts, its health checks wait for the
+    // boot that follows: none is drawn green from the last boot, and the
+    // address it checks stays named.
+    func testHealthWaitsWhileTheServerRestarts() throws {
+        let page = try Page.decode(Data(#"{"schema":"station.page/v1","id":"menubar.machine","sections":[{"id":"health","title":"Health","items":[{"row":{"id":"running","mark":"ok","label":"Running","cells":[{"kind":"none"}]}},{"row":{"id":"address","mark":"ok","label":"Has an address","cells":[{"kind":"text","text":"192.168.64.5"}]}},{"row":{"id":"check","mark":"ok","label":"Check passes","cells":[{"kind":"list","items":[{"kind":"text","text":"https://infra:6443/readyz"},{"kind":"text","text":"200"}]}]}}]}]}"#.utf8))
+        let health = try XCTUnwrap(page.section("health"))
+        XCTAssertEqual(MachineContent.checks(health, restarting: false), health.rows)
+        let waiting = MachineContent.checks(health, restarting: true)
+        XCTAssertEqual(waiting.map(\.mark), [.pending, .pending, .pending])
+        XCTAssertEqual(waiting.map { $0.cells?.first.map { Format.show($0) } ?? "" }, ["", "", "https://infra:6443/readyz"])
+        XCTAssertEqual(MachineContent.doing("restart"), "Restarting")
+    }
 }
