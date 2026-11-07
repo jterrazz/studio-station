@@ -100,8 +100,13 @@ enum Snapshot {
     // it blurs (backdrop-filter saturate 185 %), which the stand-in cannot.
     @MainActor
     static func render(_ view: AnyView, scheme: ColorScheme, desk: Bool = true) -> (png: Data, bitmap: Bitmap)? {
+        render(view, scheme: scheme, over: desk ? AnyView(Desk(scheme: scheme)) : nil)
+    }
+
+    @MainActor
+    static func render(_ view: AnyView, scheme: ColorScheme, over desk: AnyView?) -> (png: Data, bitmap: Bitmap)? {
         let themed = view.stationTheme(scheme).environment(\.stationNow, now).environment(\.stationStill, true)
-        let content = desk ? AnyView(themed.fixedSize().padding(24).background(Desk(scheme: scheme))) : AnyView(themed)
+        let content = desk.map { AnyView(themed.fixedSize().padding(24).background($0)) } ?? AnyView(themed)
         let renderer = ImageRenderer(content: content)
         renderer.scale = 2
         guard let image = renderer.cgImage, let bitmap = Bitmap(image) else { return nil }
@@ -119,15 +124,19 @@ enum Golden {
     @MainActor
     static func check(_ name: String, _ view: AnyView, scheme: ColorScheme, desk: Bool = true) throws -> String? {
         let file = "\(name).\(scheme == .dark ? "dark" : "light")"
-        let golden = Tree.goldens.appendingPathComponent(file + ".png")
-        guard let (png, bitmap) = Snapshot.render(view, scheme: scheme, desk: desk) else { return "\(file): no image rendered" }
+        return try match(Snapshot.render(view, scheme: scheme, desk: desk), file: file, in: Tree.goldens)
+    }
+
+    static func match(_ rendered: (png: Data, bitmap: Bitmap)?, file: String, in folder: URL) throws -> String? {
+        let golden = folder.appendingPathComponent(file + ".png")
+        guard let (png, bitmap) = rendered else { return "\(file): no image rendered" }
         if bitmap.placeholder >= 20 { return "\(file): \(bitmap.placeholder) pixels of the unsupported placeholder" }
         if update {
             try png.write(to: golden)
             return nil
         }
         guard let data = try? Data(contentsOf: golden), let want = Bitmap(png: data) else { return "\(file): no golden (STATION_UPDATE_GOLDENS=1 swift test writes it)" }
-        let actual = Tree.goldens.appendingPathComponent(file + ".actual.png")
+        let actual = folder.appendingPathComponent(file + ".actual.png")
         guard want.width == bitmap.width, want.height == bitmap.height else {
             try png.write(to: actual)
             return "\(file): \(bitmap.width)x\(bitmap.height), golden \(want.width)x\(want.height)"
