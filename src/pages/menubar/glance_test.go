@@ -111,3 +111,30 @@ func texts(vs []page.Value) []string {
 	}
 	return out
 }
+
+// invariant: an unfolded Needs you line says a background task by what
+// it is, the app it belongs to or its own words, never its launchd
+// label, which stays the line's detail.
+func TestNeedsYouSaysABackgroundTaskInPlainWords(t *testing.T) {
+	home := overview.Summary{Needs: []overview.Need{
+		{Section: "background", Broken: true, Subject: "com.jterrazz.brain.x-snapshot", Text: "com.jterrazz.brain.x-snapshot is failing, last exit 2"},
+		{Section: "background", Subject: "com.docker.vmnetd", Text: "com.docker.vmnetd is left over"},
+		{Section: "background", Subject: "com.bjango.istatmenus.installer", Text: "com.bjango.istatmenus.installer is left over"},
+		{Section: "background", Subject: "org.example.helper", Text: "org.example.helper is left over"},
+		{Section: "settings", Subject: "firewall", Text: "Firewall: off"},
+	}}
+	s := needsYou(Reading{Home: &home})
+	want := []string{
+		"A background task is failing: brain snapshot",
+		"Docker left a helper behind",
+		"iStat Menus left a helper behind",
+		"A background task is left over: helper",
+		"Firewall: off",
+	}
+	details := []string{"com.jterrazz.brain.x-snapshot", "com.docker.vmnetd", "com.bjango.istatmenus.installer", "org.example.helper", ""}
+	for i, it := range s.Items {
+		if it.Row.Label != want[i] || it.Row.Detail.Text != details[i] {
+			t.Fatalf("line %d %q (detail %q), want %q (detail %q)", i, it.Row.Label, it.Row.Detail.Text, want[i], details[i])
+		}
+	}
+}

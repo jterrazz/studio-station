@@ -8,6 +8,7 @@ import (
 
 	"github.com/jterrazz/studio-station/src/activity"
 	"github.com/jterrazz/studio-station/src/awake"
+	"github.com/jterrazz/studio-station/src/catalog"
 	"github.com/jterrazz/studio-station/src/core/machine"
 	"github.com/jterrazz/studio-station/src/core/section"
 	"github.com/jterrazz/studio-station/src/engine"
@@ -153,6 +154,11 @@ func needsYou(r Reading) page.Section {
 			if it.Row == nil {
 				continue
 			}
+			if n := len(rows); n < len(r.Home.Needs) && r.Home.Needs[n].Section == section.Background {
+				row := *it.Row
+				row.Label, row.Detail = taskWords(r.Home.Needs[n]), page.Text(r.Home.Needs[n].Subject)
+				it.Row = &row
+			}
 			counts[it.Row.Mark]++
 			rows = append(rows, it)
 		}
@@ -218,6 +224,43 @@ func glance(needs []overview.Need) []page.Value {
 		out = append(out, page.Text(p))
 	}
 	return out
+}
+
+// value: a background task's line in plain words, by the app it belongs
+// to or by its name, never its launchd label, which stays the row's
+// detail.
+func taskWords(n overview.Need) string {
+	name := taskName(n.Subject)
+	if owner, known := catalog.LaunchOwnerOf(n.Subject); known {
+		name = strings.TrimSuffix(owner.App, ".app")
+		if !n.Broken {
+			return name + " left a helper behind"
+		}
+	}
+	if n.Broken {
+		return "A background task is failing: " + name
+	}
+	return "A background task is left over: " + name
+}
+
+// value: a launchd label's own words: its maker's domain dropped, its
+// parts split, a lone letter left out (`com.jterrazz.brain.x-snapshot`
+// reads `brain snapshot`).
+func taskName(label string) string {
+	parts := strings.Split(label, ".")
+	if len(parts) > 2 {
+		parts = parts[2:]
+	}
+	var words []string
+	for _, w := range strings.FieldsFunc(strings.Join(parts, " "), func(r rune) bool { return r == ' ' || r == '-' || r == '_' }) {
+		if len(w) > 1 {
+			words = append(words, w)
+		}
+	}
+	if len(words) == 0 {
+		return label
+	}
+	return strings.Join(words, " ")
 }
 
 func leading(text string) int {

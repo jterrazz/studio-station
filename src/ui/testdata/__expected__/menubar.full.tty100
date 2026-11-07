@@ -1,9 +1,10 @@
 Needs you  5 things need you
-  ◐ 2 app updates              station apps update
-  ✗ npm sign-in expired        npm login
-  ✗ 1 background task failing  station background
-  ◐ Firewall off               System Settings > Network > Firewall
-  ◐ ~/.tart is misplaced       station disk move ~/.tart
+  ◐ 2 app updates         station apps update
+  ✗ npm sign-in expired   npm login
+  ✗ A background task is failing: brain snapshot
+    station background  com.jterrazz.brain.x-snapshot
+  ◐ Firewall off          System Settings > Network > Firewall
+  ◐ ~/.tart is misplaced  station disk move ~/.tart
 Machines
   ◐ This Mac       Mac        awake until 18:00
   └─   Workspaces

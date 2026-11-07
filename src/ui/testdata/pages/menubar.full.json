@@ -135,13 +135,17 @@
           "row": {
             "id": "2-com.jterrazz.brain.x-snapshot",
             "mark": "broken",
-            "label": "1 background task failing",
+            "label": "A background task is failing: brain snapshot",
             "cells": [
               {
                 "kind": "text",
                 "text": "station background"
               }
             ],
+            "detail": {
+              "kind": "text",
+              "text": "com.jterrazz.brain.x-snapshot"
+            },
             "reason": "failing"
           }
         },
