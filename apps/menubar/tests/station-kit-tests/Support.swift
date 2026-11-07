@@ -52,6 +52,15 @@ struct Bitmap {
         self.init(image)
     }
 
+    // value: the pixels as an 8-bit sRGB image, what a golden PNG keeps
+    // whatever depth the renderer drew at.
+    var image: CGImage? {
+        guard let provider = CGDataProvider(data: Data(pixels) as CFData) else { return nil }
+        return CGImage(width: width, height: height, bitsPerComponent: 8, bitsPerPixel: 32, bytesPerRow: width * 4,
+                       space: CGColorSpace(name: CGColorSpace.sRGB)!, bitmapInfo: CGBitmapInfo(rawValue: CGImageAlphaInfo.premultipliedLast.rawValue),
+                       provider: provider, decode: nil, shouldInterpolate: false, intent: .defaultIntent)
+    }
+
     func differing(_ other: Bitmap) -> Int {
         var n = 0
         for i in stride(from: 0, to: pixels.count, by: 4) {
@@ -98,6 +107,9 @@ enum Snapshot {
     // so its glass reads in the PNG; the menu bar icon is drawn bare.
     // In dark the desk is saturated as the vision's glass saturates what
     // it blurs (backdrop-filter saturate 185 %), which the stand-in cannot.
+    // The desk is drawn with no offscreen GPU group: one would be drawn by
+    // the CPU until Metal is ready, or when it is busy, so its dark goldens
+    // would match only on a quiet machine.
     @MainActor
     static func render(_ view: AnyView, scheme: ColorScheme, desk: Bool = true) -> (png: Data, bitmap: Bitmap)? {
         render(view, scheme: scheme, over: desk ? AnyView(Desk(scheme: scheme)) : nil)
@@ -109,8 +121,8 @@ enum Snapshot {
         let content = desk.map { AnyView(themed.fixedSize().padding(24).background($0)) } ?? AnyView(themed)
         let renderer = ImageRenderer(content: content)
         renderer.scale = 2
-        guard let image = renderer.cgImage, let bitmap = Bitmap(image) else { return nil }
-        let rep = NSBitmapImageRep(cgImage: image)
+        guard let image = renderer.cgImage, let bitmap = Bitmap(image), let flat = bitmap.image else { return nil }
+        let rep = NSBitmapImageRep(cgImage: flat)
         guard let png = rep.representation(using: .png, properties: [:]) else { return nil }
         return (png, bitmap)
     }
@@ -174,7 +186,6 @@ struct Desk: View {
                 EllipticalGradient(colors: [blob.0, blob.0.opacity(0)], center: blob.1, startRadiusFraction: 0, endRadiusFraction: blob.2)
             }
         }
-        .drawingGroup()
         .saturation(scheme == .dark ? 1.85 : 1)
     }
 }
