@@ -24,6 +24,13 @@ public struct Reply: Sendable {
     public var late = false
 }
 
+public struct EngineHello: Equatable, Sendable {
+    public var executable: String?
+    public var page: Int?
+
+    public var older: Bool { (page ?? 0) < pageRevision }
+}
+
 public struct AnySendable: @unchecked Sendable {
     public let value: Any
 }
@@ -156,9 +163,14 @@ public enum Client {
         socket.shutdownBoth()
     }
 
-    public static func executable(path: String) async -> String? {
+    public static func hello(path: String) async -> EngineHello? {
         let reply = await call(path: path, name: "engine.hello")
-        return reply.result["executable"]?.value as? String
+        guard reply.ok else { return nil }
+        return EngineHello(executable: reply.result["executable"]?.value as? String, page: reply.result["page"]?.value as? Int)
+    }
+
+    public static func executable(path: String) async -> String? {
+        await hello(path: path)?.executable
     }
 }
 

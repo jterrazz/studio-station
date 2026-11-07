@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/jterrazz/studio-station/src/awake"
+	"github.com/jterrazz/studio-station/src/page"
 
 	"github.com/jterrazz/studio-station/src/accounts"
 	accountscalls "github.com/jterrazz/studio-station/src/accounts/calls"
@@ -93,7 +94,7 @@ func (m machine) engine(env kit.Env) *process.Engine {
 		Remember: func(vm string, port int, stopped bool) error {
 			return portscalls.Remember(m.stores.ports(), vm, port, stopped)
 		},
-		State: m.paths.State, ThisMachine: m.kind, Version: m.engineVersion(), StartedAt: m.engineStarted(), PID: os.Getpid(), GuestPort: m.guestPort(),
+		State: m.paths.State, ThisMachine: m.kind, Version: m.engineVersion(), Page: page.Revision, StartedAt: m.engineStarted(), PID: os.Getpid(), GuestPort: m.guestPort(),
 		Power: m.powerPort, KeepAwakePage: m.keepAwakePage, Executable: m.sys.Env.Executable(),
 		NeverSleeps:   func() bool { on, _ := m.stores.neverSleeps().Get(); return on },
 		AccountShares: shares, Peer: m.engineAPI(),

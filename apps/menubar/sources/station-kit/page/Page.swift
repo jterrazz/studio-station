@@ -1,6 +1,7 @@
 import Foundation
 
 public let pageSchema = "station.page/v1"
+public let pageRevision = 4
 
 public struct Page: Codable, Equatable, Sendable {
     public var schema: String?
@@ -14,6 +15,10 @@ public struct Page: Codable, Equatable, Sendable {
     public var error: PageError?
     public var actions: [Action]?
     public var badge: Badge?
+    public var header: Header?
+    public var segments: [Segment]?
+    public var footer: Footer?
+    public var live: [String]?
 
     public static func decode(_ data: Data) throws -> Page {
         let page = try JSONDecoder().decode(Page.self, from: data)
@@ -41,6 +46,38 @@ public struct Badge: Codable, Equatable, Sendable {
     }
     public var needs: Int?
     public var down: Bool?
+    public var restarting: Bool?
+    public var label: String?
+}
+
+public struct Header: Codable, Equatable, Sendable {
+    public var back: String?
+    public var glyph: Glyph?
+    public var buttons: [String]?
+    public var stale: Value?
+}
+
+public struct Segment: Codable, Equatable, Sendable {
+    public var id: String?
+    public var label: String?
+    public var key: String?
+    public var picked: Bool?
+}
+
+public struct Footer: Codable, Equatable, Sendable {
+    public var kind: String?
+    public var copy: Value?
+    public var note: String?
+    public var buttons: [String]?
+}
+
+public struct Glyph: Codable, Equatable, Sendable {
+    public var kind: String?
+    public var signal: String?
+    public var dot: String?
+    public var ring: String?
+    public var spin: Bool?
+    public var progress: Int?
 }
 
 public enum DecodeError: Error, Equatable {
@@ -66,6 +103,7 @@ public struct Section: Codable, Equatable, Sendable {
     public var role: String?
     public var fold: String?
     public var caption: [Value]?
+    public var joined: Bool?
     public var columns: [Column]?
     public var items: [Item]?
     public var counts: [Tally]?
@@ -73,9 +111,15 @@ public struct Section: Codable, Equatable, Sendable {
     public var pipe_counts: Bool?
     public var pipe_groups: Bool?
     public var `break`: Int?
+    public var says_dropped: Bool?
+    public var top: Int?
+    public var rest: Item?
     // value: the section in a few words, for a line that sums it up
     // (Needs you folded).
     public var glance: [Value]?
+    public var segment: String?
+    public var card: String?
+    public var picker: [Action]?
 }
 
 public struct Column: Codable, Equatable, Sendable {
@@ -97,6 +141,100 @@ public struct Item: Codable, Equatable, Sendable {
     public var error: PageError?
     public var note: Note?
     public var link: Link?
+    public var tile: Tile?
+    public var gauge: PageGauge?
+    public var chart: PageChart?
+    public var message: Message?
+    public var steps: [Step]?
+    public var log: Log?
+    public var uptime: Uptime?
+}
+
+public struct Tile: Codable, Equatable, Sendable {
+    public var caption: String?
+    public var glyph: Glyph?
+    public var number: Value?
+    public var word: String?
+    public var signal: String?
+    public var toggle: String?
+    public var nav: String?
+    public var plus: String?
+}
+
+public struct PageGauge: Codable, Equatable, Sendable {
+    public var title: String?
+    public var value: Value?
+    public var spark: [Int]?
+    public var bar: Value?
+    public var stale: Bool?
+}
+
+public struct PageChart: Codable, Equatable, Sendable {
+    public var kind: String?
+    public var window: String?
+    public var series: [Series]?
+    public var peak: Peak?
+    public var ends: [String]?
+    public var anomaly: Anomaly?
+}
+
+public struct Series: Codable, Equatable, Sendable {
+    public var key: String?
+    public var points: [Double]?
+    public var unit: String?
+}
+
+public struct Peak: Codable, Equatable, Sendable {
+    public var index: Int?
+    public var value: Value?
+    public var at: String?
+}
+
+public struct Anomaly: Codable, Equatable, Sendable {
+    public var from: Int?
+    public var to: Int?
+    public var sentence: String?
+}
+
+public struct Message: Codable, Equatable, Sendable {
+    public var title: String?
+    public var body: String?
+    public var since: Value?
+    public var pr: PR?
+    public var reply: Bool?
+}
+
+public struct PR: Codable, Equatable, Sendable {
+    public var number: Int?
+    public var url: String?
+    public var files: Int?
+    public var plus: Int?
+    public var minus: Int?
+    public var opened: Value?
+}
+
+public struct Step: Codable, Equatable, Sendable {
+    public var at: Value?
+    public var text: String?
+    public var diff: String?
+    public var current: Bool?
+}
+
+public struct Log: Codable, Equatable, Sendable {
+    public var lines: [String]?
+    public var cause: Int?
+    public var more: String?
+}
+
+public struct Uptime: Codable, Equatable, Sendable {
+    public var days: [Day]?
+    public var availability: Value?
+}
+
+public struct Day: Codable, Equatable, Sendable {
+    public var date: String?
+    public var mark: String?
+    public var tip: String?
 }
 
 public struct Row: Codable, Equatable, Sendable {
@@ -105,10 +243,22 @@ public struct Row: Codable, Equatable, Sendable {
     public var mark: Mark?
     public var label: String?
     public var short: String?
+    public var sentence: Bool?
     public var cells: [Value]?
     public var detail: Value?
     public var reason: String?
     public var hint: Hint?
+    public var glyph: Glyph?
+    public var mac: String?
+    public var trail: String?
+    public var verb: String?
+    public var quick: String?
+    public var nav: String?
+    public var menu: [String]?
+    public var signal: String?
+    public var fresh: Bool?
+    public var left: Value?
+    public var birth: Value?
 }
 
 public struct Fact: Codable, Equatable, Sendable {
@@ -126,6 +276,9 @@ public struct Empty: Codable, Equatable, Sendable {
     public var noun: String?
     public var text: String?
     public var hint: Hint?
+    public var glyph: Glyph?
+    public var sub: String?
+    public var actions: [String]?
 }
 
 public struct PageError: Codable, Equatable, Sendable {
@@ -167,6 +320,15 @@ public struct Action: Codable, Equatable, Sendable {
     public var form: Form?
     // value: the choice in force among its row's (Awake's term).
     public var picked: Bool?
+    public var icon: String?
+    public var `default`: Bool?
+    public var busy: String?
+    public var sheet: String?
+    public var prefill: [String: String]?
+    public var submenu: [String]?
+    public var disabled: String?
+    public var hud: Value?
+    public var destructive: Bool?
 }
 
 public struct Run: Codable, Equatable, Sendable {
@@ -175,6 +337,8 @@ public struct Run: Codable, Equatable, Sendable {
     public var terminal: Bool?
     public var argv: [String]?
     public var target: Target?
+    public var copy: String?
+    public var open: String?
 }
 
 public struct Target: Codable, Equatable, Sendable {
@@ -189,11 +353,25 @@ public struct Confirm: Codable, Equatable, Sendable {
     public var type: String?
     public var yes: String?
     public var no: String?
+    public var icon: String?
 }
 
 public struct Form: Codable, Equatable, Sendable {
     public var title: String?
     public var fields: [Field]?
+    public var subtitle: String?
+    public var primary: [Primary]?
+    public var split: [String]?
+}
+
+public struct Primary: Codable, Equatable, Sendable {
+    public var when: When?
+    public var label: String?
+}
+
+public struct When: Codable, Equatable, Sendable {
+    public var key: String?
+    public var value: String?
 }
 
 public struct Field: Codable, Equatable, Sendable {
@@ -204,12 +382,19 @@ public struct Field: Codable, Equatable, Sendable {
     public var `default`: String?
     public var note: String?
     public var required: Bool?
+    public var stops: [Int]?
+    public var limit: Int?
+    public var limit_note: String?
+    public var fields: [Field]?
+    public var summary: Value?
+    public var when: When?
 }
 
 public struct Option: Codable, Equatable, Sendable {
     public var value: String?
     public var label: String?
     public var note: String?
+    public var disabled: String?
 }
 
 public struct Strip: Codable, Equatable, Sendable {
@@ -265,6 +450,10 @@ public struct Value: Codable, Equatable, Sendable {
     public var label: String?
     public var items: [Value]?
     public var stale: Bool?
+    public var live: String?
+    public var pri: Int?
+    public var short: String?
+    public var signal: String?
 
     public init(kind: String? = nil, text: String? = nil) {
         self.kind = kind

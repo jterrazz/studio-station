@@ -89,7 +89,7 @@ enum Snapshot {
     // bar's own, or the switcher or a machine's page pushed over Home, the
     // switcher with infra opened last.
     static func state(_ name: String, _ page: Page) -> PanelState {
-        let connection: Connection = name.hasSuffix(".error") || name.hasSuffix(".engine-stopped") ? .stopped : .live
+        let connection: Connection = name.hasSuffix(".error") || name.hasSuffix(".engine-stopped") || name.hasSuffix(".engine-outdated") ? .stopped : .live
         guard page.id == PageID.switcher || page.id == PageID.machine else { return PanelState(page: page, connection: connection) }
         return PanelState(page: nil, connection: connection, pushed: page, recent: page.id == PageID.switcher ? ["infra"] : [])
     }

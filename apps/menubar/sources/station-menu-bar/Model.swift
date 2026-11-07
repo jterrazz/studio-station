@@ -30,6 +30,7 @@ final class Model: ObservableObject {
     private var watching: Task<Void, Never>?
     private var reviving: Task<Void, Never>?
     private var asked = false
+    private var outdated = false
     private(set) var navigation: Navigation!
 
     private var settled: Task<Void, Never>?
@@ -109,7 +110,9 @@ final class Model: ObservableObject {
         switch event {
         case .connected:
             state.connection = .live
+            askEngine()
         case .page(let page):
+            guard !outdated else { return }
             state.connection = .live
             state.page = page
             lastPage = Date()
@@ -138,6 +141,23 @@ final class Model: ObservableObject {
         if !installed {
             page = notInstalled(page)
         }
+        state.page = page
+    }
+
+    func askEngine() {
+        let socket = self.socket
+        Task {
+            guard let hello = await Client.hello(path: socket) else { return }
+            outdated = hello.older
+            if outdated { showOutdated() }
+        }
+    }
+
+    func showOutdated() {
+        state.connection = .stopped
+        guard let url = Bundle.main.url(forResource: "outdated", withExtension: "json"),
+              let data = try? Data(contentsOf: url), var page = try? Page.decode(data) else { return }
+        page.context = Context(machine: state.page?.context?.machine ?? Format.bareName(ProcessInfo.processInfo.hostName), kind: page.context?.kind)
         state.page = page
     }
 

@@ -2,7 +2,10 @@ package page
 
 import (
 	"errors"
+	"reflect"
+	"slices"
 	"strconv"
+	"strings"
 )
 
 var strict bool
@@ -107,12 +110,13 @@ func Check(p Page) error {
 			return err
 		}
 	}
-	return nil
+	return checkPanel(p)
 }
 
 func checkItem(s Section, it Item, judged bool, rows map[string]bool, depth int) error {
 	set := 0
-	for _, ok := range []bool{it.Row != nil, it.Fact != nil, it.Group != nil, it.Empty != nil, it.Error != nil, it.Note != nil, it.Link != nil} {
+	for _, ok := range []bool{it.Row != nil, it.Fact != nil, it.Group != nil, it.Empty != nil, it.Error != nil, it.Note != nil, it.Link != nil,
+		it.Tile != nil, it.Gauge != nil, it.Chart != nil, it.Message != nil, it.Steps != nil, it.Log != nil, it.Uptime != nil} {
 		if ok {
 			set++
 		}
@@ -204,4 +208,184 @@ func contains(list []string, s string) bool {
 		}
 	}
 	return false
+}
+
+type names struct {
+	actions  map[string]bool
+	live     map[string]bool
+	segments map[string]bool
+}
+
+func checkPanel(p Page) error {
+	n := names{actions: map[string]bool{}, live: map[string]bool{}, segments: map[string]bool{}}
+	for _, k := range p.Live {
+		n.live[k] = true
+	}
+	for _, s := range p.Segments {
+		n.segments[s.ID] = true
+	}
+	for _, a := range p.Actions {
+		n.actions[a.ID] = a.ID != ""
+	}
+	for _, s := range p.Sections {
+		for _, a := range s.Picker {
+			n.actions[a.ID] = a.ID != ""
+		}
+	}
+	if err := walkValues(reflect.ValueOf(p), n); err != nil {
+		return err
+	}
+	if p.Header != nil {
+		if err := n.named("the header's button", p.Header.Buttons...); err != nil {
+			return err
+		}
+	}
+	if p.Footer != nil {
+		if err := n.named("the footer's button", p.Footer.Buttons...); err != nil {
+			return err
+		}
+	}
+	for _, a := range p.Actions {
+		if err := checkAction(a, n); err != nil {
+			return err
+		}
+	}
+	for _, s := range p.Sections {
+		if s.Segment != "" && !n.segments[s.Segment] {
+			return errors.New("section " + s.ID + ": its segment " + strconv.Quote(s.Segment) + " is no segment of the page")
+		}
+		for _, a := range s.Picker {
+			if err := checkAction(a, n); err != nil {
+				return errors.New("section " + s.ID + ": " + err.Error())
+			}
+		}
+		for _, it := range s.Items {
+			if err := checkPanelItem(s, it, n); err != nil {
+				return errors.New("section " + s.ID + ": " + err.Error())
+			}
+		}
+	}
+	return nil
+}
+
+func checkPanelItem(s Section, it Item, n names) error {
+	switch {
+	case it.Row != nil:
+		return checkPanelRow(s, *it.Row, n)
+	case it.Group != nil:
+		if err := checkPanelRow(s, it.Group.Head, n); err != nil {
+			return err
+		}
+		for _, child := range it.Group.Items {
+			if err := checkPanelItem(s, child, n); err != nil {
+				return err
+			}
+		}
+	case it.Empty != nil:
+		return n.named("the empty card's action", it.Empty.Actions...)
+	case it.Tile != nil:
+		if it.Tile.Number.IsNone() {
+			return errors.New("a tile carries its number")
+		}
+		if it.Tile.Toggle != "" {
+			return n.named("the tile's toggle", it.Tile.Toggle)
+		}
+	case it.Log != nil:
+		if it.Log.Cause < 0 || it.Log.Cause > len(it.Log.Lines) {
+			return errors.New("a log's cause is one of its lines")
+		}
+		if it.Log.More != "" {
+			return n.named("the log's more", it.Log.More)
+		}
+	}
+	return nil
+}
+
+func checkPanelRow(s Section, r Row, n names) error {
+	for _, ref := range []struct{ what, id string }{{"verb", r.Verb}, {"quick slot", r.Quick}} {
+		if ref.id != "" && !n.actions[ref.id] {
+			return errors.New("row " + r.ID + ": its " + ref.what + " " + strconv.Quote(ref.id) + " is no action of the page")
+		}
+	}
+	for _, id := range r.Menu {
+		if id != "-" && !n.actions[id] {
+			return errors.New("row " + r.ID + ": its menu's " + strconv.Quote(id) + " is no action of the page")
+		}
+	}
+	if r.Trail != "" && !slices.ContainsFunc(s.Columns, func(c Column) bool { return c.Key == r.Trail }) {
+		return errors.New("row " + r.ID + ": its trail " + strconv.Quote(r.Trail) + " is no column of the section")
+	}
+	return nil
+}
+
+func checkAction(a Action, n names) error {
+	if a.Sheet != "" && !strings.HasPrefix(a.Sheet, SheetHint) && a.Form == nil {
+		return errors.New("action " + a.ID + ": a sheet action carries its form")
+	}
+	if a.Destructive && a.Confirm == nil {
+		return errors.New("action " + a.ID + ": a destructive action carries a confirm")
+	}
+	if err := n.named("action "+a.ID+"'s submenu item", a.Submenu...); err != nil {
+		return err
+	}
+	if a.Form != nil {
+		return n.named("action "+a.ID+"'s split item", a.Form.Split...)
+	}
+	return nil
+}
+
+func (n names) named(what string, ids ...string) error {
+	for _, id := range ids {
+		if !n.actions[id] {
+			return errors.New(what + " " + strconv.Quote(id) + " is no action of the page")
+		}
+	}
+	return nil
+}
+
+func walkValues(v reflect.Value, n names) error {
+	k := v.Kind()
+	if k == reflect.Pointer || k == reflect.Interface {
+		if v.IsNil() {
+			return nil
+		}
+		return walkValues(v.Elem(), n)
+	}
+	if k == reflect.Slice || k == reflect.Array {
+		for i := range v.Len() {
+			if err := walkValues(v.Index(i), n); err != nil {
+				return err
+			}
+		}
+		return nil
+	}
+	if k != reflect.Struct {
+		return nil
+	}
+	switch x := v.Interface().(type) {
+	case Value:
+		if err := checkValue(x, n); err != nil {
+			return err
+		}
+	case Glyph:
+		if x.Ring != "" && !n.live[x.Ring] {
+			return errors.New("the glyph's ring " + strconv.Quote(x.Ring) + " is no live key of the page")
+		}
+	}
+	for i := range v.NumField() {
+		if err := walkValues(v.Field(i), n); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func checkValue(v Value, n names) error {
+	if v.Live != "" && !n.live[v.Live] {
+		return errors.New("the value's live key " + strconv.Quote(v.Live) + " is no live key of the page")
+	}
+	if v.Short != "" && v.Pri == 0 {
+		return errors.New("a value with a short wording carries its priority")
+	}
+	return nil
 }

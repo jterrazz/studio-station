@@ -17,6 +17,7 @@ type Hello struct {
 	Executable string    `json:"executable,omitempty"`
 	// value: the names of the calls this engine serves, as calls.json lists them.
 	Calls []string `json:"calls,omitempty"`
+	Page  int      `json:"page,omitempty"`
 }
 
 type VMView struct {

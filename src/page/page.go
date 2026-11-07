@@ -4,6 +4,8 @@ import "strings"
 
 const Schema = "station.page/v1"
 
+const Revision = 4
+
 type Page struct {
 	ID       ID        `json:"id,omitempty"`
 	Command  string    `json:"command,omitempty"`
@@ -15,13 +17,102 @@ type Page struct {
 	Error    *Error    `json:"error,omitempty"`
 	Actions  []Action  `json:"actions,omitempty"`
 	Badge    *Badge    `json:"badge,omitempty"`
+	Header   *Header   `json:"header,omitempty"`
+	Segments []Segment `json:"segments,omitempty"`
+	Footer   *Footer   `json:"footer,omitempty"`
+	Live     []string  `json:"live,omitempty"`
 }
+
+type Header struct {
+	Back    string   `json:"back,omitempty"`
+	Glyph   Glyph    `json:"glyph,omitzero"`
+	Buttons []string `json:"buttons,omitempty"`
+	Stale   *Value   `json:"stale,omitempty"`
+}
+
+type Segment struct {
+	ID     string `json:"id,omitempty"`
+	Label  string `json:"label,omitempty"`
+	Key    string `json:"key,omitempty"`
+	Picked bool   `json:"picked,omitempty"`
+}
+
+type Footer struct {
+	Kind    FooterKind `json:"kind"`
+	Copy    *Value     `json:"copy,omitempty"`
+	Note    string     `json:"note,omitempty"`
+	Buttons []string   `json:"buttons,omitempty"`
+}
+
+type FooterKind string
+
+const (
+	FooterFind      FooterKind = "find"
+	FooterSSH       FooterKind = "ssh"
+	FooterTerminals FooterKind = "terminal-list"
+	FooterNone      FooterKind = "none"
+)
+
+type Glyph struct {
+	Kind     string `json:"kind,omitempty"`
+	Signal   Signal `json:"signal,omitempty"`
+	Dot      Dot    `json:"dot,omitempty"`
+	Ring     string `json:"ring,omitempty"`
+	Spin     bool   `json:"spin,omitempty"`
+	Progress int    `json:"progress,omitempty"`
+}
+
+type Signal string
+
+const (
+	SignalActive  Signal = "active"
+	SignalWaits   Signal = "waits"
+	SignalFailing Signal = "failing"
+	SignalWell    Signal = "well"
+	SignalQuiet   Signal = "quiet"
+	SignalFaint   Signal = "faint"
+	SignalDone    Signal = "done"
+	SignalAsleep  Signal = "asleep"
+	SignalStale   Signal = "stale"
+)
+
+type Dot string
+
+const (
+	DotFill   Dot = "fill"
+	DotRing   Dot = "ring"
+	DotDash   Dot = "dash"
+	DotSquare Dot = "square"
+	DotPing   Dot = "ping"
+)
+
+type CardKind string
+
+const (
+	CardHero    CardKind = "hero"
+	CardTiles   CardKind = "tiles"
+	CardGauges  CardKind = "gauges"
+	CardFlush   CardKind = "flush"
+	CardPlain   CardKind = "plain"
+	CardWait    CardKind = "wait"
+	CardNow     CardKind = "now"
+	CardHealth  CardKind = "health"
+	CardCheck   CardKind = "check"
+	CardUptime  CardKind = "uptime"
+	CardLog     CardKind = "log"
+	CardChart   CardKind = "chart"
+	CardEmpty   CardKind = "empty"
+	CardExposed CardKind = "exposed"
+	CardCare    CardKind = "care"
+)
 
 type Badge struct {
 	// value: what the menu bar's icon says of the page's machines: how many
 	// things need you, and whether a server is down, which wins over the count.
-	Needs int  `json:"needs"`
-	Down  bool `json:"down,omitempty"`
+	Needs      int    `json:"needs"`
+	Down       bool   `json:"down,omitempty"`
+	Restarting bool   `json:"restarting,omitempty"`
+	Label      string `json:"label,omitempty"`
 }
 
 type ID string
@@ -77,7 +168,10 @@ type Section struct {
 	Rest *Item `json:"rest,omitempty"`
 	// value: the section in a few words, for a surface that gives it one
 	// line (the menu bar's folded Needs you); a terminal shows its rows.
-	Glance []Value `json:"glance,omitempty"`
+	Glance  []Value  `json:"glance,omitempty"`
+	Segment string   `json:"segment,omitempty"`
+	Card    CardKind `json:"card,omitempty"`
+	Picker  []Action `json:"picker,omitempty"`
 }
 
 type Role string
@@ -133,13 +227,124 @@ const (
 )
 
 type Item struct {
-	Row   *Row   `json:"row,omitempty"`
-	Fact  *Fact  `json:"fact,omitempty"`
-	Group *Group `json:"group,omitempty"`
-	Empty *Empty `json:"empty,omitempty"`
-	Error *Error `json:"error,omitempty"`
-	Note  *Note  `json:"note,omitempty"`
-	Link  *Link  `json:"link,omitempty"`
+	Row     *Row     `json:"row,omitempty"`
+	Fact    *Fact    `json:"fact,omitempty"`
+	Group   *Group   `json:"group,omitempty"`
+	Empty   *Empty   `json:"empty,omitempty"`
+	Error   *Error   `json:"error,omitempty"`
+	Note    *Note    `json:"note,omitempty"`
+	Link    *Link    `json:"link,omitempty"`
+	Tile    *Tile    `json:"tile,omitempty"`
+	Gauge   *Gauge   `json:"gauge,omitempty"`
+	Chart   *Chart   `json:"chart,omitempty"`
+	Message *Message `json:"message,omitempty"`
+	Steps   []Step   `json:"steps,omitempty"`
+	Log     *Log     `json:"log,omitempty"`
+	Uptime  *Uptime  `json:"uptime,omitempty"`
+}
+
+type Tile struct {
+	Caption string `json:"caption,omitempty"`
+	Glyph   Glyph  `json:"glyph,omitzero"`
+	Number  Value  `json:"number,omitzero"`
+	Word    string `json:"word,omitempty"`
+	Signal  Signal `json:"signal,omitempty"`
+	Toggle  string `json:"toggle,omitempty"`
+	Nav     ID     `json:"nav,omitempty"`
+	Plus    string `json:"plus,omitempty"`
+}
+
+type Gauge struct {
+	Title string `json:"title,omitempty"`
+	Value Value  `json:"value,omitzero"`
+	Spark []int  `json:"spark,omitempty"`
+	Bar   *Value `json:"bar,omitempty"`
+	Stale bool   `json:"stale,omitempty"`
+}
+
+type ChartKind string
+
+const (
+	ChartBars   ChartKind = "bars"
+	ChartLine   ChartKind = "line"
+	ChartMirror ChartKind = "mirror"
+)
+
+type Chart struct {
+	Kind    ChartKind `json:"kind,omitempty"`
+	Window  string    `json:"window,omitempty"`
+	Series  []Series  `json:"series,omitempty"`
+	Peak    *Peak     `json:"peak,omitempty"`
+	Ends    []string  `json:"ends,omitempty"`
+	Anomaly *Anomaly  `json:"anomaly,omitempty"`
+}
+
+type Series struct {
+	Key    string    `json:"key,omitempty"`
+	Points []float64 `json:"points,omitempty"`
+	Unit   string    `json:"unit,omitempty"`
+}
+
+type Peak struct {
+	Index int    `json:"index"`
+	Value Value  `json:"value,omitzero"`
+	At    string `json:"at,omitempty"`
+}
+
+type Anomaly struct {
+	From     int    `json:"from"`
+	To       int    `json:"to"`
+	Sentence string `json:"sentence,omitempty"`
+}
+
+type Message struct {
+	Title string `json:"title,omitempty"`
+	Body  string `json:"body,omitempty"`
+	Since Value  `json:"since,omitzero"`
+	PR    *PR    `json:"pr,omitempty"`
+	Reply bool   `json:"reply,omitempty"`
+}
+
+type PR struct {
+	Number int    `json:"number,omitempty"`
+	URL    string `json:"url,omitempty"`
+	Files  int    `json:"files,omitempty"`
+	Plus   int    `json:"plus,omitempty"`
+	Minus  int    `json:"minus,omitempty"`
+	Opened Value  `json:"opened,omitzero"`
+}
+
+type Step struct {
+	At      Value  `json:"at,omitzero"`
+	Text    string `json:"text,omitempty"`
+	Diff    string `json:"diff,omitempty"`
+	Current bool   `json:"current,omitempty"`
+}
+
+type Log struct {
+	Lines []string `json:"lines,omitempty"`
+	Cause int      `json:"cause,omitempty"`
+	More  string   `json:"more,omitempty"`
+}
+
+type DayMark string
+
+const (
+	DayOK      DayMark = "ok"
+	DayRestart DayMark = "restart"
+	DayDown    DayMark = "down"
+	DayNone    DayMark = "none"
+)
+
+type Uptime struct {
+	Days         []Day `json:"days,omitempty"`
+	Availability Value `json:"availability,omitzero"`
+}
+
+type Day struct {
+	Date string  `json:"date,omitempty"`
+	Mark DayMark `json:"mark,omitempty"`
+	Tip  string  `json:"tip,omitempty"`
 }
 
 type Row struct {
@@ -151,11 +356,22 @@ type Row struct {
 	Short string `json:"short,omitempty"`
 	// value: on a terminal, the label is the subject of the row's first
 	// words, one sentence with them (`This Mac stays awake until 18:00`).
-	Sentence bool    `json:"sentence,omitempty"`
-	Cells    []Value `json:"cells,omitempty"`
-	Detail   Value   `json:"detail,omitzero"`
-	Reason   Reason  `json:"reason,omitempty"`
-	Hint     *Hint   `json:"hint,omitempty"`
+	Sentence bool     `json:"sentence,omitempty"`
+	Cells    []Value  `json:"cells,omitempty"`
+	Detail   Value    `json:"detail,omitzero"`
+	Reason   Reason   `json:"reason,omitempty"`
+	Hint     *Hint    `json:"hint,omitempty"`
+	Glyph    Glyph    `json:"glyph,omitzero"`
+	Mac      string   `json:"mac,omitempty"`
+	Trail    string   `json:"trail,omitempty"`
+	Verb     string   `json:"verb,omitempty"`
+	Quick    string   `json:"quick,omitempty"`
+	Nav      ID       `json:"nav,omitempty"`
+	Menu     []string `json:"menu,omitempty"`
+	Signal   Signal   `json:"signal,omitempty"`
+	Fresh    bool     `json:"fresh,omitempty"`
+	Left     *Value   `json:"left,omitempty"`
+	Birth    *Value   `json:"birth,omitempty"`
 }
 
 type Fact struct {
@@ -178,8 +394,11 @@ func (g Group) Heading() bool {
 type Empty struct {
 	Noun string `json:"noun,omitempty"`
 	// value: the whole line when "no <noun>" is not it (No VMs yet).
-	Text string `json:"text,omitempty"`
-	Hint *Hint  `json:"hint,omitempty"`
+	Text    string   `json:"text,omitempty"`
+	Hint    *Hint    `json:"hint,omitempty"`
+	Glyph   Glyph    `json:"glyph,omitzero"`
+	Sub     string   `json:"sub,omitempty"`
+	Actions []string `json:"actions,omitempty"`
 }
 
 type Error struct {
@@ -223,8 +442,25 @@ type Action struct {
 	Form     *Form    `json:"form,omitempty"`
 	// value: the choice in force among its row's choices (Awake's term):
 	// a segmented control's selected segment.
-	Picked bool `json:"picked,omitempty"`
+	Picked      bool              `json:"picked,omitempty"`
+	Icon        string            `json:"icon,omitempty"`
+	Default     bool              `json:"default,omitempty"`
+	Busy        string            `json:"busy,omitempty"`
+	Sheet       string            `json:"sheet,omitempty"`
+	Prefill     map[string]string `json:"prefill,omitempty"`
+	Submenu     []string          `json:"submenu,omitempty"`
+	Disabled    string            `json:"disabled,omitempty"`
+	Hud         *Value            `json:"hud,omitempty"`
+	Destructive bool              `json:"destructive,omitempty"`
 }
+
+const (
+	SheetNewVM        = "new-vm"
+	SheetShareAccount = "share-account"
+	SheetSharePort    = "share-port"
+	SheetCleanup      = "cleanup"
+	SheetHint         = "hint:"
+)
 
 type Run struct {
 	// value: the call the action makes, by its name in calls.json, over the
@@ -243,6 +479,8 @@ type Run struct {
 	// own: another Mac by its name, or a VM of another Mac by its name and
 	// its Mac.
 	Target *Target `json:"target,omitempty"`
+	Copy   string  `json:"copy,omitempty"`
+	Open   string  `json:"open,omitempty"`
 }
 
 type Target struct {
@@ -264,37 +502,61 @@ type Confirm struct {
 	Type     string  `json:"type,omitempty"`
 	Yes      string  `json:"yes,omitempty"`
 	No       string  `json:"no,omitempty"`
+	Icon     string  `json:"icon,omitempty"`
 }
 
 type Form struct {
-	Title  string  `json:"title,omitempty"`
-	Fields []Field `json:"fields,omitempty"`
+	Title    string    `json:"title,omitempty"`
+	Fields   []Field   `json:"fields,omitempty"`
+	Subtitle string    `json:"subtitle,omitempty"`
+	Primary  []Primary `json:"primary,omitempty"`
+	Split    []string  `json:"split,omitempty"`
+}
+
+type Primary struct {
+	When  *When  `json:"when,omitempty"`
+	Label string `json:"label,omitempty"`
+}
+
+type When struct {
+	Key   string `json:"key,omitempty"`
+	Value string `json:"value,omitempty"`
 }
 
 type Field struct {
-	Key      string    `json:"key,omitempty"`
-	Label    string    `json:"label,omitempty"`
-	Kind     FieldKind `json:"kind,omitempty"`
-	Options  []Option  `json:"options,omitempty"`
-	Default  string    `json:"default,omitempty"`
-	Note     string    `json:"note,omitempty"`
-	Required bool      `json:"required,omitempty"`
+	Key       string    `json:"key,omitempty"`
+	Label     string    `json:"label,omitempty"`
+	Kind      FieldKind `json:"kind,omitempty"`
+	Options   []Option  `json:"options,omitempty"`
+	Default   string    `json:"default,omitempty"`
+	Note      string    `json:"note,omitempty"`
+	Required  bool      `json:"required,omitempty"`
+	Stops     []int     `json:"stops,omitempty"`
+	Limit     int       `json:"limit,omitempty"`
+	LimitNote string    `json:"limit_note,omitempty"`
+	Fields    []Field   `json:"fields,omitempty"`
+	Summary   Value     `json:"summary,omitzero"`
+	When      *When     `json:"when,omitempty"`
 }
 
 type FieldKind string
 
 const (
-	FieldText    FieldKind = "text"
-	FieldSecret  FieldKind = "secret"
-	FieldSelect  FieldKind = "select"
-	FieldMulti   FieldKind = "multiselect"
-	FieldConfirm FieldKind = "confirm"
+	FieldText       FieldKind = "text"
+	FieldSecret     FieldKind = "secret"
+	FieldSelect     FieldKind = "select"
+	FieldMulti      FieldKind = "multiselect"
+	FieldConfirm    FieldKind = "confirm"
+	FieldSegmented  FieldKind = "segmented"
+	FieldSlider     FieldKind = "slider"
+	FieldDisclosure FieldKind = "disclosure"
 )
 
 type Option struct {
-	Value string `json:"value,omitempty"`
-	Label string `json:"label,omitempty"`
-	Note  string `json:"note,omitempty"`
+	Value    string `json:"value,omitempty"`
+	Label    string `json:"label,omitempty"`
+	Note     string `json:"note,omitempty"`
+	Disabled string `json:"disabled,omitempty"`
 }
 
 type Strip struct {
@@ -365,15 +627,19 @@ const (
 )
 
 type Value struct {
-	Kind  Kind    `json:"kind,omitempty"`
-	Text  string  `json:"text,omitempty"`
-	N     int64   `json:"n,omitempty"`
-	Of    int64   `json:"of,omitempty"`
-	At    string  `json:"at,omitempty"`
-	Unit  string  `json:"unit,omitempty"`
-	Label string  `json:"label,omitempty"`
-	Items []Value `json:"items,omitempty"`
-	Stale bool    `json:"stale,omitempty"`
+	Kind   Kind    `json:"kind,omitempty"`
+	Text   string  `json:"text,omitempty"`
+	N      int64   `json:"n,omitempty"`
+	Of     int64   `json:"of,omitempty"`
+	At     string  `json:"at,omitempty"`
+	Unit   string  `json:"unit,omitempty"`
+	Label  string  `json:"label,omitempty"`
+	Items  []Value `json:"items,omitempty"`
+	Stale  bool    `json:"stale,omitempty"`
+	Live   string  `json:"live,omitempty"`
+	Pri    int     `json:"pri,omitempty"`
+	Short  string  `json:"short,omitempty"`
+	Signal Signal  `json:"signal,omitempty"`
 }
 
 type Kind string
