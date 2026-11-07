@@ -134,8 +134,23 @@ public struct SectionHeader: View {
 
     public init(_ title: String) { self.title = title }
 
+    // value: the header as it is drawn: its words upper-cased, a value
+    // kept as it is said: from a part's first figure to its end, its unit
+    // and its age with it (HEALTH, AFTER EVERY BOOT, 57 s ago).
+    public static func cased(_ title: String) -> String {
+        title.components(separatedBy: Token.Glyph.sep).map { part in
+            var out: [String] = []
+            var value = false
+            for word in part.split(separator: " ", omittingEmptySubsequences: false) {
+                value = value || word.first?.isNumber == true
+                out.append(value ? String(word) : word.uppercased())
+            }
+            return out.joined(separator: " ")
+        }.joined(separator: Token.Glyph.sep)
+    }
+
     public var body: some View {
-        Wrap(title.uppercased()).font(.system(size: Token.Size.label, weight: .semibold)).tracking(Token.Size.label * Token.Size.tracking)
+        Wrap(Self.cased(title)).font(.system(size: Token.Size.label, weight: .semibold)).tracking(Token.Size.label * Token.Size.tracking)
             .foregroundStyle(.secondary).lineLimit(2).fixedSize(horizontal: false, vertical: true)
             .padding(.horizontal, 4).padding(.top, 2)
     }
