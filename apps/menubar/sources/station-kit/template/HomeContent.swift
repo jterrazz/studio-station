@@ -138,8 +138,9 @@ struct HomeContent: View {
                 ForEach(Array(rows.enumerated()), id: \.offset) { _, row in
                     HStack(spacing: Token.Tile.gap) {
                         StateDot(mark: row.mark).frame(width: Token.Tile.icon)
-                        Text(row.label ?? "").font(.system(size: Token.Size.text)).lineLimit(1).truncationMode(.middle)
-                        Spacer(minLength: 4)
+                        Wrap(row.label ?? "").font(.system(size: Token.Size.text)).lineLimit(2)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .fixedSize(horizontal: false, vertical: true)
                         ForEach(Array(page.rowActions(row.id ?? "").enumerated()), id: \.offset) { _, a in
                             if state.running == a.id || state.settling == a.id {
                                 PendingDot()
