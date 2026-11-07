@@ -37,6 +37,10 @@ export default defineConfig({
         oxfmt: {
             ignore: {
                 'TODO.md': 'copied verbatim from the design',
+                'apps/menubar/stories/STORIES.md':
+                    'copied verbatim from the design hand-off (v4), its captures left in the design folder',
+                'apps/menubar/stories/INDEX.md':
+                    'written by `StoryCoverageTests` from the story files, byte for byte what its drift test compares',
                 'src/remote/api/calls.json':
                     'written by `make generate` from the call registry, byte for byte what the calls-json-fresh test compares',
             },

@@ -12,6 +12,8 @@ enum Tree {
     static let sources = root.appendingPathComponent("apps/menubar/sources/station-kit")
     static let app = root.appendingPathComponent("apps/menubar/sources/station-menu-bar")
     static let calls = root.appendingPathComponent("src/remote/api/calls.json")
+    static let stories = root.appendingPathComponent("apps/menubar/stories")
+    static let storyGoldens = goldens.appendingPathComponent("stories")
 
     static func fixtures() throws -> [(name: String, data: Data)] {
         try FileManager.default.contentsOfDirectory(at: pages, includingPropertiesForKeys: nil)

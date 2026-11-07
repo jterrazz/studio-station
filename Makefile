@@ -119,6 +119,14 @@ deprovision: ## Remove the binary from ~/.local/bin; the user data stays
 generate: ## Regenerate the catalogue's projections
 	@go run ./src/cmd/generate
 	@printf "$(GREEN)●$(RESET) Regenerated skills/studio-toolbelt/SKILL.md, docs/reference/footprint.md, src/remote/api/calls.json, the page fixtures and the recorded menubar stream\n"
+	@if $(SDK_PROBE) >/dev/null 2>&1; then \
+		mkdir -p .artifacts/menubar; \
+		STATION_UPDATE_INDEX=1 swift test --package-path apps/menubar --scratch-path .artifacts/menubar/build --filter StoryCoverageTests > .artifacts/menubar/index.log 2>&1 \
+			|| { tail -30 .artifacts/menubar/index.log; exit 1; }; \
+		printf "$(GREEN)●$(RESET) Regenerated apps/menubar/stories/INDEX.md\n"; \
+	else \
+		printf "menubar: apps/menubar/stories/INDEX.md not regenerated, no macOS SDK\n"; \
+	fi
 
 clean: ## Remove build artifacts
 	@rm -rf .artifacts
