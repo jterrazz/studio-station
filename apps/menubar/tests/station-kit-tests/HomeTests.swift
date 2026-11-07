@@ -60,7 +60,7 @@ final class HomeTests: XCTestCase {
         XCTAssertEqual(Snapshot.state("menubar.home.engine-stopped", page).connection, .stopped)
     }
 
-    func drawn(_ name: String, _ state: PopoverState) throws {
+    func drawn(_ name: String, _ state: PanelState) throws {
         XCTAssertNil(try Golden.check(name, AnyView(Popover(state, scrolls: false))))
     }
 

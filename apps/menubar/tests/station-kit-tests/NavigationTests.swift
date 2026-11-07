@@ -50,7 +50,7 @@ final class NavigationTests: XCTestCase {
             let page = try Tree.page(fixture)
             XCTAssertEqual(shown.all, ["\(watch) \(page.id ?? "")"], label)
             let home = try Tree.page("menubar.home.two-macs")
-            let state = PopoverState(page: home, connection: .live, pushed: page)
+            let state = PanelState(page: home, connection: .live, pushed: page)
             XCTAssertEqual(state.shown?.id, page.id)
             XCTAssertNil(try Golden.check(fixture, AnyView(Popover(state, handlers: handlers, scrolls: false)), scheme: .dark), label)
             handlers.back()

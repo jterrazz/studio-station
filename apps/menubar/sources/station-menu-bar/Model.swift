@@ -5,7 +5,7 @@ import UserNotifications
 
 @MainActor
 final class Model: ObservableObject {
-    @Published var state = PopoverState(page: nil, connection: .connecting)
+    @Published var state = PanelState(page: nil, connection: .connecting)
     @Published var loginItemOn = LoginItem.on
     @Published var sparkline = UserDefaults.standard.bool(forKey: Model.sparklineKey)
 

@@ -72,7 +72,7 @@ final class Round4Tests: XCTestCase {
     // the port typed, until the page read again lists it.
     func testAPortBeingSharedShowsAtOnce() throws {
         let page = try Tree.page("menubar.vm.linux-1")
-        var state = PopoverState(page: nil, connection: .live)
+        var state = PanelState(page: nil, connection: .live)
         XCTAssertNil(MachineContent.sharing(page, state))
         state.running = "share-port"
         state.sent = ["Port": "3000"]

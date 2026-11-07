@@ -5,7 +5,7 @@ import SwiftUI
 // window picked, then the top processes. Picking hands the window's word to
 // the app; nothing runs from here.
 public struct ActivityPage: View {
-    let state: PopoverState
+    let state: PanelState
     let handlers: PopoverHandlers
     @Environment(\.stationPalette) private var palette
     @Environment(\.colorScheme) private var scheme
@@ -14,7 +14,7 @@ public struct ActivityPage: View {
     // word the call's window takes.
     public static let windows: [(words: String, flag: String)] = [("6 min", "6m"), ("1 h", "1h"), ("24 h", "24h")]
 
-    public init(_ state: PopoverState, handlers: PopoverHandlers = PopoverHandlers()) {
+    public init(_ state: PanelState, handlers: PopoverHandlers = PopoverHandlers()) {
         self.state = state
         self.handlers = handlers
     }

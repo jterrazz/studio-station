@@ -5,11 +5,11 @@ import SwiftUI
 // its guards; then the other Macs by their mode, each with its Change,
 // whose y/n sheet opens in its row. No grouping: rows on the panel.
 public struct AwakePage: View {
-    let state: PopoverState
+    let state: PanelState
     let handlers: PopoverHandlers
     @Environment(\.stationPalette) private var palette
 
-    public init(_ state: PopoverState, handlers: PopoverHandlers = PopoverHandlers()) {
+    public init(_ state: PanelState, handlers: PopoverHandlers = PopoverHandlers()) {
         self.state = state
         self.handlers = handlers
     }

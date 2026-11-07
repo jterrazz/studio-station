@@ -6,7 +6,7 @@ import SwiftUI
 // A server's one primary action is Restart.
 struct MachineContent: View {
     let page: Page
-    let state: PopoverState
+    let state: PanelState
     let handlers: PopoverHandlers
     @Environment(\.stationPalette) private var palette
     @Environment(\.stationNow) private var now
@@ -84,7 +84,7 @@ struct MachineContent: View {
 
     // value: the port a Share a port that runs, or has just returned,
     // asked for, until the page lists it.
-    public static func sharing(_ page: Page, _ state: PopoverState) -> String? {
+    public static func sharing(_ page: Page, _ state: PanelState) -> String? {
         guard (state.running ?? state.settling) == "share-port", let port = state.sent["Port"], !port.isEmpty else { return nil }
         let listed = (page.section("ports")?.items ?? []).compactMap(\.link).contains { $0.row == port }
         return listed ? nil : "Port \(port)"

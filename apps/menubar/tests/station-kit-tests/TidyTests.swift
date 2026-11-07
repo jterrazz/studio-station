@@ -20,7 +20,7 @@ final class TidyTests: XCTestCase {
     func testEscapeOnAMachinePageOpenedFromHomeGoesBackToHome() throws {
         let home = try Self.home(linux: "running", api: "stopped")
         let linux = try Page.decode(Data(#"{"schema":"station.page/v1","id":"menubar.machine","context":{"machine":"linux-1","kind":"workspace"},"sections":[{"id":"machine","title":"linux-1"}]}"#.utf8))
-        var state = PopoverState(page: home, connection: .live)
+        var state = PanelState(page: home, connection: .live)
         XCTAssertEqual(BackKey.gesture(state), .close)
         state.pushed = linux
         XCTAssertNil(state.back)
@@ -42,7 +42,7 @@ final class TidyTests: XCTestCase {
         let none = try Self.home(linux: "stopped", api: "stopped")
         XCTAssertEqual(StopAll.progress(names, none), "Stopping the engine\(Token.Glyph.ellipsis)")
 
-        var state = PopoverState(page: one, connection: .live)
+        var state = PanelState(page: one, connection: .live)
         state.stopping = names
         XCTAssertEqual(StopAll.stopping(state, one), [])
         state.running = StopAll.id

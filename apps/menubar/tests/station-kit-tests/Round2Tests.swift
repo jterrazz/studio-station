@@ -31,7 +31,7 @@ final class Round2Tests: XCTestCase {
     // invariant: a status line is about the page it was said on: another
     // page shown clears it, the same page read again keeps it.
     func testAStatusLineStaysOnThePageItWasSaidOn() {
-        var state = PopoverState(page: nil, connection: .live)
+        var state = PanelState(page: nil, connection: .live)
         state.say(Status("no machine named infra", failed: true), on: PageID.of("infra"))
         state.showing(PageID.of("infra"))
         XCTAssertNotNil(state.status)

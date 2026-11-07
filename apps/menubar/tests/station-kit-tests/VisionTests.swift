@@ -13,37 +13,37 @@ final class VisionTests: XCTestCase {
         try Page.decode(Data(contentsOf: Self.data.appendingPathComponent(name + ".json")))
     }
 
-    func drawn(_ name: String, _ state: PopoverState) throws {
+    func drawn(_ name: String, _ state: PanelState) throws {
         let view = MenuPage.view(state) ?? AnyView(Popover(state, scrolls: false))
         XCTAssertNil(try Golden.check("vision." + name, view))
     }
 
     func testHomeOnThisMac() throws {
-        try drawn("a.home", PopoverState(page: try page("a.home"), connection: .live))
+        try drawn("a.home", PanelState(page: try page("a.home"), connection: .live))
     }
 
     func testTheSwitcherOpen() throws {
         let home = try page("a.home")
-        try drawn("b.switcher", PopoverState(page: home, connection: .live, pushed: try page("b.switcher"), recent: ["infra"]))
+        try drawn("b.switcher", PanelState(page: home, connection: .live, pushed: try page("b.switcher"), recent: ["infra"]))
     }
 
     func testAWorkspace() throws {
-        try drawn("c.linux-1", PopoverState(page: nil, connection: .live, pushed: try page("c.linux-1")))
+        try drawn("c.linux-1", PanelState(page: nil, connection: .live, pushed: try page("c.linux-1")))
     }
 
     func testAPortItsQROpen() throws {
-        try drawn("d.port-qr", PopoverState(page: try page("d.port-qr"), connection: .live, qr: "https://jterrazz-macbook-pro.tail77a797.ts.net:40001"))
+        try drawn("d.port-qr", PanelState(page: try page("d.port-qr"), connection: .live, qr: "https://jterrazz-macbook-pro.tail77a797.ts.net:40001"))
     }
 
     func testAwakeEveryMac() throws {
-        try drawn("e.awake", PopoverState(page: try page("e.awake"), connection: .live))
+        try drawn("e.awake", PanelState(page: try page("e.awake"), connection: .live))
     }
 
     func testAServer() throws {
-        try drawn("f.infra", PopoverState(page: nil, connection: .live, pushed: try page("f.infra")))
+        try drawn("f.infra", PanelState(page: nil, connection: .live, pushed: try page("f.infra")))
     }
 
     func testThePortsOfAMacTwoClasses() throws {
-        try drawn("g.ports-mini", PopoverState(page: try page("g.ports-mini"), connection: .live))
+        try drawn("g.ports-mini", PanelState(page: try page("g.ports-mini"), connection: .live))
     }
 }

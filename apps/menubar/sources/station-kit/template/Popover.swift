@@ -17,7 +17,7 @@ public enum PageID {
     public static func shown(_ pushed: String?) -> String { pushed ?? home }
 }
 
-public struct PopoverState: Equatable, Sendable {
+public struct PanelState: Equatable, Sendable {
     public var page: Page?
     public var connection: Connection
     public var running: String?
@@ -168,10 +168,10 @@ public enum TodoBadge {
 }
 
 public struct Popover: View {
-    let state: PopoverState
+    let state: PanelState
     let handlers: PopoverHandlers
     let scrolls: Bool
-    public init(_ state: PopoverState, handlers: PopoverHandlers = PopoverHandlers(), scrolls: Bool = true) {
+    public init(_ state: PanelState, handlers: PopoverHandlers = PopoverHandlers(), scrolls: Bool = true) {
         self.state = state
         self.handlers = handlers
         self.scrolls = scrolls
@@ -295,13 +295,13 @@ extension Page {
 // Each gesture is its own key, so the one drawn is never the one the
 // page before it held.
 struct BackKey: View {
-    let state: PopoverState
+    let state: PanelState
     let handlers: PopoverHandlers
     @Environment(\.stationStill) private var still
 
     enum Gesture: Equatable { case close, back }
 
-    static func gesture(_ state: PopoverState) -> Gesture? {
+    static func gesture(_ state: PanelState) -> Gesture? {
         guard state.confirming == nil else { return nil }
         return state.pushed == nil ? .close : .back
     }

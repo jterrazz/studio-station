@@ -303,7 +303,7 @@ func perform(_ action: Action, _ handlers: PopoverHandlers) {
 // value: the sheet of the action being confirmed, if any, on this page.
 struct SheetFor: View {
     let page: Page
-    let state: PopoverState
+    let state: PanelState
     let handlers: PopoverHandlers
 
     var body: some View {

@@ -8,7 +8,7 @@ public enum MenuPage {
     public static let activity = Navigation.activity
 
     @MainActor
-    public static func view(_ state: PopoverState, handlers: PopoverHandlers = PopoverHandlers()) -> AnyView? {
+    public static func view(_ state: PanelState, handlers: PopoverHandlers = PopoverHandlers()) -> AnyView? {
         guard let page = state.page else { return nil }
         let body: AnyView
         switch page.id {
@@ -22,11 +22,11 @@ public enum MenuPage {
 }
 
 struct MenuPageFrame<Content: View>: View {
-    let state: PopoverState
+    let state: PanelState
     let handlers: PopoverHandlers
     let content: Content
 
-    init(state: PopoverState, handlers: PopoverHandlers, @ViewBuilder content: () -> Content) {
+    init(state: PanelState, handlers: PopoverHandlers, @ViewBuilder content: () -> Content) {
         self.state = state
         self.handlers = handlers
         self.content = content()
@@ -75,7 +75,7 @@ extension Section {
 // invariant: an action is run as SPEC §10.2 says: a confirmation or a form
 // opens its sheet first, any other runs at once.
 struct Act {
-    let state: PopoverState
+    let state: PanelState
     let handlers: PopoverHandlers
 
     func tap(_ action: Action) {

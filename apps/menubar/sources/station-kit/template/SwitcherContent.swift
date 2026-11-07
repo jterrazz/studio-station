@@ -6,7 +6,7 @@ import SwiftUI
 // Add a Mac.
 struct SwitcherContent: View {
     let page: Page
-    let state: PopoverState
+    let state: PanelState
     let handlers: PopoverHandlers
 
     var tree: Section? { page.section("machines") }

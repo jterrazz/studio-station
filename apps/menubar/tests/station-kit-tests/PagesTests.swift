@@ -36,11 +36,11 @@ final class PagesTests: XCTestCase {
         return (frames.map(Sent.init(frame:)), calls.all)
     }
 
-    func drawn(_ name: String, _ state: PopoverState) throws {
+    func drawn(_ name: String, _ state: PanelState) throws {
         XCTAssertNil(try Golden.check(name, AnyView(Popover(state, scrolls: false))))
     }
 
-    func pushed(_ fixture: String, confirming: String? = nil, typed: String? = nil) throws -> PopoverState {
+    func pushed(_ fixture: String, confirming: String? = nil, typed: String? = nil) throws -> PanelState {
         let page = try Tree.page(fixture)
         var state = Snapshot.state(fixture, page)
         state.confirming = confirming

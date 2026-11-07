@@ -5,7 +5,7 @@ import SwiftUI
 // Accounts tiles side by side, then the menu.
 struct HomeContent: View {
     let page: Page
-    let state: PopoverState
+    let state: PanelState
     let handlers: PopoverHandlers
     @State private var unfolded = false
     @State private var lit: Int?
@@ -310,7 +310,7 @@ public enum StopAll {
 
     // value: the VMs still stopping while Stop everything runs: those it
     // stops whose line does not say stopped yet.
-    public static func stopping(_ state: PopoverState, _ page: Page?) -> Set<String> {
+    public static func stopping(_ state: PanelState, _ page: Page?) -> Set<String> {
         guard state.running == id || state.settling == id else { return [] }
         return Set(state.stopping.filter { name in row(name, page).map { !stopped($0) } ?? false })
     }

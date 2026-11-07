@@ -7,11 +7,11 @@ import SwiftUI
 // then lists them under no header. A shared port unfolds in its row: its
 // link, its QR, Copy link, Open, Stop sharing.
 public struct PortsPage: View {
-    let state: PopoverState
+    let state: PanelState
     let handlers: PopoverHandlers
     @Environment(\.stationPalette) private var palette
 
-    public init(_ state: PopoverState, handlers: PopoverHandlers = PopoverHandlers()) {
+    public init(_ state: PanelState, handlers: PopoverHandlers = PopoverHandlers()) {
         self.state = state
         self.handlers = handlers
     }
@@ -243,7 +243,7 @@ struct SharedPortCard: View {
     let url: URL
     let stop: Action?
     let page: Page
-    let state: PopoverState
+    let state: PanelState
     let handlers: PopoverHandlers
     @Environment(\.stationPalette) private var palette
     @State private var copied = false

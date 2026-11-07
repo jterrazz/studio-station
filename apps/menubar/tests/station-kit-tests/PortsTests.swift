@@ -24,7 +24,7 @@ final class PortsTests: XCTestCase {
         var opened: [URL] = []
         var asked: [String?] = []
         let handlers = PopoverHandlers(confirm: { asked.append($0?.id) }, open: { opened.append($0) }, copy: { copied.append($0) })
-        var state = PopoverState(page: page, connection: .live, qr: url)
+        var state = PanelState(page: page, connection: .live, qr: url)
         XCTAssertNil(try Golden.check("menubar.ports.linux-1.qr", try XCTUnwrap(MenuPage.view(state, handlers: handlers))))
         state.confirming = stop.id
         XCTAssertNil(try Golden.check("sheet.stop-sharing", try XCTUnwrap(MenuPage.view(state, handlers: handlers))))

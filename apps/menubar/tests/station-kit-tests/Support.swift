@@ -77,10 +77,10 @@ enum Snapshot {
     // value: the popover as a fixture shows it: Home or a page of the menu
     // bar's own, or the switcher or a machine's page pushed over Home, the
     // switcher with infra opened last.
-    static func state(_ name: String, _ page: Page) -> PopoverState {
+    static func state(_ name: String, _ page: Page) -> PanelState {
         let connection: Connection = name.hasSuffix(".error") || name.hasSuffix(".engine-stopped") ? .stopped : .live
-        guard page.id == PageID.switcher || page.id == PageID.machine else { return PopoverState(page: page, connection: connection) }
-        return PopoverState(page: nil, connection: connection, pushed: page, recent: page.id == PageID.switcher ? ["infra"] : [])
+        guard page.id == PageID.switcher || page.id == PageID.machine else { return PanelState(page: page, connection: connection) }
+        return PanelState(page: nil, connection: connection, pushed: page, recent: page.id == PageID.switcher ? ["infra"] : [])
     }
 
     static func popover(_ page: Page) -> Bool { page.id == PageID.home || page.id == PageID.switcher || page.id == PageID.machine }
