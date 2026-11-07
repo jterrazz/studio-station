@@ -67,6 +67,50 @@ final class KitBoundaryTests: XCTestCase {
         return out
     }
 
+    static let drawnByTheKit = ["Popover(", "PageView(", "MenuBarIconView(", "MenuPage.", "HomeContent(", "MachineContent(", "StoryView("]
+    static let engine = ["Client.", "UnixSocket.", "EnginePath.", "ActionRunner(", "Navigation(", "Terminal."]
+
+    static func scanCatalog(_ files: [(path: String, text: String)]) -> [Finding] {
+        var out: [Finding] = []
+        for (path, text) in files {
+            if text.contains("Color(") || text.range(of: #"Color\.(red|green|blue|yellow|orange|black|white|gray)"#, options: .regularExpression) != nil {
+                out.append(Finding(file: path, rule: "a colour outside Token"))
+            }
+            for word in drawnByTheKit where text.contains(word) {
+                out.append(Finding(file: path, rule: "\(word.dropLast()) drawn by the Catalog, not through StoryStage"))
+            }
+            for word in engine where text.contains(word) {
+                out.append(Finding(file: path, rule: "\(word.dropLast()): the Catalog reaches no engine"))
+            }
+        }
+        return out
+    }
+
+    static func swiftFiles(_ root: URL) -> [(path: String, text: String)] {
+        FileManager.default.enumerator(at: root, includingPropertiesForKeys: nil)!.compactMap { $0 as? URL }
+            .filter { $0.pathExtension == "swift" }
+            .map { (String($0.path.dropFirst(root.path.count + 1)), try! String(contentsOf: $0, encoding: .utf8)) }
+    }
+
+    func testTheCatalogDrawsOnlyThroughTheKitAndIsNeverBundled() throws {
+        let files = Self.swiftFiles(Tree.root.appendingPathComponent("apps/menubar/sources/station-catalog"))
+        XCTAssertGreaterThan(files.count, 2)
+        XCTAssertEqual(Self.scanCatalog(files), [])
+        let package = try String(contentsOf: Tree.root.appendingPathComponent("apps/menubar/Package.swift"), encoding: .utf8)
+        let app = try XCTUnwrap(package.split(separator: "\n").first { $0.contains("name: \"StationMenuBar\"") })
+        XCTAssertFalse(app.contains("StationCatalog"), "Station.app links the Catalog")
+        let bundle = try String(contentsOf: Tree.root.appendingPathComponent("apps/menubar/scripts/build.sh"), encoding: .utf8)
+        XCTAssertFalse(bundle.contains("StationCatalog"), "the bundle carries the Catalog")
+    }
+
+    func testTheCatalogScanCatchesWhatItForbids() {
+        let caught = Self.scanCatalog([
+            ("Canvas.swift", "Popover(state).background(Color.blue)"),
+            ("Live.swift", "await Client.call(path: socket, name: name)"),
+        ]).map(\.rule)
+        XCTAssertEqual(caught, ["a colour outside Token", "Popover drawn by the Catalog, not through StoryStage", "Client: the Catalog reaches no engine"])
+    }
+
     func testTheKitKeepsItsBoundary() throws {
         let root = Tree.sources
         let files = FileManager.default.enumerator(at: root, includingPropertiesForKeys: nil)!.compactMap { $0 as? URL }
