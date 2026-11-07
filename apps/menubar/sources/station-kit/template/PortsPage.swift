@@ -24,6 +24,8 @@ public struct PortsPage: View {
         VStack(alignment: .leading, spacing: Token.Tile.section) {
             PageHeader(back: state.back ?? Page.ThisMacWord, title: "Ports", subtitle: Format.show(summary?.cells?.first ?? Value()), action: handlers.back)
             if let red = page.section("needs-you") { needsYou(red) }
+            let needing = Self.needing(page)
+            if !needing.isEmpty { needsLook(needing) }
             if let https = page.section("https"), let row = https.rows.first {
                 MenuRow(row.label ?? "", subtitle: Format.show(row.cells?.first ?? Value()), bare: true) {
                     EmptyView()
@@ -73,6 +75,36 @@ public struct PortsPage: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             .layoutPriority(1)
             if let review { StationButton(review.label ?? "") { act.tap(review) } }
+        }
+        .stationTile(tint: palette.bad)
+    }
+
+    // value: SPEC §10.2's Needs you on top when nothing is reachable
+    // outside Tailscale undeclared: each port of Public or Private the
+    // engine marks, by its name and port, with what it says of it.
+    public static func needing(_ page: Page) -> [(title: String, words: String)] {
+        guard page.section("needs-you")?.rows.isEmpty ?? true else { return [] }
+        return ["public", "private"].compactMap { page.section($0) }.flatMap { s in
+            s.rows.filter { $0.mark == .attention || $0.mark == .broken }.map { r in
+                let port = s.cell(r, "port").map { Format.show($0) } ?? ""
+                let words = [s.cell(r, "what"), s.cell(r, "declared")].compactMap { $0.map { Format.show($0) } }.filter { !$0.isEmpty }
+                return ("\(r.short ?? r.label ?? "")\(Token.Glyph.sep)\(port)", words.joined(separator: Token.Glyph.sep))
+            }
+        }
+    }
+
+    func needsLook(_ rows: [(title: String, words: String)]) -> some View {
+        HStack(alignment: .center, spacing: Token.Tile.gap) {
+            IconTile(Token.Symbol.warn, active: true, tint: palette.bad)
+            VStack(alignment: .leading, spacing: 6) {
+                ForEach(Array(rows.enumerated()), id: \.offset) { _, r in
+                    VStack(alignment: .leading, spacing: 1) {
+                        Wrap(r.title).font(.system(size: Token.Size.text, weight: .semibold)).lineLimit(2)
+                        SubText(r.words)
+                    }
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
         .stationTile(tint: palette.bad)
     }
