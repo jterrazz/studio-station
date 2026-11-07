@@ -1,6 +1,7 @@
 package fake_test
 
 import (
+	"encoding/json"
 	"testing"
 
 	"github.com/jterrazz/studio-station/src/agents"
@@ -13,6 +14,19 @@ func TestJournal(t *testing.T) {
 		j := fake.NewJournal()
 		j.World().Now = contracttest.Morning()
 		return contracttest.JournalSubject{Journal: j, Now: &j.World().Now}
+	})
+}
+
+func TestHooks(t *testing.T) {
+	contracttest.Hooks(t, func(*testing.T) contracttest.HooksSubject {
+		edit := agents.Event{Kind: agents.UseDone, Session: "s-1", Folder: "/Users/admin/app", Act: agents.ActEdit, Path: "/Users/admin/app/src/a.ts", Added: 3, Removed: 1, At: contracttest.Morning()}
+		payload, _ := json.Marshal(edit)
+		return contracttest.HooksSubject{
+			Hooks:      fake.NewHooks("fake"),
+			OwnersKept: func(*testing.T) bool { return true },
+			Recorded:   []contracttest.Recorded{{Name: "an edit done", Payload: payload, Want: edit}},
+			Unknown:    [][]byte{[]byte(`{"kind":"compacted","session":"s-1"}`), []byte(`{"kind":"began"}`)},
+		}
 	})
 }
 

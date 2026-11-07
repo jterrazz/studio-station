@@ -278,6 +278,8 @@ type VM struct {
 type Agents struct {
 	// value: the journal the hooks write, by session.
 	Journal map[string]agents.Agent `json:"journal,omitempty"`
+	// value: the apps whose settings file runs station's hook, by adapter id.
+	Hooks map[agents.App]bool `json:"hooks,omitempty"`
 	// value: the programs the agents' terminal session runs, each
 	// "<folder> <argv>", and the texts typed into it.
 	Opened []string `json:"opened,omitempty"`
