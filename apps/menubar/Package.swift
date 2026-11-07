@@ -5,7 +5,7 @@ let package = Package(
     name: "StationMenuBar",
     platforms: [.macOS(.v26)],
     targets: [
-        .target(name: "StationKit", path: "sources/station-kit"),
+        .target(name: "StationKit", path: "sources/station-kit", resources: [.process("token/symbols.xcassets")]),
         .executableTarget(name: "StationMenuBar", dependencies: ["StationKit"], path: "sources/station-menu-bar"),
         .testTarget(name: "StationKitTests", dependencies: ["StationKit"], path: "tests/station-kit-tests", exclude: ["testdata"]),
     ],

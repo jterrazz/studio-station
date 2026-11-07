@@ -77,6 +77,7 @@ menubar-check: ## The menu bar's swift test, then its bundle; one line of skip w
 		fi; \
 		printf "menubar: skipped, no macOS SDK (install Xcode to build apps/menubar)\n"; exit 0; \
 	fi; \
+	swift apps/menubar/scripts/orbit-symbols.swift apps/menubar/sources/station-kit/token/symbols.xcassets && \
 	swift test --package-path apps/menubar --scratch-path .artifacts/menubar/build && apps/menubar/scripts/build.sh
 
 menubar: ## Build the menu bar's bundle, signed ad hoc, into $(MENUBAR_APP)

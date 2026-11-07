@@ -11,7 +11,6 @@ public enum Token {
         public static let dash = "-"
         public static let missing = "—"
         public static let slash = "/"
-        public static let down = "!"
         public static let command = "⌘"
         public static let restart = "↺"
         public static let caret = "|"
@@ -137,16 +136,17 @@ public enum Token {
         }
     }
 
-    // value: the menu bar icon of the vision: the station symbol, 16 pt, its
-    // badge on its top right corner, and the CPU line beside it.
+    // value: the menu bar icon: the Orbit, a custom SF Symbol drawn as the
+    // status bar draws its own symbols, 13 pt medium (measured against
+    // Spotlight's and a bare status item's on macOS 26), one symbol per
+    // state, and the CPU line beside it at the symbol's stroke.
     public enum Icon {
-        public static let symbol: CGFloat = 18
-        public static let line: CGFloat = 1.5
-        public static let badge: CGFloat = 10
-        public static let badgeText: CGFloat = 8
-        public static let badgeAt = CGPoint(x: 12, y: -3)
-        public static let digit: CGFloat = 5
-        public static let notch: CGFloat = 1
+        public static let orbit = "station.orbit"
+        public static let badged = "station.orbit.badge"
+        public static let slashed = "station.orbit.slash"
+        public static let size: CGFloat = 13
+        public static let weight = Font.Weight.medium
+        public static let line: CGFloat = 1.25
         public static let sparkWidth: CGFloat = 22
         public static let sparkHeight: CGFloat = 12
         public static let gap: CGFloat = 4
@@ -154,7 +154,6 @@ public enum Token {
 
         public static func needs(_ scheme: ColorScheme) -> Color { Token.hex(scheme == .dark ? 0xFFAD1F : 0xF29D0B) }
         public static func down(_ scheme: ColorScheme) -> Color { Token.hex(scheme == .dark ? 0xFF4F45 : 0xEC3B30) }
-        public static let badgeInk = Token.hex(0xFFFFFF)
         public static func ink(_ scheme: ColorScheme) -> Color { Token.hex(scheme == .dark ? 0xFFFFFF : 0x000000) }
     }
 

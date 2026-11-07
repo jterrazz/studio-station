@@ -88,11 +88,11 @@ final class PlayFixesTests: XCTestCase {
         XCTAssertNil(SwitcherKeys.picked(0, lit: nil, searching: true))
     }
 
-    // invariant: the icon's count is drawn whole, `10`, never cut to `…`.
-    func testTheBadgeDrawsATwoDigitCountWhole() throws {
-        for scheme in [ColorScheme.dark, .light] {
-            XCTAssertNil(try Golden.check("icon.needs-10", AnyView(MenuBarIconView(MenuBarIcon(.needs(10)), scheme: scheme)), scheme: scheme, desk: false))
-        }
+    // invariant: a count of any size draws the one dot, its number said by
+    // the label, never a digit cut to `…`.
+    func testACountOfAnySizeDrawsTheOneDot() throws {
+        XCTAssertEqual(MenuBarIcon(.needs(10)).image(scheme: .dark).flatMap(Bitmap.init)?.pixels, MenuBarIcon(.needs(1)).image(scheme: .dark).flatMap(Bitmap.init)?.pixels)
+        XCTAssertEqual(MenuBarIcon(.needs(10)).label, "station: 10 things need you")
     }
 
     // invariant: the engine stopped keeps a badge: the icon never says
@@ -100,7 +100,7 @@ final class PlayFixesTests: XCTestCase {
     func testTheEngineStoppedIsNotTheSymbolAlone() {
         let icon = MenuBarIcon.of(connection: .stopped, page: nil)
         XCTAssertEqual(icon.mark, .stopped)
-        XCTAssertFalse(icon.template)
+        XCTAssertNotEqual(icon.symbol, Token.Icon.orbit)
     }
 
     // invariant: the Accounts tile and a workspace's Apps, Settings and Disk

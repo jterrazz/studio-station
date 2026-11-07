@@ -4,12 +4,14 @@ root=$(cd "$(dirname "$0")/../../.." && pwd)
 package="$root/apps/menubar"
 app="$root/.artifacts/menubar/Station.app"
 scratch="$root/.artifacts/menubar/build"
+swift "$package/scripts/orbit-symbols.swift" "$package/sources/station-kit/token/symbols.xcassets"
 swift build -c release --package-path "$package" --scratch-path "$scratch" --product StationMenuBar
 bin=$(swift build -c release --package-path "$package" --scratch-path "$scratch" --show-bin-path)
 rm -rf "$app"
 mkdir -p "$app/Contents/MacOS" "$app/Contents/Resources"
 cp "$bin/StationMenuBar" "$app/Contents/MacOS/StationMenuBar"
 cp "$package/resources/Info.plist" "$app/Contents/Info.plist"
+cp -R "$bin/StationMenuBar_StationKit.bundle" "$app/Contents/Resources/"
 icons="$scratch/AppIcon.iconset"
 rm -rf "$icons" && mkdir -p "$icons"
 qlmanage -t -s 1024 -o "$scratch" "$package/resources/AppIcon.svg" >/dev/null
