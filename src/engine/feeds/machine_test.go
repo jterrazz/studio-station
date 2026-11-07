@@ -14,6 +14,7 @@ import (
 	"github.com/jterrazz/studio-station/src/activity"
 	activitycalls "github.com/jterrazz/studio-station/src/activity/calls"
 	"github.com/jterrazz/studio-station/src/awake"
+	"github.com/jterrazz/studio-station/src/catalog"
 	"github.com/jterrazz/studio-station/src/core/call"
 	"github.com/jterrazz/studio-station/src/core/machine"
 	"github.com/jterrazz/studio-station/src/engine"
@@ -339,15 +340,17 @@ func shared(p page.Page) []string {
 
 func TestAnAccountTakenBackLeavesLinux1sPageOnceTheCallReturns(t *testing.T) {
 	linux := machines.VM{Name: "linux-1", Mac: thisMac, Lifetime: machines.Permanent, State: machines.Running, Guest: "connected"}
-	w := &world{infra: []machines.VM{infraAt(machines.Running, 0)}, here: []machines.VM{linux}, lent: lentTo("linux-1", "github", "claude"), asked: map[string][]string{}, activity: map[string]uint64{}}
+	w := &world{infra: []machines.VM{infraAt(machines.Running, 0)}, here: []machines.VM{linux}, lent: lentTo("linux-1", catalog.ProviderGitHub, catalog.ProviderClaude), asked: map[string][]string{}, activity: map[string]uint64{}}
 	refresh := make(chan struct{}, 1)
 	pages := watchWith(t, w, newSteps(), engine.FeedInput{Subject: "linux-1", Refresh: refresh})
-	until(t, pages, "GitHub and Claude shared with linux-1", func(p page.Page) bool { return slices.Equal(shared(p), []string{"github", "claude"}) })
+	until(t, pages, "GitHub and Claude shared with linux-1", func(p page.Page) bool {
+		return slices.Equal(shared(p), []string{catalog.ProviderGitHub, catalog.ProviderClaude})
+	})
 	w.mu.Lock()
-	w.lent = lentTo("linux-1", "claude")
+	w.lent = lentTo("linux-1", catalog.ProviderClaude)
 	w.mu.Unlock()
 	refresh <- struct{}{}
-	p := until(t, pages, "GitHub gone from linux-1's shared accounts", func(p page.Page) bool { return slices.Equal(shared(p), []string{"claude"}) })
+	p := until(t, pages, "GitHub gone from linux-1's shared accounts", func(p page.Page) bool { return slices.Equal(shared(p), []string{catalog.ProviderClaude}) })
 	for _, a := range p.Actions {
 		if a.ID == "take-back/github" {
 			t.Errorf("linux-1's page still offers %q after GitHub was taken back", a.Label)

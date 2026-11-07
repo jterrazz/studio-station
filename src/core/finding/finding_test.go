@@ -62,7 +62,7 @@ func TestNeedsYouListsEachMacFollowedByItsOwnVMsThenTheNextMac(t *testing.T) {
 	read := []finding.Finding{
 		line(this, "node"),
 		line(infra, "curl"),
-		line(mini, "git"),
+		line(mini, "fd"),
 		line(linux1, "jq"),
 	}
 
@@ -74,7 +74,7 @@ func TestNeedsYouListsEachMacFollowedByItsOwnVMsThenTheNextMac(t *testing.T) {
 	want := []string{
 		"jterrazz-macbook-pro node",
 		"linux-1 jq",
-		"jterrazz-mac-mini git",
+		"jterrazz-mac-mini fd",
 		"infra curl",
 	}
 	if !slices.Equal(got, want) {

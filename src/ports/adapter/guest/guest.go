@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	agentscontract "github.com/jterrazz/studio-station/src/agents/contract"
 	"io"
 	"path"
 	"sort"
@@ -40,6 +41,9 @@ type Options struct {
 	Listeners Listeners
 	// value: the ports this VM's containers publish; nil reads none.
 	Containers Containers
+	// value: the journal this VM's agent hooks write, the one store of the
+	// agents the guest reads.
+	Journal agentscontract.Journal
 }
 
 type Listeners interface {

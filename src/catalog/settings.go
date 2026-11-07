@@ -192,6 +192,10 @@ var Settings = []Setting{
 
 const GitShortcutsSetting = "git-shortcuts"
 
+const GitShortcutsGroup = "git" // value: the group of v2's run shortcuts, now git's own aliases, and the program each alias is said with.
+
+func GitShortcutLine(alias string) string { return GitShortcutsGroup + " " + alias }
+
 var GitShortcuts = GitAliases{File: "~/.gitconfig", Aliases: []GitAlias{
 	{Name: "wip", Command: "!git add --all && git commit -m WIP"},
 	{Name: "unwip", Command: "!git reset --soft HEAD~1 && git reset HEAD"},

@@ -9,6 +9,8 @@ import (
 	"github.com/spf13/cobra"
 
 	accountscalls "github.com/jterrazz/studio-station/src/accounts/calls"
+	agentsjsonfile "github.com/jterrazz/studio-station/src/agents/adapter/jsonfile"
+	agentscontract "github.com/jterrazz/studio-station/src/agents/contract"
 	"github.com/jterrazz/studio-station/src/catalog"
 	model "github.com/jterrazz/studio-station/src/machines"
 	"github.com/jterrazz/studio-station/src/ports/adapter/docker"
@@ -26,7 +28,7 @@ func (m machine) guest() *guest.Agent {
 	if root == "" {
 		root = "/"
 	}
-	return guest.New(m.sys, guest.Options{State: m.paths.State, PortsEnv: filepath.Join(m.paths.Prefs, "services.env"), Kind: m.kind, Version: Version(), Listeners: m.listeners(root), Containers: m.containers(), Accounts: func(ctx context.Context, keys []string) any {
+	return guest.New(m.sys, guest.Options{State: m.paths.State, PortsEnv: filepath.Join(m.paths.Prefs, "services.env"), Kind: m.kind, Version: Version(), Listeners: m.listeners(root), Containers: m.containers(), Journal: m.journal(), Accounts: func(ctx context.Context, keys []string) any {
 		a := accountscalls.NewReader(m.pool, m.identities(path.Join(m.paths.State, "children")), accountscalls.ReaderPorts{}, accountscalls.ReaderOptions{ThisMachine: m.kind, ThisMacName: m.where.Machine, Now: m.sys.Clock.Now, Keys: func() []string { return keys }})
 		return a.Own(ctx)
 	}})
@@ -58,6 +60,14 @@ func (g guestServer) Run(ctx context.Context, in io.Reader, out io.Writer) error
 		return err
 	}
 	return g.Agent.Run(ctx, in, out)
+}
+
+// value: the journal of this VM's agents, inside the VM.
+func (m machine) journal() agentscontract.Journal {
+	if m.world != nil {
+		return m.world.journal()
+	}
+	return agentsjsonfile.New(m.sys.FS, path.Join(m.paths.State, "agents"), m.sys.Clock, catalog.AgentWatchEvery)
 }
 
 // value: what listens here, read the way this system can: a Linux kernel's

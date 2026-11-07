@@ -24,6 +24,8 @@ The families, each with its model, `contract/`, `calls/` and `adapter/<tech>/`:
 ```text
 src/
   machines/  apps/  settings/  disk/  ports/  accounts/  background/  awake/  activity/  images/
+  agents/    the coding agents of a workspace: Judge folds their hook events into a state, Scrub keeps
+             only what privacy lets through; contracts Hooks, Journal, Session, Forge, Repo
   overview/  the Overview's read (overview/calls), which composes every section's own read
   setup/     setup.run, the one bootstrap call, and the preferences groups it writes
   engine/    the engine's model (its events, its own calls), engine/calls, engine/contract (the Notifier)
@@ -223,6 +225,7 @@ The binary holds the catalogue; the machine holds its own state, in the XDG fold
 | `ShareStore`       | `accounts` | `~/.local/state/station/shares.json`                                              |
 | `ReservationStore` | `ports`    | `~/.local/state/station/leases.json`                                              |
 | `AppliedStore`     | `settings` | `~/.local/state/station/applied/`                                                 |
+| `Journal`          | `agents`   | `~/.local/state/station/agents/`, inside a VM, one file per session               |
 
 Each store carries its version; `station setup` runs every store's `Migrator`, and a store written by a newer station is refused rather than read. Nothing else is consulted, and no file inside the clone matters: the dotfiles and the VM recipes are embedded. [Footprint](../reference/footprint.md) lists every file station writes.
 

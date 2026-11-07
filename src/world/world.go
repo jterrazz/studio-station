@@ -7,6 +7,7 @@ import (
 
 	"github.com/jterrazz/studio-station/src/accounts"
 	"github.com/jterrazz/studio-station/src/activity"
+	"github.com/jterrazz/studio-station/src/agents"
 	"github.com/jterrazz/studio-station/src/awake"
 	"github.com/jterrazz/studio-station/src/background"
 	"github.com/jterrazz/studio-station/src/catalog"
@@ -269,6 +270,32 @@ type VM struct {
 	// value: the containers run inside the VM, each with the ports
 	// it publishes.
 	Containers []Container `json:"containers,omitempty"`
+	// value: the coding agents inside the VM, what their hooks wrote and
+	// what was asked of them.
+	Agents *Agents `json:"agents,omitempty"`
+}
+
+type Agents struct {
+	// value: the journal the hooks write, by session.
+	Journal map[string]agents.Agent `json:"journal,omitempty"`
+	// value: the apps whose settings file runs station's hook, by adapter id.
+	Hooks map[agents.App]bool `json:"hooks,omitempty"`
+	// value: the programs the agents' terminal session runs, each
+	// "<folder> <argv>", and the texts typed into it.
+	Opened []string `json:"opened,omitempty"`
+	Typed  []string `json:"typed,omitempty"`
+	// value: the PRs of the VM's repositories, by number: open or merged.
+	PRs map[int]string `json:"prs,omitempty"`
+	// value: each folder's change since its base.
+	Changes map[string]agents.Change `json:"changes,omitempty"`
+}
+
+func (v *VM) Agentic() *Agents {
+	// invariant: the agents of a VM, made empty the first time they are asked.
+	if v.Agents == nil {
+		v.Agents = &Agents{}
+	}
+	return v.Agents
 }
 
 type Container struct {

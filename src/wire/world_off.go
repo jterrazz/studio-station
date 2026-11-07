@@ -10,6 +10,7 @@ import (
 
 	accountscontract "github.com/jterrazz/studio-station/src/accounts/contract"
 	activitycontract "github.com/jterrazz/studio-station/src/activity/contract"
+	agentscontract "github.com/jterrazz/studio-station/src/agents/contract"
 	appscontract "github.com/jterrazz/studio-station/src/apps/contract"
 	awakecontract "github.com/jterrazz/studio-station/src/awake/contract"
 	backgroundcontract "github.com/jterrazz/studio-station/src/background/contract"
@@ -60,6 +61,7 @@ func (*worldMac) procedureAppliers() []settingscontract.Applier         { return
 func (*worldMac) meter() activitycontract.Meter                         { return nil }
 func (*worldMac) disk() diskcontract.DiskUsage                          { return nil }
 func (*worldMac) listeners() portscontract.Listeners                    { return nil }
+func (*worldMac) journal() agentscontract.Journal                       { return nil }
 func (*worldMac) placement() (ports.VMLivesOn, bool)                    { return ports.VMLivesOn{}, false }
 func (*worldMac) tailnet() portscontract.Tailnet                        { return nil }
 func (*worldMac) funnel() funnel.Funnel                                 { return nil }

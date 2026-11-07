@@ -30,12 +30,18 @@ func technologies() map[string][]string {
 		"bun":         {"bun"},
 		"uv":          {"uv"},
 		"docker":      {"docker"},
-		"cli":         {"docker", "npm"},
+		"cli":         {"docker", "npm", "gh", "git", "claude"},
+		"git":         {"git", "gh"},
+		"gitaliases":  {"git"},
 		"lsof":        {"lsof"},
 		"keychain":    {"security"},
 		"neversleeps": {"pmset"},
 		"macos":       {"pmset", "sysctl", "security", "fdesetup", "ssh"},
 		"linux":       {},
+		"tmux":        {"tmux"},
+		"gh":          {"gh"},
+		"claudecode":  {"claude"},
+		"codex":       {"codex"},
 	}
 }
 
@@ -105,7 +111,7 @@ func wordAllowed(pkg, word string) bool {
 // security of a Mac): their identifiers and prose are exempt, a command line
 // that runs them is not: an exec's name or path, an argv's first word, a
 // shell line that calls it.
-func productWords() []string { return []string{"ssh", "docker", "security"} }
+func productWords() []string { return []string{"ssh", "docker", "security", "git", "gh", "claude"} }
 
 func runsWord(word string, fields []string) bool {
 	for i, f := range fields {

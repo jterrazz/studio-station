@@ -30,6 +30,8 @@ import (
 	accountscontract "github.com/jterrazz/studio-station/src/accounts/contract"
 	activityfake "github.com/jterrazz/studio-station/src/activity/adapter/fake"
 	activitycontract "github.com/jterrazz/studio-station/src/activity/contract"
+	agentsfake "github.com/jterrazz/studio-station/src/agents/adapter/fake"
+	agentscontract "github.com/jterrazz/studio-station/src/agents/contract"
 	appsfake "github.com/jterrazz/studio-station/src/apps/adapter/fake"
 	appscontract "github.com/jterrazz/studio-station/src/apps/contract"
 	awakefake "github.com/jterrazz/studio-station/src/awake/adapter/fake"
@@ -301,11 +303,12 @@ func (m *worldMac) jobs() backgroundcontract.Jobs { return backgroundfake.New(m.
 func (m *worldMac) meter() activitycontract.Meter { return activityfake.MeterOf(m.run.w, m.name) }
 func (m *worldMac) disk() diskcontract.DiskUsage  { return m.files() }
 
-func (m *worldMac) files() *diskfake.Usage         { return diskfake.UsageOf(m.run.w, m.name).At(m.home) }
-func (m *worldMac) tailnet() portscontract.Tailnet { return portsfake.TailnetOf(m.run.w, m.name) }
-func (m *worldMac) funnel() funnel.Funnel          { return portsfake.TailnetOf(m.run.w, m.name) }
-func (m *worldMac) bundler() appscontract.Bundler  { return appsfake.BundlerOf(m.run.w, m.name) }
-func (m *worldMac) vault() accountscontract.Vault  { return accountsfake.NewVault(m.run.w, m.name) }
+func (m *worldMac) files() *diskfake.Usage          { return diskfake.UsageOf(m.run.w, m.name).At(m.home) }
+func (m *worldMac) tailnet() portscontract.Tailnet  { return portsfake.TailnetOf(m.run.w, m.name) }
+func (m *worldMac) funnel() funnel.Funnel           { return portsfake.TailnetOf(m.run.w, m.name) }
+func (m *worldMac) bundler() appscontract.Bundler   { return appsfake.BundlerOf(m.run.w, m.name) }
+func (m *worldMac) vault() accountscontract.Vault   { return accountsfake.NewVault(m.run.w, m.name) }
+func (m *worldMac) journal() agentscontract.Journal { return agentsfake.JournalOf(m.run.w, m.name) }
 func (m *worldMac) listeners() portscontract.Listeners {
 	return portsfake.ListenersOf(m.run.w, m.name)
 }

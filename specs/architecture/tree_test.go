@@ -10,7 +10,7 @@ import (
 
 // invariant: ARCHITECTURE 13.1: the top level of src/ names what station does.
 func families() []string {
-	return []string{"machines", "activity", "apps", "settings", "disk", "ports", "accounts", "background", "awake", "images", "overview", "setup", "engine"}
+	return []string{"machines", "activity", "apps", "settings", "disk", "ports", "accounts", "background", "awake", "images", "overview", "setup", "engine", "agents"}
 }
 
 func plumbing() []string {
