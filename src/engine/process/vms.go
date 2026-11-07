@@ -640,7 +640,7 @@ func (d *Engine) fromGuest(ctx context.Context, v *vmState, line []byte) {
 func (d *Engine) guestRequest(ctx context.Context, vm string, m guestMessage) (any, error) {
 	switch m.Op {
 	case "ports":
-		return d.macPorts(vm), nil
+		return d.surveyed(ctx, vm), nil
 	case "reserve":
 		return d.shareOf(ctx, vm, m.Port, false, "")
 	case "release":

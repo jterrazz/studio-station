@@ -68,6 +68,25 @@ func (d *Engine) listeningLocked() []ports.Machine {
 	return out
 }
 
+// value: this Mac's ports as the engine serves them, with what listens in
+// its VMs (in one VM when vm names it) in its class, declarations read, so a
+// VM's own Overview counts its ports as its Mac's Ports page does.
+func (d *Engine) surveyed(ctx context.Context, vm string) ports.MacPorts {
+	out := d.macPorts(vm)
+	d.mu.Lock()
+	heard := d.listeningLocked()
+	d.mu.Unlock()
+	if vm != "" {
+		heard = slices.DeleteFunc(heard, func(m ports.Machine) bool { return m.Ref.Name != vm })
+	}
+	var decl []ports.Declaration
+	if d.o.Declarations != nil {
+		decl, _ = d.o.Declarations(ctx)
+	}
+	out.Ports = ports.Survey(heard, decl)
+	return out
+}
+
 // invariant: the exposure job (SPEC 5.6.1): this Mac's listeners and its
 // VMs' are read at the start, every exposureEvery and on every listener
 // change a guest reports; a port that turns red is told once, and again

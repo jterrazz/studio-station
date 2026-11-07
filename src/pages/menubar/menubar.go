@@ -163,11 +163,83 @@ func needsYou(r Reading) page.Section {
 		}
 	}
 	s.Caption = []page.Value{page.Text(things(len(rows)))}
+	s.Glance = glance(r.Home.Needs)
 	s.Items = rows
 	if len(rows) == 0 {
 		s.Items = []page.Item{{Empty: &page.Empty{Text: "Nothing needs you"}}}
 	}
 	return s
+}
+
+// value: Needs you in the vision's short words, one part per kind of
+// finding in the one order: the updates summed, an account's sign-in, a
+// folder to move, a setting, a failing or left-over task; any other
+// finding by its words up to a comma.
+func glance(needs []overview.Need) []page.Value {
+	var updates, failing, left int
+	var accountsOut, folders, settings, others []string
+	for _, n := range needs {
+		switch n.Section {
+		case section.Apps:
+			updates += leading(n.Text)
+		case section.Accounts:
+			accountsOut = append(accountsOut, n.Subject+" sign-in")
+		case section.Disk:
+			folders = append(folders, n.Subject)
+		case section.Settings:
+			settings = append(settings, strings.ToLower(strings.ReplaceAll(n.Text, ":", "")))
+		case section.Background:
+			if n.Broken {
+				failing++
+			} else {
+				left++
+			}
+		default:
+			head, _, _ := strings.Cut(n.Text, ",")
+			others = append(others, head)
+		}
+	}
+	var parts []string
+	if updates > 0 {
+		parts = append(parts, counted(updates, "update", "updates"))
+	}
+	parts = append(parts, accountsOut...)
+	parts = append(parts, grouped(folders, "folders to move")...)
+	parts = append(parts, grouped(settings, "settings")...)
+	if failing > 0 {
+		parts = append(parts, counted(failing, "failing task", "failing tasks"))
+	}
+	if left > 0 {
+		parts = append(parts, counted(left, "left-over task", "left-over tasks"))
+	}
+	parts = append(parts, others...)
+	out := make([]page.Value, 0, len(parts))
+	for _, p := range parts {
+		out = append(out, page.Text(p))
+	}
+	return out
+}
+
+func leading(text string) int {
+	head, _, _ := strings.Cut(text, " ")
+	if n, err := strconv.Atoi(head); err == nil && n > 0 {
+		return n
+	}
+	return 1
+}
+
+func counted(n int, one, many string) string {
+	if n == 1 {
+		return "1 " + one
+	}
+	return strconv.Itoa(n) + " " + many
+}
+
+func grouped(words []string, many string) []string {
+	if len(words) > 1 {
+		return []string{strconv.Itoa(len(words)) + " " + many}
+	}
+	return words
 }
 
 func things(n int) string {
@@ -313,11 +385,11 @@ func awakeTile(r Reading) page.Section {
 	self := ""
 	if r.Awake != nil {
 		self = r.Awake.Mac
-		parts = append(parts, page.Text(page.ThisMac+" "+cmpWord(awakeWords(*r.Awake), "sleeps normally")))
+		parts = append(parts, page.Text(page.ThisMac+" "+cmpWord(awakeWords(*r.Awake), "sleeps")))
 	}
 	for _, m := range r.Macs {
 		if !m.ThisMac {
-			parts = append(parts, page.Text(macLabel(r, m.Mac, self)+" "+cmpWord(awakeWords(m), "sleeps normally")))
+			parts = append(parts, page.Text(macLabel(r, m.Mac, self)+" "+cmpWord(awakeWords(m), "sleeps")))
 		}
 	}
 	value := page.Pending()
@@ -410,8 +482,8 @@ func newVM() page.Action {
 		Run: &page.Run{Call: CallCreate, In: map[string]string{"Request.Image": "linux", "Request.Network": "nat"}},
 		Form: &page.Form{Title: "New VM", Fields: []page.Field{
 			{Key: "Request.Lifetime", Label: "Will it last?", Kind: page.FieldSelect, Default: "throwaway", Options: []page.Option{
-				{Value: "throwaway", Label: "Throwaway", Note: "deleted when it powers off from inside"},
-				{Value: "permanent", Label: "Permanent", Note: "kept until you delete it"},
+				{Value: "throwaway", Label: "Throwaway", Note: "Deleted when it powers off from inside."},
+				{Value: "permanent", Label: "Permanent", Note: "Kept until you delete it."},
 			}},
 			{Key: "Request.Size.MemoryBytes", Label: "Memory", Kind: page.FieldSelect, Default: gigabytes(4), Options: []page.Option{{Value: gigabytes(4), Label: "4 GB"}, {Value: gigabytes(8), Label: "8 GB"}}},
 		}}}
@@ -496,7 +568,7 @@ func ask(levels Levels, gesture string, k machine.Kind, name, question, verb str
 	case LevelNone:
 		return nil
 	case LevelTypeName:
-		values = append(values, page.Text("Type "+name+" to "+verb+" it"))
+		values = append(values, page.Text("Type "+name+" to "+verb+" it."))
 		return &page.Confirm{Question: question, Lines: values, Danger: true, Type: name, Yes: titled(verb)}
 	}
 	return &page.Confirm{Question: question, Lines: values, Yes: titled(verb)}

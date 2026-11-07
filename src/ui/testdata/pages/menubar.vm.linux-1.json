@@ -544,7 +544,7 @@
         "lines": [
           {
             "kind": "text",
-            "text": "Its disk is kept"
+            "text": "Its disk is kept."
           }
         ],
         "yes": "Stop"
@@ -568,11 +568,11 @@
         "lines": [
           {
             "kind": "text",
-            "text": "Its disk is erased: nothing of it is kept"
+            "text": "Its disk is erased: nothing of it is kept."
           },
           {
             "kind": "text",
-            "text": "Type linux-1 to delete it"
+            "text": "Type linux-1 to delete it."
           }
         ],
         "danger": true,
@@ -625,7 +625,7 @@
         "lines": [
           {
             "kind": "text",
-            "text": "Its copy on linux-1 is deleted"
+            "text": "Its copy on linux-1 is deleted."
           }
         ],
         "yes": "Take back"
@@ -653,7 +653,7 @@
         "lines": [
           {
             "kind": "text",
-            "text": "Its copy on linux-1 is deleted"
+            "text": "Its copy on linux-1 is deleted."
           }
         ],
         "yes": "Take back"

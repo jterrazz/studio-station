@@ -66,6 +66,17 @@ final class Round3Tests: XCTestCase {
         XCTAssertTrue(FormSheet.complete(form, ["Port": "3000"]))
     }
 
+    // invariant: a port field holding what is not a port says why Share
+    // stays off; an empty or valid one says nothing.
+    func testSharePortSaysWhatAPortIs() throws {
+        let form: StationKit.Form = try decoded(#"{"title":"Share a port","fields":[{"key":"Port","label":"Port","kind":"text","required":true}]}"#)
+        let field = try XCTUnwrap(form.fields?.first)
+        XCTAssertEqual(FormSheet.refused(field, ["Port": "abc"]), "A port is a number from 1 to 65535.")
+        XCTAssertEqual(FormSheet.refused(field, ["Port": "70000"]), "A port is a number from 1 to 65535.")
+        XCTAssertNil(FormSheet.refused(field, [:]))
+        XCTAssertNil(FormSheet.refused(field, ["Port": "8080"]))
+    }
+
     // invariant: Until says no time while another term is chosen.
     func testUntilSegmentNamesNoTimeUnlessChosen() throws {
         let (_, keeps) = try awake()

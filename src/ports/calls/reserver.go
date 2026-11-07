@@ -5,6 +5,7 @@ import (
 	"errors"
 	"github.com/jterrazz/studio-station/src/ports/contract"
 	"reflect"
+	"slices"
 	"sort"
 
 	machinescontract "github.com/jterrazz/studio-station/src/machines/contract"
@@ -97,6 +98,8 @@ func (s *Reserver) ThisMachine(ctx context.Context) (ports.MacPorts, error) {
 			}
 		}
 		view.Shared = mine
+		view.Ports = slices.DeleteFunc(view.Ports, func(p ports.Port) bool { return p.Machine.Name != s.o.VMName })
+		view.Listening = nil
 		return view, nil
 	}
 	view, err := s.d.MacPorts(ctx)

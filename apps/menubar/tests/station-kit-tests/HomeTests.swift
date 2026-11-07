@@ -18,8 +18,10 @@ final class HomeTests: XCTestCase {
         XCTAssertEqual(stop.label, "Stop everything on This Mac")
         XCTAssertEqual(texts(confirm.lines), [
             "linux-1 will stop; its disk is kept",
-            "Awake ends; the engine stays off until you run station engine start or log in again",
+            "Awake ends; the engine stays off until you log in again or run",
+            "station engine start",
         ])
+        XCTAssertEqual(confirm.lines?.last?.kind, "command")
         XCTAssertEqual(stop.run?.call, ActionRunner.endsTheEngine)
         XCTAssertEqual(stop.run?.in, ["Confirm": "yes", "By": "the menu bar"])
         var state = Snapshot.state("menubar.home.two-macs", page)

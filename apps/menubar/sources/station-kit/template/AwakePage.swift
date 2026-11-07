@@ -103,6 +103,7 @@ public struct AwakePage: View {
     // and the For it sent, until the page read again picks it too.
     public static let keepKey = "Keep"
     public static let forKey = "For"
+    public static let untilKey = "Until"
 
     // value: the segment drawn chosen: the term the owner just picked,
     // else the term the page says is in force; from an engine that says
@@ -116,8 +117,30 @@ public struct AwakePage: View {
     // For it sent, so the page drawn before the next read shows it, and a
     // switch flipped meanwhile keeps it.
     public static func holding(_ action: Action, answers: [String: String]) -> [String: String] {
-        guard action.id?.hasPrefix("keep") == true, let sent = answers[forKey] ?? action.run?.in?[forKey] else { return [:] }
+        guard action.id?.hasPrefix("keep") == true else { return [:] }
+        if let end = answers[untilKey] { return [keepKey: action.id ?? "", untilKey: end] }
+        guard let sent = answers[forKey] ?? action.run?.in?[forKey] else { return [:] }
         return [keepKey: action.id ?? "", forKey: sent]
+    }
+
+    // invariant: a switch sends the term the owner last picked, by its
+    // length or by its end, in place of the one its page was read with:
+    // the call is the action with its input set so, never a stale page's.
+    public static func sending(_ a: Action, _ page: Page, held: [String: String], flipping: Bool) -> Action {
+        var out = a
+        var input = a.run?.in ?? [:]
+        for (k, v) in flags(page, held: held, flipping: flipping ? a : nil) { input[k] = v }
+        if flipping, held[keepKey] != nil {
+            if let sent = held[forKey] {
+                input[forKey] = sent
+                input[untilKey] = nil
+            } else if let end = held[untilKey] {
+                input[untilKey] = end
+                input[forKey] = nil
+            }
+        }
+        out.run?.in = input
+        return out
     }
 
     // invariant: a switch's action flips it, so its input holds the other
@@ -157,12 +180,13 @@ public struct AwakePage: View {
         if let id = held[keepKey], page.actions?.contains(where: { $0.id == id && $0.picked == true }) == true {
             out[keepKey] = nil
             out[forKey] = nil
+            out[untilKey] = nil
         }
         return out
     }
 
     func run(_ a: Action, flipping: Bool = false) {
-        handlers.run(a, Self.flags(page, held: state.held, flipping: flipping ? a : nil))
+        handlers.run(Self.sending(a, page, held: state.held, flipping: flipping), [:])
     }
 
     func toggle(_ a: Action) -> some View {

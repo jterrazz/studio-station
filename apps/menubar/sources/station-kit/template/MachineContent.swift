@@ -53,6 +53,40 @@ struct MachineContent: View {
         }
     }
 
+    // value: the machine stops, or is stopped: its tiles say no figure.
+    var stopping: Bool {
+        Self.doing(state.running ?? state.settling) == "Stopping" || head?.rows.first?.reason == "stopped"
+    }
+
+    // value: the server restarts: its checks are run again after it.
+    var restarting: Bool { Self.doing(state.running ?? state.settling) == "Restarting" }
+
+    // value: a server's health checks as drawn: while it restarts, each
+    // waits for the boot that follows, never the last boot's answer.
+    public static func checks(_ s: Section, restarting: Bool) -> [Row] {
+        guard restarting else { return s.rows }
+        return s.rows.map { r in
+            var r = r
+            r.mark = .pending
+            r.cells = r.cells?.map { v in
+                (v.kind == "list" ? v.items ?? [] : [v]).first { Format.show($0).hasPrefix("http") } ?? Value(kind: "none")
+            }
+            return r
+        }
+    }
+
+    public static func measures(_ s: Section, stopping: Bool) -> [(label: String, value: Value?, spark: [Int]?)] {
+        s.rows.map { r in (r.label ?? "", stopping ? nil : r.cells?.first, stopping ? nil : r.cells?.dropFirst().first?.points) }
+    }
+
+    // value: the port a Share a port that runs, or has just returned,
+    // asked for, until the page lists it.
+    public static func sharing(_ page: Page, _ state: PopoverState) -> String? {
+        guard (state.running ?? state.settling) == "share-port", let port = state.sent["Port"], !port.isEmpty else { return nil }
+        let listed = (page.section("ports")?.items ?? []).compactMap(\.link).contains { $0.row == port }
+        return listed ? nil : "Port \(port)"
+    }
+
     // value: the page before its first read: its head alone.
     var loading: Bool { (page.sections ?? []).allSatisfy { $0.id == "machine" } && page.error == nil }
 
@@ -125,7 +159,7 @@ struct MachineContent: View {
         switch s.id {
         case "activity":
             if server { SectionHeader("Activity") }
-            Metrics(measures: s.rows.map { r in (r.label ?? "", r.cells?.first, r.cells?.dropFirst().first?.points) })
+            Metrics(measures: Self.measures(s, stopping: stopping))
         case "up":
             HStack(alignment: .top, spacing: Token.Tile.pair) {
                 ForEach(Array(s.rows.enumerated()), id: \.offset) { _, r in figure(r) }
@@ -134,7 +168,7 @@ struct MachineContent: View {
         case "health":
             SectionHeader(s.header)
             Rows {
-                ForEach(Array(s.rows.enumerated()), id: \.offset) { _, r in health(r) }
+                ForEach(Array(Self.checks(s, restarting: restarting).enumerated()), id: \.offset) { _, r in health(r) }
             }
         case "inside":
             Rows {
@@ -155,6 +189,11 @@ struct MachineContent: View {
                     EmptyLine(empty).padding(Token.Tile.rowPadding)
                 }
                 ForEach(Array((s.items ?? []).compactMap(\.link).enumerated()), id: \.offset) { _, l in link(l) }
+                if let port = Self.sharing(page, state) {
+                    MenuRow(port, subtitle: "Sharing on Tailscale\(Token.Glyph.ellipsis)") {
+                        PendingDot().frame(width: Token.Tile.icon)
+                    }
+                }
                 if let share = page.action("share-port") {
                     MenuRow("\(share.label ?? "")\(Token.Glyph.ellipsis)", tap: { perform(share, handlers) }) {
                         IconTile(Token.Symbol.share)

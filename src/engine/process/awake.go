@@ -59,7 +59,11 @@ func (d *Engine) watchAwake(ctx context.Context) {
 }
 
 func (d *Engine) keepAwake(r engine.AwakeIn) (awake.Awoken, error) {
-	session, refreshed, err := d.awakeJob.Awake(awake.Request{Lid: r.Lid, Battery: r.Battery, For: time.Duration(r.For) * time.Second, By: r.By})
+	req := awake.Request{Lid: r.Lid, Battery: r.Battery, For: time.Duration(r.For) * time.Second, By: r.By}
+	if r.Until != nil {
+		req.Until = *r.Until
+	}
+	session, refreshed, err := d.awakeJob.Awake(req)
 	s := awake.Awoken{Session: session, Refreshed: refreshed}
 	var rng *awake.RangeError
 	var guard *awake.GuardError

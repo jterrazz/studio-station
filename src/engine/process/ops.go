@@ -31,7 +31,7 @@ func (d *Engine) Hello() engine.Hello {
 
 func (d *Engine) VMs() []engine.VMView { return d.vmViews() }
 
-func (d *Engine) Ports(vm string) ports.MacPorts { return d.macPorts(vm) }
+func (d *Engine) Ports(ctx context.Context, vm string) ports.MacPorts { return d.surveyed(ctx, vm) }
 
 func (d *Engine) Reserve(ctx context.Context, vm string, port int, pinned bool, profile string) (ports.SharedPort, error) {
 	return d.shareOf(ctx, vm, port, pinned, profile)

@@ -586,11 +586,11 @@
         "lines": [
           {
             "kind": "text",
-            "text": "It stays stopped until you start it: the engine no longer restarts it"
+            "text": "It stays stopped until you start it: the engine no longer restarts it."
           },
           {
             "kind": "text",
-            "text": "Type infra to stop it"
+            "text": "Type infra to stop it."
           }
         ],
         "danger": true,

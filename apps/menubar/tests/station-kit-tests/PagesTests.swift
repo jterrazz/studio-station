@@ -92,7 +92,7 @@ final class PagesTests: XCTestCase {
         let delete = try XCTUnwrap(Tree.page("menubar.vm.linux-1").action("delete"))
         let confirm = try XCTUnwrap(delete.confirm)
         XCTAssertEqual(confirm.type, "linux-1")
-        XCTAssertEqual(texts(confirm.lines).last, "Type linux-1 to delete it")
+        XCTAssertEqual(texts(confirm.lines).last, "Type linux-1 to delete it.")
         XCTAssertFalse(ConfirmSheet.allows(confirm, typed: "linux-"))
         XCTAssertFalse(ConfirmSheet.allows(confirm, typed: "linux-1 "))
         XCTAssertTrue(ConfirmSheet.allows(confirm, typed: "linux-1"))
@@ -107,7 +107,7 @@ final class PagesTests: XCTestCase {
     func testServerStopSheetTyped() async throws {
         let stop = try XCTUnwrap(Tree.page("menubar.vm.infra").action("stop"))
         XCTAssertEqual(stop.confirm?.type, "infra")
-        XCTAssertEqual(texts(stop.confirm?.lines).last, "Type infra to stop it")
+        XCTAssertEqual(texts(stop.confirm?.lines).last, "Type infra to stop it.")
         try drawn("sheet.stop-server", try pushed("menubar.vm.infra", confirming: "stop", typed: "infra"))
         let (frame, _) = try await sent(stop, answers: [ActionRunner.typedKey: "infra"], label: "mb-stop-srv")
         XCTAssertEqual(frame.call, "machines.stop")

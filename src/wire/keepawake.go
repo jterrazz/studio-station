@@ -30,7 +30,11 @@ func (m machine) awakeWaker() *awakecalls.Waker {
 		},
 		Awake: func(ctx context.Context, r awake.Request) (awake.Awoken, error) {
 			var a awake.Awoken
-			err := c.do(ctx, engine.CallKeepAwake, engine.AwakeIn{Lid: r.Lid, Battery: r.Battery, For: int(r.For / time.Second), By: r.By}, &a)
+			in := engine.AwakeIn{Lid: r.Lid, Battery: r.Battery, For: int(r.For / time.Second), By: r.By}
+			if !r.Until.IsZero() {
+				in.Until = &r.Until
+			}
+			err := c.do(ctx, engine.CallKeepAwake, in, &a)
 			return a, awakeDown(err)
 		},
 		Sleep: func(ctx context.Context) (awake.Slept, error) {

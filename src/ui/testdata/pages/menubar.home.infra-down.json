@@ -184,7 +184,29 @@
           "n": 2
         }
       ],
-      "uncounted": true
+      "uncounted": true,
+      "glance": [
+        {
+          "kind": "text",
+          "text": "2 updates"
+        },
+        {
+          "kind": "text",
+          "text": "npm sign-in"
+        },
+        {
+          "kind": "text",
+          "text": "~/.tart"
+        },
+        {
+          "kind": "text",
+          "text": "firewall off"
+        },
+        {
+          "kind": "text",
+          "text": "1 failing task"
+        }
+      ]
     },
     {
       "id": "machines",
@@ -468,7 +490,7 @@
                   },
                   {
                     "kind": "text",
-                    "text": "npm needs sign-in needs sign-in",
+                    "text": "npm needs sign-in",
                     "label": "broken"
                   }
                 ]
@@ -505,12 +527,12 @@
               {
                 "value": "throwaway",
                 "label": "Throwaway",
-                "note": "deleted when it powers off from inside"
+                "note": "Deleted when it powers off from inside."
               },
               {
                 "value": "permanent",
                 "label": "Permanent",
-                "note": "kept until you delete it"
+                "note": "Kept until you delete it."
               }
             ],
             "default": "throwaway"
@@ -556,7 +578,11 @@
           },
           {
             "kind": "text",
-            "text": "Awake ends; the engine stays off until you run station engine start or log in again"
+            "text": "Awake ends; the engine stays off until you log in again or run"
+          },
+          {
+            "kind": "command",
+            "text": "station engine start"
           }
         ],
         "danger": true,

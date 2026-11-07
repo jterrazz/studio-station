@@ -749,15 +749,34 @@ struct PanelScroll: ViewModifier {
     let key: String
     // value: the sheet open, if any: opening one scrolls it into sight.
     let sheet: String?
-    // value: the height kept under the scroll for the status line.
+    // value: the height kept under the scroll for the status line; the
+    // rows it takes the room of are scrolled up into sight, so the line
+    // never hides the control it is about.
     var reserve: CGFloat = 0
     static let sheetID = "station.sheet"
     @Environment(\.stationStill) private var still
     @State private var height: CGFloat = 0
+    @State private var offset: CGFloat = 0
+    @State private var position = ScrollPosition(edge: .top)
+    // value: a sheet just opened whose room the content has not grown by
+    // yet: it is scrolled into sight again once it has.
+    @State private var opening = false
+    @State private var scroller = Self.scrollerWidth
 
     // value: the room the panel may take: the screen's visible height
     // under the menu bar, less the gap macOS leaves above the Dock.
     static var room: CGFloat { max((NSScreen.main?.visibleFrame.height ?? 800) - 16, 320) }
+
+    // value: the content is taller than the panel's room: it scrolls.
+    var scrolled: Bool { height > Self.room - reserve }
+
+    // value: the width a legacy scroller takes beside the content (a
+    // mouse plugged in), kept on every page so the panel's width and its
+    // left margin never change from one page to the next, nor once the
+    // page is read; an overlay scroller takes none.
+    static var scrollerWidth: CGFloat {
+        NSScroller.preferredScrollerStyle == .legacy ? NSScroller.scrollerWidth(for: .regular, scrollerStyle: .legacy) : 0
+    }
 
     func body(content: Content) -> some View {
         if still || !scrolls {
@@ -766,21 +785,62 @@ struct PanelScroll: ViewModifier {
             ScrollViewReader { proxy in
                 ScrollView(.vertical) {
                     content.onGeometryChange(for: CGFloat.self) { $0.size.height } action: { height = $0 }
+                        .padding(.trailing, scrolled ? 0 : scroller)
                 }
                 .onChange(of: sheet) { _, open in
+                    opening = open != nil
                     guard open != nil else { return }
                     DispatchQueue.main.async { withAnimation { proxy.scrollTo(Self.sheetID, anchor: .bottom) } }
                 }
+                .onChange(of: height) {
+                    guard opening else { return }
+                    opening = false
+                    DispatchQueue.main.async { withAnimation { proxy.scrollTo(Self.sheetID, anchor: .bottom) } }
+                }
+                .scrollPosition($position)
+                .onScrollGeometryChange(for: CGFloat.self) { $0.contentOffset.y } action: { _, y in offset = y }
+                .onChange(of: reserve) { was, now in
+                    guard now > was, height > Self.room - now else { return }
+                    position.scrollTo(y: offset + now - was)
+                }
             }
             .id(key)
+            .onReceive(NotificationCenter.default.publisher(for: NSScroller.preferredScrollerStyleDidChangeNotification)) { _ in
+                scroller = Self.scrollerWidth
+            }
+            .onAppear { scroller = Self.scrollerWidth }
+            .onChange(of: key) {
+                offset = 0
+                position.scrollTo(edge: .top)
+            }
             .scrollBounceBehavior(.basedOnSize)
-            .scrollIndicators(height > Self.room - reserve ? .automatic : .never)
-            .frame(width: Token.Space.width, height: height > 0 ? min(height, Self.room - reserve) : nil)
+            .scrollIndicators(scrolled ? .automatic : .never)
+            .frame(width: Token.Space.width + scroller, height: height > 0 ? min(height, Self.room - reserve) : nil)
+        }
+    }
+}
+
+// invariant: the panel's content takes the width the scroll leaves it, so
+// its margins never shift under a scroller; drawn still, the panel's width.
+struct PanelWidth: ViewModifier {
+    let scrolls: Bool
+    @Environment(\.stationStill) private var still
+
+    func body(content: Content) -> some View {
+        if still || !scrolls {
+            content.frame(width: Token.Space.width, alignment: .topLeading)
+        } else {
+            content.frame(maxWidth: .infinity, alignment: .topLeading)
         }
     }
 }
 
 extension View {
+    // value: the panel's width (see PanelWidth).
+    public func stationWidth(_ scrolls: Bool = true) -> some View {
+        modifier(PanelWidth(scrolls: scrolls))
+    }
+
     // value: the panel's scroll (see PanelScroll).
     public func stationScroll(_ scrolls: Bool, key: String = "", sheet: String? = nil, status: Bool = false) -> some View {
         modifier(PanelScroll(scrolls: scrolls, key: key, sheet: sheet, reserve: status ? Token.Space.statusRoom : 0))

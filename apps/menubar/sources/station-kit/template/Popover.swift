@@ -46,6 +46,9 @@ public struct PopoverState: Equatable, Sendable {
     // value: the page the status line was said on, by its watch; nil is
     // Home.
     public var statusOn: String?
+    // value: the answers of the call that runs or settles, so its page
+    // shows what it asked at once (the port being shared).
+    public var sent: [String: String] = [:]
 
     public init(page: Page?, connection: Connection, running: String? = nil, confirming: String? = nil, status: Status? = nil, qr: String? = nil, pushed: Page? = nil, recent: [String] = []) {
         self.page = page
@@ -217,7 +220,7 @@ public struct Popover: View {
             }
         }
         .padding(Token.Space.margin)
-        .frame(width: Token.Space.width, alignment: .topLeading)
+        .stationWidth(scrolls)
         .stationScroll(scrolls, key: "\(state.openings)/\(state.shown?.id ?? "")/\(state.shown?.context?.machine ?? "")", sheet: state.confirming, status: state.status != nil || state.connection == .connecting)
         .stationStatus { statusLine }
         .background { BackKey(state: state, handlers: handlers) }

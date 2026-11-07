@@ -104,6 +104,7 @@ public enum Token {
     public enum Fill {
         public static func tile(_ scheme: ColorScheme) -> Color { Color.white.opacity(scheme == .dark ? 0.08 : 0.58) }
         public static func raised(_ scheme: ColorScheme) -> Color { Color.white.opacity(scheme == .dark ? 0.14 : 0.8) }
+        public static func picked(_ scheme: ColorScheme) -> Color { Color.white.opacity(scheme == .dark ? 0.32 : 0.8) }
         public static func faint(_ scheme: ColorScheme) -> Color {
             scheme == .dark ? Token.hex(0xEBEBF5).opacity(0.16) : Token.hex(0x3C3C43).opacity(0.18)
         }

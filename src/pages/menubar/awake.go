@@ -98,6 +98,11 @@ func awakeColumns() []page.Column {
 func thisMac(r awake.Report) page.Section {
 	row := pageawake.Row(r)
 	row.Short = page.ThisMac
+	if len(row.Cells) > 0 && len(row.Cells[0].Items) > 0 {
+		if rest, ok := strings.CutPrefix(row.Cells[0].Items[0].Text, "Awake until "); ok {
+			row.Cells[0].Items[0].Text = "until " + rest
+		}
+	}
 	return page.Section{ID: SectionThisMac, Title: page.ThisMac, Uncounted: true, Columns: awakeColumns(), Items: []page.Item{{Row: &row}}}
 }
 
@@ -136,20 +141,22 @@ func temperature(n int) string {
 
 func nanos(d time.Duration) string { return strconv.FormatInt(int64(d), 10) }
 
+// value: an end as the call's input takes it, a JSON time.
+func moment(t time.Time) string { return `"` + t.UTC().Format(time.RFC3339) + `"` }
+
 func flags(lid, battery bool) map[string]string {
 	return map[string]string{"Lid": strconv.FormatBool(lid), "Battery": strconv.FormatBool(battery), "By": "the menu bar"}
 }
 
 // invariant: a keep-awake keeps the switches as they are; a switch keeps
-// the term that is left, or starts the 4 h one. While held, Until… says
+// the end the keep-awake holds until, or starts the 4 h one. While held, Until… says
 // the time it holds until (vision panel e: `Until 18:00`), and the term it
 // was taken for is the one picked, else Until.
 func keeps(r awake.Report, now time.Time, zone *time.Location) []page.Action {
 	var lid, battery bool
-	left := 4 * time.Hour
 	held := r.Session != nil && r.Mode() == awake.AwakeUntil
 	if held {
-		lid, battery, left = r.Session.Lid, r.Session.Battery, r.Session.Until.Sub(now).Round(time.Minute)
+		lid, battery = r.Session.Lid, r.Session.Battery
 	}
 	rows := []string{r.Mac}
 	var out []page.Action
@@ -170,14 +177,20 @@ func keeps(r awake.Report, now time.Time, zone *time.Location) []page.Action {
 	}
 	out = append(out, page.Action{ID: ActionUntil, Label: until, On: page.OnRow, Rows: rows, Priority: 1, Mutates: true, Picked: held && !picked,
 		Form: &page.Form{Title: "Keep awake until", Fields: []page.Field{untilField(now, zone)}}, Run: &page.Run{Call: CallKeepAwake, In: flags(lid, battery)}})
+	term := func(in map[string]string) map[string]string {
+		if held {
+			in["Until"] = moment(r.Session.Until)
+		} else {
+			in["For"] = nanos(awake.DefaultFor)
+		}
+		return in
+	}
 	if r.Caps.Lid {
-		in := flags(!lid, battery)
-		in["For"] = nanos(left)
+		in := term(flags(!lid, battery))
 		out = append(out, page.Action{ID: ActionLid, Label: "Lid closed", On: page.OnRow, Rows: rows, Priority: 2, Mutates: true, Run: &page.Run{Call: CallKeepAwake, In: in}})
 	}
 	if r.Caps.Battery {
-		in := flags(lid, !battery)
-		in["For"] = nanos(left)
+		in := term(flags(lid, !battery))
 		out = append(out, page.Action{ID: ActionBattery, Label: "On battery", On: page.OnRow, Rows: rows, Priority: 2, Mutates: true, Run: &page.Run{Call: CallKeepAwake, In: in}})
 	}
 	if held {
@@ -205,9 +218,9 @@ func untilField(now time.Time, zone *time.Location) page.Field {
 	opts := make([]page.Option, 0, untilHours)
 	for i := range untilHours {
 		at := next.Add(time.Duration(i) * time.Hour)
-		opts = append(opts, page.Option{Value: nanos(at.Sub(now)), Label: at.Format("15:04")})
+		opts = append(opts, page.Option{Value: moment(at), Label: at.Format("15:04")})
 	}
-	return page.Field{Key: "For", Label: "Until", Kind: page.FieldSelect, Options: opts, Default: opts[len(opts)/2].Value}
+	return page.Field{Key: "Until", Label: "Until", Kind: page.FieldSelect, Options: opts, Default: opts[len(opts)/2].Value}
 }
 
 // invariant: AW-21: Change… on a Mac that never sleeps lets it sleep again,

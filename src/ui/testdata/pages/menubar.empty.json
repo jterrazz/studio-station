@@ -185,7 +185,7 @@
                 "items": [
                   {
                     "kind": "text",
-                    "text": "This Mac sleeps normally"
+                    "text": "This Mac sleeps"
                   }
                 ]
               }
@@ -251,12 +251,12 @@
               {
                 "value": "throwaway",
                 "label": "Throwaway",
-                "note": "deleted when it powers off from inside"
+                "note": "Deleted when it powers off from inside."
               },
               {
                 "value": "permanent",
                 "label": "Permanent",
-                "note": "kept until you delete it"
+                "note": "Kept until you delete it."
               }
             ],
             "default": "throwaway"
@@ -298,7 +298,11 @@
         "lines": [
           {
             "kind": "text",
-            "text": "Awake ends; the engine stays off until you run station engine start or log in again"
+            "text": "Awake ends; the engine stays off until you log in again or run"
+          },
+          {
+            "kind": "command",
+            "text": "station engine start"
           }
         ],
         "danger": true,

@@ -22,8 +22,10 @@ public struct ActionRunner: Sendable {
     // it returns.
     public var reread: [String]
     // value: how long Stop everything waits for the engine to end, in
-    // seconds, before it says the engine did not stop.
-    public var stopWithin: Double = 15
+    // seconds, before it says the engine did not stop: the engine stops
+    // its VMs first, each given 60 s to power off and 10 s more to be
+    // stopped hard.
+    public var stopWithin: Double = 90
 
     // value: the call that ends the engine answering it: its connection's
     // end, with no answer, is its success.

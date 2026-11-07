@@ -106,20 +106,24 @@ func vmPage(m Machine, h model.MacView, vm model.VM) page.Page {
 	}
 	sections := []page.Section{{ID: SectionMachine, Title: vm.Name, Role: page.Summary, Caption: caption, Columns: columns(), Items: []page.Item{{Row: &head}}}}
 	p := page.Page{ID: MachineID, Command: "menubar", Context: page.Context{Machine: vm.Name, Kind: string(kind), On: on}}
+	samples := m.Samples
+	if vm.State != model.Running {
+		samples = nil
+	}
 	if kind == machine.Server {
-		sections = append(sections, upSection(m, vm), healthSection(vm, m.Now), activitySection(m.Samples, "Activity"), serverSection(m))
+		sections = append(sections, upSection(m, vm), healthSection(vm, m.Now), activitySection(samples, vm.State == model.Running, "Activity"), serverSection(m))
 		restart := page.Action{ID: ActionRestart, Label: "Restart", On: page.OnPage, Priority: 1, Mutates: true, Confirm: ask(m.Asks, "restart", kind, vm.Name, "Restart "+vm.Name+"?", "restart"),
 			Run: &page.Run{Call: CallRestartVM, In: map[string]string{"Name": vm.Name}, Target: target(h)}}
 		restart.Run.In = answered(restart.Confirm, restart.Run.In)
 		stop := page.Action{ID: ActionStop, Label: "Stop", On: page.OnPage, Priority: 2, Mutates: true,
-			Confirm: ask(m.Asks, "stop", kind, vm.Name, "Stop "+vm.Name+"?", "stop", "It stays stopped until you start it: the engine no longer restarts it"),
+			Confirm: ask(m.Asks, "stop", kind, vm.Name, "Stop "+vm.Name+"?", "stop", "It stays stopped until you start it: the engine no longer restarts it."),
 			Run:     &page.Run{Call: CallStopVM, In: map[string]string{"VM": vm.Name}, Target: target(h)}}
 		stop.Run.In = answered(stop.Confirm, stop.Run.In)
 		p.Actions = []page.Action{restart, stop}
 	} else {
-		sections = append(sections, activitySection(m.Samples, "Activity"), insideSection(m.Summary), portsSection(m, h, vm), sharedSection(m, h, vm))
+		sections = append(sections, activitySection(samples, vm.State == model.Running, "Activity"), insideSection(m.Summary), portsSection(m, h, vm), sharedSection(m, h, vm))
 		stop := page.Action{ID: ActionStop, Label: "Stop", On: page.OnPage, Priority: 1, Mutates: true,
-			Confirm: ask(m.Asks, "stop", kind, vm.Name, "Stop "+vm.Name+"?", "stop", "Its disk is kept"),
+			Confirm: ask(m.Asks, "stop", kind, vm.Name, "Stop "+vm.Name+"?", "stop", "Its disk is kept."),
 			Run:     &page.Run{Call: CallStopVM, In: map[string]string{"VM": vm.Name}, Target: target(h)}}
 		stop.Run.In = answered(stop.Confirm, stop.Run.In)
 		if vm.State != model.Running && !model.Down(vm) {
@@ -127,7 +131,7 @@ func vmPage(m Machine, h model.MacView, vm model.VM) page.Page {
 				Run: &page.Run{Call: CallStartVM, In: map[string]string{"VM": vm.Name}, Target: target(h)}}
 		}
 		del := page.Action{ID: ActionDelete, Label: "Delete", On: page.OnPage, Priority: 2, Mutates: true,
-			Confirm: ask(m.Asks, "delete", kind, vm.Name, "Delete "+vm.Name+"?", "delete", "Its disk is erased: nothing of it is kept"),
+			Confirm: ask(m.Asks, "delete", kind, vm.Name, "Delete "+vm.Name+"?", "delete", "Its disk is erased: nothing of it is kept."),
 			Run:     &page.Run{Call: CallDeleteVM, In: map[string]string{"VM": vm.Name}, Target: target(h)}}
 		del.Run.In = answered(del.Confirm, del.Run.In)
 		p.Actions = []page.Action{stop, del}
@@ -151,9 +155,12 @@ func vmPage(m Machine, h model.MacView, vm model.VM) page.Page {
 // readings give them (its disk as the share used, vision panels c and
 // f), each led into its series over the readings kept (0 to 100: CPU's
 // share, memory's and disk's use of their total), so a tile draws its bar
-// meter; pending until they are read.
-func activitySection(readings []activity.Reading, title string) page.Section {
+// meter; pending until they are read, none while the machine does not run.
+func activitySection(readings []activity.Reading, running bool, title string) page.Section {
 	cpu, memory, disk := page.Pending(), page.Pending(), page.Pending()
+	if !running {
+		cpu, memory, disk = page.None(), page.None(), page.None()
+	}
 	var cpus, memories, disks []int
 	for i, r := range readings {
 		if i > 0 {
@@ -388,7 +395,7 @@ func takeBacks(m Machine, vm model.VM) []page.Action {
 	out := make([]page.Action, 0, len(shared))
 	for _, a := range shared {
 		label := accounts.Label(a.Provider)
-		c := ask(m.Asks, "take-back", machine.Workspace, label, "Take back "+label+" from "+vm.Name+"?", "take back", "Its copy on "+vm.Name+" is deleted")
+		c := ask(m.Asks, "take-back", machine.Workspace, label, "Take back "+label+" from "+vm.Name+"?", "take back", "Its copy on "+vm.Name+" is deleted.")
 		out = append(out, page.Action{ID: ActionTakeBack + "/" + a.Provider, Label: "Take back", On: page.OnRow, Rows: []string{a.Provider}, Priority: 4, Mutates: true, Confirm: c,
 			Run: &page.Run{Call: CallTakeBack, In: answered(c, map[string]string{"Account": a.Provider, "From": vm.Name})}})
 	}

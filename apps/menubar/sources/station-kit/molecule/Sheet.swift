@@ -76,14 +76,15 @@ public struct TypedField: View {
 }
 
 // value: where a sheet sits: under a divider, in the flow of the page,
-// never a card of its own.
+// never a card of its own; scrolled into sight, it keeps the panel's
+// margin under its buttons.
 struct SheetGround: ViewModifier {
     func body(content: Content) -> some View {
         VStack(alignment: .leading, spacing: 10) {
             SectionDivider()
             content
         }
-        .id(PanelScroll.sheetID)
+        .background { Color.clear.id(PanelScroll.sheetID).padding(.bottom, -Token.Space.margin) }
     }
 }
 
@@ -127,6 +128,12 @@ public struct ConfirmSheet: View {
         self.onAnswer = onAnswer
     }
 
+    // value: a confirm's line as it is drawn: a command set off as code
+    // (`station engine start`), any other line as its words.
+    public static func line(_ v: Value) -> (words: String, code: Bool) {
+        v.kind == "command" ? (v.text ?? "", true) : (Format.show(v), false)
+    }
+
     public static func allows(_ confirm: Confirm, typed: String) -> Bool {
         guard let name = confirm.type else { return true }
         return typed == name
@@ -135,8 +142,16 @@ public struct ConfirmSheet: View {
     public var body: some View {
         VStack(alignment: .leading, spacing: 6) {
             Text(confirm.question ?? "").font(.body.weight(.semibold)).foregroundStyle(.primary)
-            ForEach(Array((confirm.lines ?? []).enumerated()), id: \.offset) { _, line in
-                SubText(Format.show(line))
+            ForEach(Array((confirm.lines ?? []).enumerated()), id: \.offset) { _, v in
+                let line = Self.line(v)
+                if line.code {
+                    Text(line.words).font(.system(size: Token.Size.sub, design: .monospaced)).foregroundStyle(.primary)
+                        .textSelection(.enabled)
+                        .padding(.horizontal, 6).padding(.vertical, 3)
+                        .background(RoundedRectangle(cornerRadius: 5, style: .continuous).fill(.fill.tertiary))
+                } else {
+                    SubText(line.words)
+                }
             }
             if let name = confirm.type {
                 TypedField(name, text: $typed, autofocus: true, submit: { if Self.allows(confirm, typed: typed) { onAnswer(true) } })
@@ -184,10 +199,20 @@ public struct FormSheet: View {
     // and a port holds a port: a number from 1 to 65535.
     public static func complete(_ form: Form, _ answers: [String: String]) -> Bool {
         (form.fields ?? []).allSatisfy { f in
-            let v = (answers[f.key ?? ""] ?? f.default ?? "").trimmingCharacters(in: .whitespaces)
-            if f.key == portKey, f.kind != "select", !v.isEmpty, !(Int(v).map { (1...65535).contains($0) } ?? false) { return false }
-            return f.required != true || !v.isEmpty
+            refused(f, answers) == nil && (f.required != true || !value(f, answers).isEmpty)
         }
+    }
+
+    static func value(_ f: Field, _ answers: [String: String]) -> String {
+        (answers[f.key ?? ""] ?? f.default ?? "").trimmingCharacters(in: .whitespaces)
+    }
+
+    // value: why a field's answer cannot run, said under it; nil while it
+    // is empty or holds what it asks.
+    public static func refused(_ f: Field, _ answers: [String: String]) -> String? {
+        let v = value(f, answers)
+        guard f.key == portKey, f.kind != "select", !v.isEmpty, !(Int(v).map { (1...65535).contains($0) } ?? false) else { return nil }
+        return "A port is a number from 1 to 65535."
     }
 
     public static let portKey = "Port"
@@ -216,6 +241,9 @@ public struct FormSheet: View {
                         }
                     } else {
                         TypedField(f.note ?? "", text: binding(f), autofocus: Self.first(form) == f.key, submit: { if complete { onAnswer(true) } })
+                        if let why = Self.refused(f, answers) {
+                            Text(why).font(.system(size: Token.Space.small)).foregroundStyle(palette.bad)
+                        }
                     }
                 }
             }
@@ -267,7 +295,7 @@ public struct Segments: View {
                         .padding(.vertical, 5)
                         .background {
                             if o.on {
-                                RoundedRectangle(cornerRadius: 8, style: .continuous).fill(Token.Fill.raised(scheme)).shadow(color: .black.opacity(0.12), radius: 1.5, y: 1)
+                                RoundedRectangle(cornerRadius: 8, style: .continuous).fill(Token.Fill.picked(scheme)).shadow(color: .black.opacity(0.12), radius: 1.5, y: 1)
                             }
                         }
                         .contentShape(Rectangle())
