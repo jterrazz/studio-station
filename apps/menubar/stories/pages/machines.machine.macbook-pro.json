@@ -1,0 +1,277 @@
+{
+  "schema": "station.page/v1",
+  "id": "menubar.machine",
+  "command": "menubar",
+  "context": {
+    "machine": "macbook-pro",
+    "kind": "mac"
+  },
+  "state": "ready",
+  "sections": [
+    {
+      "id": "machine",
+      "title": "This Mac",
+      "role": "summary",
+      "caption": [
+        {
+          "kind": "text",
+          "text": "Mac"
+        },
+        {
+          "kind": "text",
+          "text": "macbook-pro"
+        }
+      ],
+      "columns": [
+        {
+          "key": "name",
+          "kind": "text",
+          "keep": 100
+        },
+        {
+          "key": "value",
+          "kind": "list",
+          "keep": 60
+        }
+      ],
+      "items": [
+        {
+          "row": {
+            "id": "state",
+            "mark": "ok",
+            "label": "State",
+            "cells": [
+              {
+                "kind": "text",
+                "text": "Engine running"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "needs-you",
+      "title": "Needs you",
+      "columns": [
+        {
+          "key": "finding",
+          "kind": "text",
+          "keep": 100
+        },
+        {
+          "key": "fix",
+          "kind": "command",
+          "keep": 50
+        }
+      ],
+      "items": [
+        {
+          "row": {
+            "id": "0-npm",
+            "mark": "broken",
+            "label": "npm signed out",
+            "cells": [
+              {
+                "kind": "text",
+                "text": "npm login"
+              }
+            ],
+            "reason": "failing"
+          }
+        },
+        {
+          "row": {
+            "id": "1-com.jterrazz.brain.x-snapshot",
+            "mark": "broken",
+            "label": "1 login item failing",
+            "cells": [
+              {
+                "kind": "text",
+                "text": "station background"
+              }
+            ],
+            "reason": "failing"
+          }
+        },
+        {
+          "row": {
+            "id": "2-updates",
+            "mark": "attention",
+            "label": "2 app updates",
+            "cells": [
+              {
+                "kind": "text",
+                "text": "station apps update"
+              }
+            ],
+            "reason": "degraded"
+          }
+        },
+        {
+          "row": {
+            "id": "3-firewall",
+            "mark": "attention",
+            "label": "Firewall off",
+            "cells": [
+              {
+                "kind": "text",
+                "text": "System Settings > Network > Firewall"
+              }
+            ],
+            "reason": "degraded"
+          }
+        }
+      ],
+      "uncounted": true
+    },
+    {
+      "id": "vms",
+      "title": "VMs",
+      "columns": [
+        {
+          "key": "name",
+          "kind": "text",
+          "keep": 100
+        },
+        {
+          "key": "kind",
+          "kind": "text",
+          "keep": 40
+        },
+        {
+          "key": "detail",
+          "kind": "list",
+          "keep": 80
+        }
+      ],
+      "items": [
+        {
+          "group": {
+            "head": {
+              "id": "macbook-pro/workspaces",
+              "label": "Workspaces"
+            },
+            "items": [
+              {
+                "row": {
+                  "id": "linux-1",
+                  "mark": "ok",
+                  "label": "linux-1",
+                  "cells": [
+                    {
+                      "kind": "text",
+                      "text": "Workspace"
+                    },
+                    {
+                      "kind": "list",
+                      "items": [
+                        {
+                          "kind": "text",
+                          "text": "Throwaway"
+                        },
+                        {
+                          "kind": "count",
+                          "n": 2,
+                          "unit": "ports shared"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              },
+              {
+                "row": {
+                  "id": "agent-7f",
+                  "mark": "ok",
+                  "label": "agent-7f",
+                  "cells": [
+                    {
+                      "kind": "text",
+                      "text": "Workspace"
+                    },
+                    {
+                      "kind": "list",
+                      "items": [
+                        {
+                          "kind": "text",
+                          "text": "Throwaway"
+                        },
+                        {
+                          "kind": "text",
+                          "text": "Running"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              },
+              {
+                "row": {
+                  "id": "api",
+                  "mark": "absent",
+                  "label": "api",
+                  "cells": [
+                    {
+                      "kind": "text",
+                      "text": "Workspace"
+                    },
+                    {
+                      "kind": "list",
+                      "items": [
+                        {
+                          "kind": "text",
+                          "text": "Permanent"
+                        },
+                        {
+                          "kind": "text",
+                          "text": "Stopped"
+                        }
+                      ]
+                    }
+                  ],
+                  "reason": "stopped"
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "counts": [
+        {
+          "mark": "ok",
+          "n": 2
+        },
+        {
+          "mark": "absent",
+          "n": 1
+        }
+      ]
+    }
+  ],
+  "actions": [
+    {
+      "label": "Update all",
+      "on": "row",
+      "rows": [
+        "2-updates"
+      ],
+      "priority": 5,
+      "mutates": true,
+      "id": "update-all:2-updates",
+      "run": {
+        "call": "apps.update"
+      }
+    },
+    {
+      "key": "cmd+t",
+      "label": "Open in Terminal",
+      "on": "page",
+      "priority": 2,
+      "id": "open-station",
+      "run": {
+        "terminal": true
+      }
+    }
+  ]
+}

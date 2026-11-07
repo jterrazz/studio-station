@@ -1,8 +1,8 @@
 {
     "group": "home",
     "id": "home.loading",
-    "note": "Today's Home while the engine's first answer is on its way.",
-    "pages": ["../../../src/ui/testdata/pages/menubar.loading.json"],
+    "note": "Home while mac-mini has not answered yet.",
+    "pages": ["pages/machines.loading.menubar.json"],
     "schema": "station.story/v1",
     "status": "today"
 }

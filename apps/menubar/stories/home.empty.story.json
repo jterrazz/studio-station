@@ -1,8 +1,8 @@
 {
     "group": "home",
     "id": "home.empty",
-    "note": "Today's Home with no VM yet: This Mac alone, nothing needs you. Today it is the same screen as home.fine, from the same page.",
-    "pages": ["../../../src/ui/testdata/pages/menubar.empty.json"],
+    "note": "First run: This Mac alone, no VM.",
+    "pages": ["pages/machines.empty.menubar.json"],
     "schema": "station.story/v1",
     "status": "today"
 }

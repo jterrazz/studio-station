@@ -1,8 +1,8 @@
 {
     "group": "home",
     "id": "home.needs",
-    "note": "Today's Home over two Macs: five things need you, the machines, Awake and Accounts.",
-    "pages": ["../../../src/ui/testdata/pages/menubar.home.two-macs.json"],
+    "note": "The daily home: what needs you, then the machines.",
+    "pages": ["pages/machines.menubar.json"],
     "schema": "station.story/v1",
     "status": "today"
 }

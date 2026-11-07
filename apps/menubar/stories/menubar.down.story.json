@@ -1,8 +1,8 @@
 {
     "group": "shell",
     "id": "menubar.down",
-    "note": "Today's status item with a server down: the slashed Orbit, whatever the count.",
-    "pages": ["../../../src/ui/testdata/pages/menubar.home.infra-down.json"],
+    "note": "The status item while infra is down: the red need.",
+    "pages": ["pages/machines.down.menubar.json"],
     "schema": "station.story/v1",
     "status": "today",
     "ui": {

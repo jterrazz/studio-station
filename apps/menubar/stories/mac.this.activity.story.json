@@ -1,8 +1,8 @@
 {
     "group": "mac",
     "id": "mac.this.activity",
-    "note": "Today's Activity of This Mac: its graphs and its busiest processes.",
-    "pages": ["../../../src/ui/testdata/pages/menubar.activity.mac.json"],
+    "note": "This Mac's activity.",
+    "pages": ["pages/machines.activity.json"],
     "schema": "station.story/v1",
     "status": "today"
 }

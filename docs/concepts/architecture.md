@@ -228,7 +228,7 @@ Each store carries its version; `station setup` runs every store's `Migrator`, a
 
 ## The compiler
 
-This repository is an application in the sense of the [repo-structure doctrine](repo-structure.md): it authors a corpus and generates no API reference. Its compiler is `make generate` (`src/cmd/generate/`), which writes, from the catalogue and the Registry: the rosters between the `GENERATED` markers of `skills/studio-toolbelt/SKILL.md`, `docs/reference/footprint.md` whole, the page fixtures of `src/ui/testdata/pages/` from the real page functions, the menu bar's recorded streams, and `src/remote/api/calls.json`. Each projection is committed, and a test fails when one drifts.
+This repository is an application in the sense of the [repo-structure doctrine](repo-structure.md): it authors a corpus and generates no API reference. Its compiler is `make generate` (`src/cmd/generate/`), which writes, from the catalogue and the Registry: the rosters between the `GENERATED` markers of `skills/studio-toolbelt/SKILL.md`, `docs/reference/footprint.md` whole, the page fixtures of `src/ui/testdata/pages/` from the real page functions, the pages of the menu bar's story worlds (`src/cmd/generate/pages/stories.go`: the `machines` world of every Mac and VM and its variants, the clock pinned at 2026-11-07 10:30) into `apps/menubar/stories/pages/<world>.<page>.json`, the menu bar's recorded streams, and `src/remote/api/calls.json`. Each projection is committed, and a test fails when one drifts.
 
 ## Related
 

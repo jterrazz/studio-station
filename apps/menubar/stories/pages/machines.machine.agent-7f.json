@@ -1,0 +1,582 @@
+{
+  "schema": "station.page/v1",
+  "id": "menubar.machine",
+  "command": "menubar",
+  "context": {
+    "machine": "agent-7f",
+    "kind": "workspace",
+    "on": "This Mac"
+  },
+  "state": "loading",
+  "sections": [
+    {
+      "id": "machine",
+      "title": "agent-7f",
+      "role": "summary",
+      "caption": [
+        {
+          "kind": "text",
+          "text": "Workspace VM"
+        },
+        {
+          "kind": "text",
+          "text": "Throwaway"
+        },
+        {
+          "kind": "text",
+          "text": "on This Mac"
+        }
+      ],
+      "columns": [
+        {
+          "key": "name",
+          "kind": "text",
+          "keep": 100
+        },
+        {
+          "key": "value",
+          "kind": "list",
+          "keep": 60
+        }
+      ],
+      "items": [
+        {
+          "row": {
+            "id": "state",
+            "mark": "ok",
+            "label": "State",
+            "cells": [
+              {
+                "kind": "text",
+                "text": "Running"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "activity",
+      "title": "Activity",
+      "role": "summary",
+      "columns": [
+        {
+          "key": "name",
+          "kind": "text",
+          "keep": 100
+        },
+        {
+          "key": "value",
+          "kind": "list",
+          "keep": 60
+        },
+        {
+          "key": "graph",
+          "kind": "spark",
+          "keep": 50
+        }
+      ],
+      "items": [
+        {
+          "row": {
+            "id": "cpu",
+            "label": "CPU",
+            "cells": [
+              {
+                "kind": "percent",
+                "n": 340
+              },
+              {
+                "kind": "spark",
+                "items": [
+                  {
+                    "kind": "none"
+                  },
+                  {
+                    "kind": "count",
+                    "n": 12
+                  },
+                  {
+                    "kind": "count",
+                    "n": 18
+                  },
+                  {
+                    "kind": "count",
+                    "n": 25
+                  },
+                  {
+                    "kind": "count",
+                    "n": 34
+                  },
+                  {
+                    "kind": "count",
+                    "n": 30
+                  },
+                  {
+                    "kind": "count",
+                    "n": 22
+                  },
+                  {
+                    "kind": "count",
+                    "n": 41
+                  },
+                  {
+                    "kind": "count",
+                    "n": 55
+                  },
+                  {
+                    "kind": "count",
+                    "n": 48
+                  },
+                  {
+                    "kind": "count",
+                    "n": 36
+                  },
+                  {
+                    "kind": "count",
+                    "n": 28
+                  },
+                  {
+                    "kind": "count",
+                    "n": 31
+                  },
+                  {
+                    "kind": "count",
+                    "n": 44
+                  },
+                  {
+                    "kind": "count",
+                    "n": 38
+                  },
+                  {
+                    "kind": "count",
+                    "n": 29
+                  },
+                  {
+                    "kind": "count",
+                    "n": 34
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "row": {
+            "id": "memory",
+            "label": "Memory",
+            "cells": [
+              {
+                "kind": "ratio",
+                "n": 7462505676,
+                "of": 8589934592
+              },
+              {
+                "kind": "spark",
+                "items": [
+                  {
+                    "kind": "none"
+                  },
+                  {
+                    "kind": "count",
+                    "n": 77
+                  },
+                  {
+                    "kind": "count",
+                    "n": 77
+                  },
+                  {
+                    "kind": "count",
+                    "n": 80
+                  },
+                  {
+                    "kind": "count",
+                    "n": 83
+                  },
+                  {
+                    "kind": "count",
+                    "n": 86
+                  },
+                  {
+                    "kind": "count",
+                    "n": 77
+                  },
+                  {
+                    "kind": "count",
+                    "n": 80
+                  },
+                  {
+                    "kind": "count",
+                    "n": 83
+                  },
+                  {
+                    "kind": "count",
+                    "n": 86
+                  },
+                  {
+                    "kind": "count",
+                    "n": 77
+                  },
+                  {
+                    "kind": "count",
+                    "n": 80
+                  },
+                  {
+                    "kind": "count",
+                    "n": 83
+                  },
+                  {
+                    "kind": "count",
+                    "n": 86
+                  },
+                  {
+                    "kind": "count",
+                    "n": 77
+                  },
+                  {
+                    "kind": "count",
+                    "n": 80
+                  },
+                  {
+                    "kind": "count",
+                    "n": 83
+                  },
+                  {
+                    "kind": "count",
+                    "n": 86
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "row": {
+            "id": "disk",
+            "label": "Disk",
+            "cells": [
+              {
+                "kind": "percent",
+                "n": 125
+              },
+              {
+                "kind": "spark",
+                "items": [
+                  {
+                    "kind": "none"
+                  },
+                  {
+                    "kind": "count",
+                    "n": 12
+                  },
+                  {
+                    "kind": "count",
+                    "n": 12
+                  },
+                  {
+                    "kind": "count",
+                    "n": 12
+                  },
+                  {
+                    "kind": "count",
+                    "n": 12
+                  },
+                  {
+                    "kind": "count",
+                    "n": 12
+                  },
+                  {
+                    "kind": "count",
+                    "n": 12
+                  },
+                  {
+                    "kind": "count",
+                    "n": 12
+                  },
+                  {
+                    "kind": "count",
+                    "n": 12
+                  },
+                  {
+                    "kind": "count",
+                    "n": 12
+                  },
+                  {
+                    "kind": "count",
+                    "n": 12
+                  },
+                  {
+                    "kind": "count",
+                    "n": 12
+                  },
+                  {
+                    "kind": "count",
+                    "n": 12
+                  },
+                  {
+                    "kind": "count",
+                    "n": 12
+                  },
+                  {
+                    "kind": "count",
+                    "n": 12
+                  },
+                  {
+                    "kind": "count",
+                    "n": 12
+                  },
+                  {
+                    "kind": "count",
+                    "n": 12
+                  },
+                  {
+                    "kind": "count",
+                    "n": 12
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "inside",
+      "title": "Inside",
+      "role": "summary",
+      "columns": [
+        {
+          "key": "name",
+          "kind": "text",
+          "keep": 100
+        },
+        {
+          "key": "value",
+          "kind": "list",
+          "keep": 60
+        }
+      ],
+      "items": [
+        {
+          "row": {
+            "id": "apps",
+            "label": "Apps",
+            "cells": [
+              {
+                "kind": "pending"
+              }
+            ]
+          }
+        },
+        {
+          "row": {
+            "id": "settings",
+            "label": "Settings",
+            "cells": [
+              {
+                "kind": "pending"
+              }
+            ]
+          }
+        },
+        {
+          "row": {
+            "id": "disk",
+            "label": "Disk",
+            "cells": [
+              {
+                "kind": "pending"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "ports",
+      "title": "Private",
+      "caption": [
+        {
+          "kind": "text",
+          "text": "shared on Tailscale"
+        }
+      ],
+      "items": [
+        {
+          "empty": {
+            "text": "No port shared yet"
+          }
+        }
+      ],
+      "uncounted": true
+    },
+    {
+      "id": "shared",
+      "title": "Accounts shared from This Mac",
+      "columns": [
+        {
+          "key": "name",
+          "kind": "text",
+          "keep": 100
+        },
+        {
+          "key": "value",
+          "kind": "list",
+          "keep": 60
+        }
+      ],
+      "items": [
+        {
+          "empty": {
+            "text": "No account shared"
+          }
+        }
+      ]
+    }
+  ],
+  "actions": [
+    {
+      "label": "Stop",
+      "on": "page",
+      "confirm": {
+        "question": "Stop agent-7f?",
+        "lines": [
+          {
+            "kind": "text",
+            "text": "Its disk is kept."
+          }
+        ],
+        "yes": "Stop"
+      },
+      "priority": 1,
+      "mutates": true,
+      "id": "stop",
+      "run": {
+        "call": "machines.stop",
+        "in": {
+          "Confirm": "yes",
+          "VM": "agent-7f"
+        }
+      }
+    },
+    {
+      "label": "Delete",
+      "on": "page",
+      "confirm": {
+        "question": "Delete agent-7f?",
+        "lines": [
+          {
+            "kind": "text",
+            "text": "Its disk is erased: nothing of it is kept."
+          },
+          {
+            "kind": "text",
+            "text": "Type agent-7f to delete it."
+          }
+        ],
+        "danger": true,
+        "type": "agent-7f",
+        "yes": "Delete"
+      },
+      "priority": 2,
+      "mutates": true,
+      "id": "delete",
+      "run": {
+        "call": "machines.delete",
+        "in": {
+          "VM": "agent-7f"
+        }
+      }
+    },
+    {
+      "label": "Share a port",
+      "on": "page",
+      "priority": 3,
+      "mutates": true,
+      "id": "share-port",
+      "run": {
+        "call": "ports.share",
+        "in": {
+          "VM": "agent-7f"
+        }
+      },
+      "form": {
+        "title": "Share a port of agent-7f",
+        "fields": [
+          {
+            "key": "Port",
+            "label": "Port",
+            "kind": "text",
+            "note": "a port number, like 5173",
+            "required": true
+          }
+        ]
+      }
+    },
+    {
+      "label": "Open apps",
+      "on": "row",
+      "rows": [
+        "apps"
+      ],
+      "priority": 5,
+      "id": "open:apps",
+      "run": {
+        "terminal": true,
+        "argv": [
+          "apps",
+          "--on",
+          "agent-7f"
+        ]
+      }
+    },
+    {
+      "label": "Open settings",
+      "on": "row",
+      "rows": [
+        "settings"
+      ],
+      "priority": 5,
+      "id": "open:settings",
+      "run": {
+        "terminal": true,
+        "argv": [
+          "settings",
+          "--on",
+          "agent-7f"
+        ]
+      }
+    },
+    {
+      "label": "Open disk",
+      "on": "row",
+      "rows": [
+        "disk"
+      ],
+      "priority": 5,
+      "id": "open:disk",
+      "run": {
+        "terminal": true,
+        "argv": [
+          "disk",
+          "--on",
+          "agent-7f"
+        ]
+      }
+    },
+    {
+      "key": "cmd+t",
+      "label": "Open in Terminal",
+      "on": "page",
+      "priority": 2,
+      "id": "open-station",
+      "run": {
+        "terminal": true,
+        "argv": [
+          "--on",
+          "agent-7f"
+        ]
+      }
+    }
+  ]
+}

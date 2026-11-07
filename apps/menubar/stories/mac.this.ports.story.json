@@ -1,8 +1,8 @@
 {
     "group": "mac",
     "id": "mac.this.ports",
-    "note": "Today's Ports page of This Mac: linux-1's HTTPS and private ports.",
-    "pages": ["../../../src/ui/testdata/pages/menubar.ports.linux-1.json"],
+    "note": "The ports of This Mac and its VMs.",
+    "pages": ["pages/machines.ports.macbook-pro.json"],
     "schema": "station.story/v1",
     "status": "today"
 }
