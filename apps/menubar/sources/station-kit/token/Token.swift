@@ -140,15 +140,17 @@ public enum Token {
     // value: the menu bar icon of the vision: the station symbol, 16 pt, its
     // badge on its top right corner, and the CPU line beside it.
     public enum Icon {
-        public static let symbol: CGFloat = 16
-        public static let line: CGFloat = 1.6
-        public static let badge: CGFloat = 14
-        public static let badgeText: CGFloat = 9.5
-        public static let badgeShift = CGSize(width: 5, height: -3)
+        public static let symbol: CGFloat = 18
+        public static let line: CGFloat = 1.5
+        public static let badge: CGFloat = 10
+        public static let badgeText: CGFloat = 8
+        public static let badgeAt = CGPoint(x: 12, y: -3)
+        public static let digit: CGFloat = 5
+        public static let notch: CGFloat = 1
         public static let sparkWidth: CGFloat = 22
         public static let sparkHeight: CGFloat = 12
         public static let gap: CGFloat = 4
-        public static let dimmed = 0.45
+        public static let dimmed = 0.4
 
         public static func needs(_ scheme: ColorScheme) -> Color { Token.hex(scheme == .dark ? 0xFFAD1F : 0xF29D0B) }
         public static func down(_ scheme: ColorScheme) -> Color { Token.hex(scheme == .dark ? 0xFF4F45 : 0xEC3B30) }

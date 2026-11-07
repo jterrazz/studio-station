@@ -1,3 +1,4 @@
+import AppKit
 import SwiftUI
 
 public struct MenuBarIcon: Equatable, Sendable {
@@ -52,14 +53,50 @@ public struct MenuBarIcon: Equatable, Sendable {
     }
 }
 
-struct StationSymbol: Shape {
+// value: the Orbit mark on its 18-unit grid: one Mac, the rounded square
+// at the centre, and two of its machines riding a broken ring around it.
+enum Orbit {
+    static let grid: CGFloat = 18
+    static let core = CGRect(x: 6, y: 6, width: 6, height: 6)
+    static let coreRadius: CGFloat = 1.75
+    static let ring: CGFloat = 7.15
+    static let satellite: CGFloat = 1.85
+    static let gap = Angle.radians(2 * asin(3.1 / (2 * ring)))
+    static let satellites = [Angle.degrees(210), Angle.degrees(30)]
+    static let notch = Angle.degrees(340)
+
+    static func point(_ a: Angle, _ r: CGFloat, _ u: CGFloat) -> CGPoint {
+        CGPoint(x: (9 + r * cos(a.radians)) * u, y: (9 + r * sin(a.radians)) * u)
+    }
+}
+
+// invariant: a notched mark ends its ring inside the notch, so no stub of
+// ring is left between the badge and the satellite.
+struct OrbitBody: Shape {
+    var notched = false
+
     func path(in rect: CGRect) -> Path {
-        let u = rect.width / 16
-        var p = Path(roundedRect: CGRect(x: 2.2 * u, y: 2.2 * u, width: 11.6 * u, height: 11.6 * u), cornerRadius: 3.2 * u)
-        p.move(to: CGPoint(x: 5 * u, y: 6.3 * u))
-        p.addLine(to: CGPoint(x: 11 * u, y: 6.3 * u))
-        p.move(to: CGPoint(x: 5 * u, y: 9.7 * u))
-        p.addLine(to: CGPoint(x: 8.6 * u, y: 9.7 * u))
+        let u = rect.width / Orbit.grid
+        let c = Orbit.core
+        var p = Path(roundedRect: CGRect(x: c.minX * u, y: c.minY * u, width: c.width * u, height: c.height * u), cornerRadius: Orbit.coreRadius * u)
+        for from in Orbit.satellites {
+            let end = from == Orbit.satellites[0] && notched ? Orbit.notch : from + .degrees(180) - Orbit.gap
+            p.move(to: Orbit.point(from + Orbit.gap, Orbit.ring, u))
+            p.addRelativeArc(center: CGPoint(x: 9 * u, y: 9 * u), radius: Orbit.ring * u, startAngle: from + Orbit.gap, delta: end - from - Orbit.gap)
+        }
+        return p
+    }
+}
+
+struct OrbitSatellites: Shape {
+    func path(in rect: CGRect) -> Path {
+        let u = rect.width / Orbit.grid
+        var p = Path()
+        for a in Orbit.satellites {
+            let c = Orbit.point(a, Orbit.ring, u)
+            let r = Orbit.satellite * u
+            p.addEllipse(in: CGRect(x: c.x - r, y: c.y - r, width: 2 * r, height: 2 * r))
+        }
         return p
     }
 }
@@ -90,20 +127,24 @@ public struct MenuBarIconView: View {
 
     var ink: Color { Token.Icon.ink(scheme) }
 
-    var dimmed: Bool {
-        switch icon.mark {
-        case .stopped, .connecting: true
-        case .plain, .needs, .down: false
-        }
-    }
+    var dimmed: Bool { icon.mark == .stopped }
+
+    var working: Bool { icon.mark == .connecting }
 
     public var body: some View {
         HStack(spacing: Token.Icon.gap) {
-            StationSymbol()
-                .stroke(ink, style: StrokeStyle(lineWidth: Token.Icon.line, lineCap: .round, lineJoin: .round))
-                .frame(width: Token.Icon.symbol, height: Token.Icon.symbol)
-                .opacity(dimmed ? Token.Icon.dimmed : 1)
-                .overlay(alignment: .topTrailing) { badge.offset(Token.Icon.badgeShift) }
+            ZStack {
+                OrbitBody(notched: text != nil)
+                    .stroke(ink, style: StrokeStyle(lineWidth: Token.Icon.line, lineCap: .butt, lineJoin: .round))
+                    .opacity(working ? Token.Icon.dimmed : 1)
+                OrbitSatellites().fill(ink)
+                knockout.blendMode(.destinationOut)
+            }
+            .compositingGroup()
+            .frame(width: Token.Icon.symbol, height: Token.Icon.symbol)
+            .opacity(dimmed ? Token.Icon.dimmed : 1)
+            .overlay(alignment: .topLeading) { badge.offset(x: Token.Icon.badgeAt.x, y: Token.Icon.badgeAt.y) }
+            .padding(.trailing, room)
             if let spark = icon.spark {
                 IconSpark(points: spark)
                     .stroke(ink, style: StrokeStyle(lineWidth: Token.Icon.line - 0.2, lineCap: .round, lineJoin: .round))
@@ -115,25 +156,52 @@ public struct MenuBarIconView: View {
         .padding(.trailing, 6)
     }
 
-    @ViewBuilder
-    var badge: some View {
+    var text: String? {
         switch icon.mark {
-        case .needs(let n): pill(n > 99 ? "99+" : "\(n)", Token.Icon.needs(scheme))
-        case .down: pill(Token.Glyph.down, Token.Icon.down(scheme))
-        case .stopped: pill(Token.Glyph.down, Token.Icon.needs(scheme))
-        case .plain, .connecting: EmptyView()
+        case .needs(let n): n > 99 ? "99+" : "\(n)"
+        case .down, .stopped: Token.Glyph.down
+        case .plain, .connecting: nil
         }
     }
 
-    func pill(_ text: String, _ fill: Color) -> some View {
+    // value: the room the badge takes past the mark, wider as its count
+    // grows, so a count is drawn whole and the CPU line moves aside.
+    var room: CGFloat {
+        guard let text else { return 0 }
+        return Token.Icon.badge + Token.Icon.badgeAt.x - Token.Icon.symbol + CGFloat(text.count - 1) * Token.Icon.digit
+    }
+
+    var fill: Color {
+        icon.mark == .down ? Token.Icon.down(scheme) : Token.Icon.needs(scheme)
+    }
+
+    @ViewBuilder
+    var badge: some View {
+        if let text { pill(text).background(Capsule().fill(fill)) }
+    }
+
+    // invariant: the badge sits in a notch cut out of the mark, never on
+    // its strokes, so the mark and the badge each read whole.
+    @ViewBuilder
+    var knockout: some View {
+        if let text {
+            pill(text)
+                .opacity(0)
+                .padding(Token.Icon.notch)
+                .background(Capsule().fill(ink))
+                .offset(x: Token.Icon.badgeAt.x - Token.Icon.notch, y: Token.Icon.badgeAt.y - Token.Icon.notch)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        }
+    }
+
+    func pill(_ text: String) -> some View {
         Text(text)
             .font(.system(size: Token.Icon.badgeText, weight: .bold))
             .foregroundStyle(Token.Icon.badgeInk)
             .lineLimit(1)
             .fixedSize()
-            .padding(.horizontal, 3)
+            .padding(.horizontal, 2)
             .frame(minWidth: Token.Icon.badge, minHeight: Token.Icon.badge)
-            .background(Capsule().fill(fill))
     }
 }
 
@@ -145,5 +213,22 @@ extension MenuBarIcon {
         let renderer = ImageRenderer(content: MenuBarIconView(self, scheme: template ? .light : scheme))
         renderer.scale = scale
         return renderer.cgImage
+    }
+
+    // value: the label's image with a bitmap per screen scale, so the mark
+    // lands on whole pixels at 1x, 2x and 3x alike.
+    @MainActor
+    public func nsImage(scheme: ColorScheme) -> NSImage {
+        let image = NSImage()
+        for scale in [1, 2, 3] as [CGFloat] {
+            guard let cg = self.image(scheme: scheme, scale: scale) else { continue }
+            let rep = NSBitmapImageRep(cgImage: cg)
+            rep.size = NSSize(width: CGFloat(cg.width) / scale, height: CGFloat(cg.height) / scale)
+            image.addRepresentation(rep)
+            image.size = rep.size
+        }
+        image.isTemplate = template
+        image.accessibilityDescription = label
+        return image
     }
 }

@@ -66,4 +66,39 @@ final class IconTests: XCTestCase {
         XCTAssertEqual(MenuBarIcon.of(connection: .live, page: try Tree.page("menubar.loading")), MenuBarIcon(.plain))
         try drawn("stopped", stopped)
     }
+
+    // invariant: a connection being made dims the Mac and its ring and
+    // keeps the two machines lit, with no badge.
+    func testIconConnecting() throws {
+        let icon = try icon("menubar.home.two-macs", .connecting)
+        XCTAssertEqual(icon, MenuBarIcon(.connecting))
+        XCTAssertTrue(icon.template)
+        try drawn("connecting", icon)
+    }
+
+    // invariant: the mark is the Orbit, a Mac inside a ring, never a
+    // bubble again: across its middle row and its middle column, at 1x and
+    // at 2x, the ink crosses the ring, the Mac, the hole inside it, the Mac
+    // and the ring, four strokes with its centre left empty.
+    func testTheMarkIsAMacInsideARing() throws {
+        for scale in [1, 2] as [CGFloat] {
+            let image = try XCTUnwrap(MenuBarIcon(.plain).image(scheme: .light, scale: scale))
+            let bitmap = try XCTUnwrap(Bitmap(image))
+            let x0 = Int(2 * scale), y0 = Int(3 * scale), side = Int(Token.Icon.symbol * scale)
+            func inked(_ x: Int, _ y: Int) -> Bool { bitmap.pixels[(y * bitmap.width + x) * 4 + 3] > 110 }
+            func strokes(_ at: (Int) -> Bool) -> Int {
+                var n = 0, was = false
+                for i in 0..<side {
+                    let now = at(i)
+                    if now && !was { n += 1 }
+                    was = now
+                }
+                return n
+            }
+            let mid = side / 2
+            XCTAssertEqual(strokes { inked(x0 + $0, y0 + mid) }, 4, "middle row at \(scale)x")
+            XCTAssertEqual(strokes { inked(x0 + mid, y0 + $0) }, 4, "middle column at \(scale)x")
+            XCTAssertFalse(inked(x0 + mid, y0 + mid), "the Mac's hole at \(scale)x")
+        }
+    }
 }

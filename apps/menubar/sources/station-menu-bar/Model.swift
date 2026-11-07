@@ -64,12 +64,7 @@ final class Model: ObservableObject {
     var icon: MenuBarIcon { MenuBarIcon.of(connection: state.connection, page: state.page, sparkline: sparkline) }
 
     func iconImage(dark: Bool) -> NSImage {
-        let icon = self.icon
-        guard let cg = icon.image(scheme: dark ? .dark : .light) else { return NSImage() }
-        let image = NSImage(cgImage: cg, size: NSSize(width: CGFloat(cg.width) / 2, height: CGFloat(cg.height) / 2))
-        image.isTemplate = icon.template
-        image.accessibilityDescription = icon.label
-        return image
+        icon.nsImage(scheme: dark ? .dark : .light)
     }
 
     func start() {
