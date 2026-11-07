@@ -416,7 +416,7 @@ func pageFamilies() []string {
 // the menu bar's proofs of USE-CASES §23 cite them by those names.
 func worldFamilies() map[string][]string {
 	return map[string][]string{
-		"menubar.home":     {"one-mac", "two-macs", "infra-down", "engine-stopped"},
+		"menubar.home":     {"one-mac", "two-macs", "infra-down", "engine-stopped", "engine-outdated"},
 		"menubar.switcher": {"two-macs"},
 		"menubar.vm":       {"linux-1", "infra"},
 		"menubar.mac":      {"mini", "mini-offline"},

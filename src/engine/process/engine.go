@@ -60,6 +60,7 @@ type Options struct {
 	State       string
 	ThisMachine catalog.MachineKind
 	Version     string
+	Page        int
 	PID         int
 	Tick        time.Duration
 	GuestPort   int

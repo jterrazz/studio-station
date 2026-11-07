@@ -181,6 +181,26 @@ final class ClientTests: XCTestCase {
         XCTAssertEqual(calls.all, [])
     }
 
+    func testAnEngineOlderThanThePageLanguageOfTheAppIsTold() async throws {
+        let answers = [
+            "mb-hello-now": (#"{"version":"v4.1.0","page":\#(pageRevision),"executable":"/u/bin/station"}"#, false),
+            "mb-hello-old": (#"{"version":"v3.9.0","page":\#(pageRevision - 1)}"#, true),
+            "mb-hello-v3": (#"{"version":"v3.0.0"}"#, true),
+        ]
+        for (name, (out, older)) in answers {
+            let engine = try answered(name, #"{"v":2,"id":"1","out":\#(out)}"#)
+            defer { engine.stop() }
+            let reply = await Client.hello(path: engine.path)
+            let hello = try XCTUnwrap(reply, name)
+            XCTAssertEqual(hello.older, older, name)
+            XCTAssertEqual(engine.received, [#"{"call":"engine.hello","id":"1","v":2}"#], name)
+        }
+        let silent = try FakeEngine("mb-hello-none")
+        silent.stop()
+        let none = await Client.hello(path: silent.path)
+        XCTAssertNil(none, "no engine answers, so none is older: the Stopped page says so")
+    }
+
     func testAFailingCallsMessageAndHintMakeTheStatusLine() async throws {
         let engine = try answered("mb-fail", #"{"v":2,"id":"1","error":{"type":"failed","code":"internal","message":"api did not stop","hint":"station machines"}}"#)
         defer { engine.stop() }

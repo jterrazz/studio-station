@@ -1,6 +1,7 @@
 import Foundation
 
 public let pageSchema = "station.page/v1"
+public let pageRevision = 4
 
 public struct Page: Codable, Equatable, Sendable {
     public var schema: String?

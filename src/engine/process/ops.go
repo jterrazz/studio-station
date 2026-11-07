@@ -26,7 +26,7 @@ func fault(code, message, hint string) *enginecalls.OpError {
 }
 
 func (d *Engine) Hello() engine.Hello {
-	return engine.Hello{Version: d.o.Version, PID: d.o.PID, StartedAt: d.started, Executable: d.o.Executable}
+	return engine.Hello{Version: d.o.Version, Page: d.o.Page, PID: d.o.PID, StartedAt: d.started, Executable: d.o.Executable}
 }
 
 func (d *Engine) VMs() []engine.VMView { return d.vmViews() }

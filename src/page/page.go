@@ -4,6 +4,8 @@ import "strings"
 
 const Schema = "station.page/v1"
 
+const Revision = 4
+
 type Page struct {
 	ID       ID        `json:"id,omitempty"`
 	Command  string    `json:"command,omitempty"`
