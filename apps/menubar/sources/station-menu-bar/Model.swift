@@ -223,6 +223,7 @@ final class Model: ObservableObject {
         state.settling = nil
         state.status = nil
         state.sent = answers
+        state.stopping = action.id == StopAll.id ? StopAll.vms(state.page) : []
         let on = navigation.watched
         if action.run?.terminal == true { closePanel() }
         let socket = self.socket

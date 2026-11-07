@@ -36,7 +36,7 @@ struct HomeContent: View {
             }
             if let machines = page.section("machines") {
                 SectionHeader(machines.title ?? "")
-                MachineTree(section: machines, kinds: false, only: nil, lit: litID, open: handlers.openMachine)
+                MachineTree(section: machines, kinds: false, only: nil, lit: litID, stopping: StopAll.stopping(state, page), open: handlers.openMachine)
             }
             tiles
             SheetFor(page: page, state: state, handlers: handlers)
@@ -252,7 +252,7 @@ struct HomeContent: View {
                 if state.running == a.id || (state.settling == a.id && Self.doing(a) != nil) {
                     HStack(spacing: Token.Tile.gap) {
                         PendingDot()
-                        SubText(Self.doing(a) ?? "\(a.label ?? "")\(Token.Glyph.ellipsis)")
+                        SubText(a.id == StopAll.id ? StopAll.progress(state.stopping, page) : Self.doing(a) ?? "\(a.label ?? "")\(Token.Glyph.ellipsis)")
                     }
                     .frame(minHeight: Token.Tile.row - 8)
                     .padding(.horizontal, 4)
@@ -268,6 +268,73 @@ struct HomeContent: View {
             }
         }
     }
+}
+
+// invariant: Stop everything says what it does while the engine does it:
+// each VM it stops says Stopping on its own line until the page says it
+// stopped, and the footer names the one it waits for and how far it is
+// (Stopping linux-1, 1 of 2), then the engine itself.
+public enum StopAll {
+    public static let id = "stop-all"
+
+    // value: the VMs Stop everything stops: This Mac's workspaces that
+    // run, as Home lists them when it is asked; a server is kept.
+    public static func vms(_ page: Page?) -> [String] {
+        guard let machines = page?.section("machines") else { return [] }
+        let mac = (machines.items ?? []).compactMap(\.group).first { $0.head?.label == Page.ThisMacWord }
+        return (mac?.items ?? []).flatMap { item -> [Row] in
+            if let g = item.group { return (g.items ?? []).compactMap(\.row) }
+            return item.row.map { [$0] } ?? []
+        }
+        .filter { $0.cells?.first?.text == workspace && !stopped($0) }
+        .compactMap(\.id)
+    }
+
+    static let workspace = "Workspace"
+
+    static func stopped(_ row: Row) -> Bool { row.reason == "stopped" || row.mark == .absent }
+
+    static func row(_ name: String, _ page: Page?) -> Row? {
+        func find(_ items: [Item]) -> Row? {
+            for item in items {
+                if let r = item.row, r.id == name { return r }
+                if let g = item.group {
+                    if let h = g.head, h.id == name { return h }
+                    if let r = find(g.items ?? []) { return r }
+                }
+            }
+            return nil
+        }
+        return find(page?.section("machines")?.items ?? [])
+    }
+
+    // value: the VMs still stopping while Stop everything runs: those it
+    // stops whose line does not say stopped yet.
+    public static func stopping(_ state: PopoverState, _ page: Page?) -> Set<String> {
+        guard state.running == id || state.settling == id else { return [] }
+        return Set(state.stopping.filter { name in row(name, page).map { !stopped($0) } ?? false })
+    }
+
+    public static func progress(_ names: [String], _ page: Page?) -> String {
+        let left = names.filter { name in row(name, page).map { !stopped($0) } ?? false }
+        guard !names.isEmpty else { return "Stopping everything\(Token.Glyph.ellipsis)" }
+        guard let next = left.first else { return "Stopping the engine\(Token.Glyph.ellipsis)" }
+        return "Stopping \(next)\(Token.Glyph.ellipsis) \(names.count - left.count + 1) of \(names.count)"
+    }
+
+    // value: a VM's line while it stops: Stopping in place of its state,
+    // its lifetime kept, its mark pending.
+    public static func shown(_ row: Row) -> Row {
+        var r = row
+        r.mark = .pending
+        let lifetime = row.cells?.dropFirst().first?.items?.first
+        var said = Value(kind: "list")
+        said.items = [lifetime, Value(kind: "text", text: stoppingWord)].compactMap { $0 }
+        r.cells = [row.cells?.first ?? Value(kind: "text", text: workspace), said]
+        return r
+    }
+
+    static let stoppingWord = "Stopping"
 }
 
 public enum HomeKeys {

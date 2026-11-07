@@ -166,6 +166,7 @@ struct MachineTree: View {
     let kinds: Bool
     let only: Set<String>?
     var lit: String? = nil
+    var stopping: Set<String> = []
     let open: (String) -> Void
 
     enum Line {
@@ -213,6 +214,8 @@ struct MachineTree: View {
         }
     }
 
+    func said(_ r: Row) -> Row { stopping.contains(r.id ?? "") ? StopAll.shown(r) : r }
+
     func shown(_ r: Row) -> Bool { only == nil || only!.contains(r.id ?? "") }
 
     func lines() -> [Line] {
@@ -237,10 +240,10 @@ struct MachineTree: View {
                 let rows = (g.items ?? []).compactMap(\.row).filter(shown)
                 if !rows.isEmpty {
                     if only == nil, let label = g.head?.label { out.append(.caption(label)) }
-                    out += rows.map { .row($0, nested: indent, symbol: Token.Symbol.machine($0.cells?.first?.text)) }
+                    out += rows.map { .row(said($0), nested: indent, symbol: Token.Symbol.machine($0.cells?.first?.text)) }
                 }
             } else if let row = item.row, shown(row) {
-                out.append(.row(row, nested: indent, symbol: Token.Symbol.machine(row.cells?.first?.text)))
+                out.append(.row(said(row), nested: indent, symbol: Token.Symbol.machine(row.cells?.first?.text)))
             }
         }
         return out

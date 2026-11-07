@@ -49,6 +49,9 @@ public struct PopoverState: Equatable, Sendable {
     // value: the answers of the call that runs or settles, so its page
     // shows what it asked at once (the port being shared).
     public var sent: [String: String] = [:]
+    // value: the VMs Stop everything stops, as Home listed them when it
+    // was asked: each says Stopping until its line says it stopped.
+    public var stopping: [String] = []
 
     public init(page: Page?, connection: Connection, running: String? = nil, confirming: String? = nil, status: Status? = nil, qr: String? = nil, pushed: Page? = nil, recent: [String] = []) {
         self.page = page

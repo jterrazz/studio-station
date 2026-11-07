@@ -29,6 +29,34 @@ final class TidyTests: XCTestCase {
         XCTAssertNil(BackKey.gesture(state))
     }
 
+    // invariant: during Stop everything each VM it stops says Stopping on
+    // its own line until the page says it stopped, and the footer names
+    // the one it waits for and how far it is, then the engine.
+    func testStopEverythingSaysEachVMStopping() throws {
+        let both = try Self.home(linux: "running", api: "running")
+        XCTAssertEqual(StopAll.vms(both), ["linux-1", "api"])
+        let names = StopAll.vms(both)
+        XCTAssertEqual(StopAll.progress(names, both), "Stopping linux-1\(Token.Glyph.ellipsis) 1 of 2")
+        let one = try Self.home(linux: "stopped", api: "running")
+        XCTAssertEqual(StopAll.progress(names, one), "Stopping api\(Token.Glyph.ellipsis) 2 of 2")
+        let none = try Self.home(linux: "stopped", api: "stopped")
+        XCTAssertEqual(StopAll.progress(names, none), "Stopping the engine\(Token.Glyph.ellipsis)")
+
+        var state = PopoverState(page: one, connection: .live)
+        state.stopping = names
+        XCTAssertEqual(StopAll.stopping(state, one), [])
+        state.running = StopAll.id
+        XCTAssertEqual(StopAll.stopping(state, one), ["api"])
+
+        let tree = MachineTree(section: try XCTUnwrap(one.section("machines")), kinds: false, only: nil, stopping: StopAll.stopping(state, one), open: { _ in })
+        let rows = HomeKeys.rows(tree.lines())
+        let api = try XCTUnwrap(rows.first { $0.id == "api" })
+        XCTAssertEqual(api.mark, .pending)
+        XCTAssertEqual(MachineRow(row: api, symbol: "", kinds: false, open: { _ in }).words, "Permanent\(Token.Glyph.sep)Stopping")
+        let linux = try XCTUnwrap(rows.first { $0.id == "linux-1" })
+        XCTAssertEqual(linux.mark, .absent)
+    }
+
     // invariant: a section header upper-cases its words, never a value:
     // an age, a figure and its unit keep the case they are said in.
     func testASectionHeaderKeepsTheCaseOfItsValues() {
