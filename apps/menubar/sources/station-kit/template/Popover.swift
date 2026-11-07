@@ -287,21 +287,58 @@ extension Page {
 }
 
 // invariant: Escape goes back a level while a page is pushed and no sheet
-// is open (a sheet's Cancel takes it then); on Home it closes the panel,
-// as macOS does.
+// is open (a sheet's Cancel takes it then): a machine's page opened from
+// Home goes back to Home; on Home it closes the panel, as macOS does.
+// Each gesture is its own key, so the one drawn is never the one the
+// page before it held.
 struct BackKey: View {
     let state: PopoverState
     let handlers: PopoverHandlers
     @Environment(\.stationStill) private var still
 
+    enum Gesture: Equatable { case close, back }
+
+    static func gesture(_ state: PopoverState) -> Gesture? {
+        guard state.confirming == nil else { return nil }
+        return state.pushed == nil ? .close : .back
+    }
+
     var body: some View {
-        if state.confirming == nil, !still {
-            Button("") { state.pushed == nil ? handlers.close() : handlers.back() }
-                .keyboardShortcut(.escape, modifiers: [])
-                .opacity(0)
-                .allowsHitTesting(false)
-                .accessibilityHidden(true)
+        if !still {
+            switch Self.gesture(state) {
+            case .close: key(handlers.close).id(Gesture.close)
+            case .back: key(handlers.back).id(Gesture.back)
+            case nil: EmptyView()
+            }
         }
+    }
+
+    func key(_ act: @escaping () -> Void) -> some View {
+        Button("", action: act)
+            .keyboardShortcut(.escape, modifiers: [])
+            .opacity(0)
+            .allowsHitTesting(false)
+            .accessibilityHidden(true)
+    }
+}
+
+// invariant: a pushed page with no field to type in holds the keys
+// itself, so Escape reaches its way back before the panel's own close.
+struct EscapeKey: View {
+    let back: () -> Void
+    @FocusState private var focused: Bool
+
+    var body: some View {
+        Color.clear.frame(width: 1, height: 1)
+            .focusable()
+            .focusEffectDisabled()
+            .focused($focused)
+            .onKeyPress(.escape) {
+                back()
+                return .handled
+            }
+            .onAppear { DispatchQueue.main.async { focused = true } }
+            .accessibilityHidden(true)
     }
 }
 

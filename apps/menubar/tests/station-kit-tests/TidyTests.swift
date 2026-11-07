@@ -14,6 +14,21 @@ final class TidyTests: XCTestCase {
         return try Page.decode(Data(json.utf8))
     }
 
+    // invariant: Escape on a machine's page opened from Home (it says
+    // All machines) goes back to Home, never closes the panel; on Home it
+    // closes it; a sheet open takes it.
+    func testEscapeOnAMachinePageOpenedFromHomeGoesBackToHome() throws {
+        let home = try Self.home(linux: "running", api: "stopped")
+        let linux = try Page.decode(Data(#"{"schema":"station.page/v1","id":"menubar.machine","context":{"machine":"linux-1","kind":"workspace"},"sections":[{"id":"machine","title":"linux-1"}]}"#.utf8))
+        var state = PopoverState(page: home, connection: .live)
+        XCTAssertEqual(BackKey.gesture(state), .close)
+        state.pushed = linux
+        XCTAssertNil(state.back)
+        XCTAssertEqual(BackKey.gesture(state), .back)
+        state.confirming = "stop"
+        XCTAssertNil(BackKey.gesture(state))
+    }
+
     // invariant: a section header upper-cases its words, never a value:
     // an age, a figure and its unit keep the case they are said in.
     func testASectionHeaderKeepsTheCaseOfItsValues() {

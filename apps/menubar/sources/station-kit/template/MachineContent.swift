@@ -51,6 +51,9 @@ struct MachineContent: View {
                 buttons
             }
         }
+        .background {
+            if !still, BackKey.gesture(state) == .back { EscapeKey(back: handlers.back) }
+        }
     }
 
     // value: the machine stops, or is stopped: its tiles say no figure.
