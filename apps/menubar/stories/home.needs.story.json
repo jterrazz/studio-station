@@ -1,0 +1,8 @@
+{
+    "group": "home",
+    "id": "home.needs",
+    "note": "The daily home: what needs you, then the machines.",
+    "pages": ["pages/machines.menubar.json"],
+    "schema": "station.story/v1",
+    "status": "today"
+}

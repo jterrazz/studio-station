@@ -1,0 +1,11 @@
+{
+    "group": "shell",
+    "id": "menubar.down",
+    "note": "The status item while infra is down: the red need.",
+    "pages": ["pages/machines.down.menubar.json"],
+    "schema": "station.story/v1",
+    "status": "today",
+    "ui": {
+        "statusItem": true
+    }
+}

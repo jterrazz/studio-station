@@ -1,0 +1,8 @@
+{
+    "group": "find",
+    "id": "find.empty",
+    "note": "Find opened: today's switcher.",
+    "pages": ["pages/machines.switcher.json"],
+    "schema": "station.story/v1",
+    "status": "today"
+}

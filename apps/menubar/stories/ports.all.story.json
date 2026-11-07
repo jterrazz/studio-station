@@ -1,0 +1,8 @@
+{
+    "group": "ports",
+    "id": "ports.all",
+    "note": "Ports on all machines.",
+    "pages": ["pages/machines.ports.json"],
+    "schema": "station.story/v1",
+    "status": "today"
+}

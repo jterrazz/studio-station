@@ -1,0 +1,8 @@
+{
+    "group": "server",
+    "id": "server.healthy",
+    "note": "infra healthy, up 12 days.",
+    "pages": ["pages/machines.machine.infra.json"],
+    "schema": "station.story/v1",
+    "status": "today"
+}

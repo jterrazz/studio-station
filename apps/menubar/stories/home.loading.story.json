@@ -1,0 +1,8 @@
+{
+    "group": "home",
+    "id": "home.loading",
+    "note": "Home while mac-mini has not answered yet.",
+    "pages": ["pages/machines.loading.menubar.json"],
+    "schema": "station.story/v1",
+    "status": "today"
+}

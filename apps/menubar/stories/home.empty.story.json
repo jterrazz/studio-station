@@ -1,0 +1,8 @@
+{
+    "group": "home",
+    "id": "home.empty",
+    "note": "First run: This Mac alone, no VM.",
+    "pages": ["pages/machines.empty.menubar.json"],
+    "schema": "station.story/v1",
+    "status": "today"
+}

@@ -1,0 +1,8 @@
+{
+    "group": "mac",
+    "id": "mac.this.activity",
+    "note": "This Mac's activity.",
+    "pages": ["pages/machines.activity.json"],
+    "schema": "station.story/v1",
+    "status": "today"
+}

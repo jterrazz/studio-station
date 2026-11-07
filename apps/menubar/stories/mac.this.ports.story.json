@@ -1,0 +1,8 @@
+{
+    "group": "mac",
+    "id": "mac.this.ports",
+    "note": "The ports of This Mac and its VMs.",
+    "pages": ["pages/machines.ports.macbook-pro.json"],
+    "schema": "station.story/v1",
+    "status": "today"
+}

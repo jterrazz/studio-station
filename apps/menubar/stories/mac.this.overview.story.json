@@ -1,0 +1,8 @@
+{
+    "group": "mac",
+    "id": "mac.this.overview",
+    "note": "This Mac's page.",
+    "pages": ["pages/machines.machine.macbook-pro.json"],
+    "schema": "station.story/v1",
+    "status": "today"
+}

@@ -1,0 +1,8 @@
+{
+    "group": "server",
+    "id": "server.down",
+    "note": "infra down: out of memory, in a restart loop.",
+    "pages": ["pages/machines.down.machine.infra.json"],
+    "schema": "station.story/v1",
+    "status": "today"
+}
