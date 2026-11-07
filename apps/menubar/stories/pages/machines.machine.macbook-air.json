@@ -1,0 +1,99 @@
+{
+  "schema": "station.page/v1",
+  "id": "menubar.machine",
+  "command": "menubar",
+  "context": {
+    "machine": "macbook-air",
+    "kind": "mac"
+  },
+  "state": "ready",
+  "sections": [
+    {
+      "id": "machine",
+      "title": "macbook-air",
+      "role": "summary",
+      "caption": [
+        {
+          "kind": "text",
+          "text": "Mac"
+        },
+        {
+          "kind": "text",
+          "text": "macbook-air"
+        }
+      ],
+      "columns": [
+        {
+          "key": "name",
+          "kind": "text",
+          "keep": 100
+        },
+        {
+          "key": "value",
+          "kind": "list",
+          "keep": 60
+        }
+      ],
+      "items": [
+        {
+          "row": {
+            "id": "state",
+            "mark": "broken",
+            "label": "State",
+            "cells": [
+              {
+                "kind": "text",
+                "text": "Unreachable"
+              }
+            ],
+            "reason": "unreachable"
+          }
+        }
+      ]
+    },
+    {
+      "id": "vms",
+      "title": "VMs",
+      "columns": [
+        {
+          "key": "name",
+          "kind": "text",
+          "keep": 100
+        },
+        {
+          "key": "kind",
+          "kind": "text",
+          "keep": 40
+        },
+        {
+          "key": "detail",
+          "kind": "list",
+          "keep": 80
+        }
+      ],
+      "items": [
+        {
+          "empty": {
+            "noun": "VMs"
+          }
+        }
+      ]
+    }
+  ],
+  "actions": [
+    {
+      "key": "cmd+t",
+      "label": "Open in Terminal",
+      "on": "page",
+      "priority": 2,
+      "id": "open-station",
+      "run": {
+        "terminal": true,
+        "argv": [
+          "--on",
+          "macbook-air"
+        ]
+      }
+    }
+  ]
+}

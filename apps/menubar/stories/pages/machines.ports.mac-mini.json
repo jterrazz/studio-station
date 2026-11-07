@@ -1,0 +1,438 @@
+{
+  "schema": "station.page/v1",
+  "id": "menubar.ports",
+  "command": "ports",
+  "context": {
+    "machine": "macbook-pro",
+    "kind": "mac"
+  },
+  "state": "ready",
+  "sections": [
+    {
+      "id": "summary",
+      "title": "Summary",
+      "role": "summary",
+      "fold": "open",
+      "columns": [
+        {
+          "key": "area",
+          "kind": "text",
+          "keep": 100
+        },
+        {
+          "key": "value",
+          "kind": "list",
+          "keep": 60
+        }
+      ],
+      "items": [
+        {
+          "row": {
+            "id": "summary/ports",
+            "mark": "ok",
+            "label": "mac-mini",
+            "cells": [
+              {
+                "kind": "list",
+                "items": [
+                  {
+                    "kind": "text",
+                    "text": "6 ports"
+                  },
+                  {
+                    "kind": "text",
+                    "text": "nothing needs you"
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "uncounted": true
+    },
+    {
+      "id": "public",
+      "title": "Public: reachable from anywhere else, internet or LAN, declared",
+      "columns": [
+        {
+          "key": "machine",
+          "kind": "text",
+          "keep": 100
+        },
+        {
+          "key": "port",
+          "label": "port",
+          "kind": "port",
+          "keep": 90
+        },
+        {
+          "key": "class",
+          "label": "class",
+          "kind": "text",
+          "keep": 85
+        },
+        {
+          "key": "what",
+          "label": "what",
+          "kind": "text",
+          "keep": 60
+        },
+        {
+          "key": "listens",
+          "label": "listens on",
+          "kind": "text",
+          "keep": 50
+        },
+        {
+          "key": "declared",
+          "label": "declared",
+          "kind": "text",
+          "keep": 70
+        }
+      ],
+      "items": [
+        {
+          "row": {
+            "id": "infra:443",
+            "mark": "ok",
+            "label": "infra",
+            "cells": [
+              {
+                "kind": "port",
+                "n": 443
+              },
+              {
+                "kind": "text",
+                "text": "public"
+              },
+              {
+                "kind": "text",
+                "text": "nginx"
+              },
+              {
+                "kind": "list",
+                "items": [
+                  {
+                    "kind": "text",
+                    "text": "*:443 all interfaces"
+                  }
+                ]
+              },
+              {
+                "kind": "list",
+                "items": [
+                  {
+                    "kind": "text",
+                    "text": "Cloudflare Tunnel"
+                  },
+                  {
+                    "kind": "text",
+                    "text": "tunnel seen"
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "counts": [
+        {
+          "mark": "ok",
+          "n": 1
+        }
+      ],
+      "pipe_counts": true
+    },
+    {
+      "id": "private",
+      "title": "Private: shared with you on Tailscale",
+      "columns": [
+        {
+          "key": "vm",
+          "kind": "text",
+          "keep": 100
+        },
+        {
+          "key": "port",
+          "label": "port",
+          "kind": "portmap",
+          "keep": 80
+        },
+        {
+          "key": "class",
+          "label": "class",
+          "kind": "text",
+          "keep": 85
+        },
+        {
+          "key": "url",
+          "label": "url",
+          "kind": "url",
+          "keep": 40
+        },
+        {
+          "key": "state",
+          "label": "state",
+          "kind": "text",
+          "keep": 70
+        },
+        {
+          "key": "process",
+          "label": "process",
+          "kind": "text",
+          "keep": 20,
+          "whole": true
+        }
+      ],
+      "items": [
+        {
+          "row": {
+            "id": "linux-3:8080",
+            "mark": "ok",
+            "label": "linux-3",
+            "cells": [
+              {
+                "kind": "portmap",
+                "n": 8080,
+                "of": 40001
+              },
+              {
+                "kind": "text",
+                "text": "private"
+              },
+              {
+                "kind": "url",
+                "text": "https://mac-mini.tail77a797.ts.net:40001"
+              },
+              {
+                "kind": "text",
+                "text": "shared"
+              },
+              {
+                "kind": "text",
+                "text": "python3"
+              }
+            ],
+            "detail": {
+              "kind": "none"
+            }
+          }
+        },
+        {
+          "row": {
+            "id": "infra:6443",
+            "mark": "ok",
+            "label": "infra",
+            "cells": [
+              {
+                "kind": "port",
+                "n": 6443
+              },
+              {
+                "kind": "text",
+                "text": "private"
+              },
+              {
+                "kind": "none"
+              },
+              {
+                "kind": "text",
+                "text": "own Tailscale device: infra"
+              },
+              {
+                "kind": "text",
+                "text": "Kubernetes API"
+              }
+            ]
+          }
+        },
+        {
+          "row": {
+            "id": "linux-3:5432",
+            "mark": "ok",
+            "label": "linux-3",
+            "cells": [
+              {
+                "kind": "port",
+                "n": 5432
+              },
+              {
+                "kind": "text",
+                "text": "private"
+              },
+              {
+                "kind": "none"
+              },
+              {
+                "kind": "text",
+                "text": "behind mac-mini, not shared"
+              },
+              {
+                "kind": "text",
+                "text": "postgres"
+              }
+            ]
+          }
+        },
+        {
+          "row": {
+            "id": "review-bot:8000",
+            "mark": "ok",
+            "label": "review-bot",
+            "cells": [
+              {
+                "kind": "port",
+                "n": 8000
+              },
+              {
+                "kind": "text",
+                "text": "private"
+              },
+              {
+                "kind": "none"
+              },
+              {
+                "kind": "text",
+                "text": "behind mac-mini, not shared"
+              },
+              {
+                "kind": "text",
+                "text": "uvicorn"
+              }
+            ]
+          }
+        },
+        {
+          "row": {
+            "id": "mac-mini:5900",
+            "mark": "ok",
+            "label": "mac-mini",
+            "cells": [
+              {
+                "kind": "port",
+                "n": 5900
+              },
+              {
+                "kind": "text",
+                "text": "private"
+              },
+              {
+                "kind": "none"
+              },
+              {
+                "kind": "text",
+                "text": "on Tailscale"
+              },
+              {
+                "kind": "text",
+                "text": "Screen Sharing"
+              }
+            ]
+          }
+        }
+      ],
+      "counts": [
+        {
+          "mark": "ok",
+          "n": 5
+        }
+      ],
+      "pipe_counts": true
+    }
+  ],
+  "actions": [
+    {
+      "label": "Declare public",
+      "on": "page",
+      "priority": 2,
+      "mutates": true,
+      "id": "declare-public",
+      "run": {
+        "call": "ports.declare"
+      },
+      "form": {
+        "title": "Declare a port public",
+        "fields": [
+          {
+            "key": "Port",
+            "label": "Port",
+            "kind": "select",
+            "options": [
+              {
+                "value": "Machine=\"infra\" Port=\"6443\"",
+                "label": "infra:6443"
+              },
+              {
+                "value": "Machine=\"linux-3\" Port=\"5432\"",
+                "label": "linux-3:5432"
+              },
+              {
+                "value": "Machine=\"review-bot\" Port=\"8000\"",
+                "label": "review-bot:8000"
+              },
+              {
+                "value": "Machine=\"mac-mini\" Port=\"5900\"",
+                "label": "mac-mini:5900"
+              }
+            ],
+            "default": "Machine=\"infra\" Port=\"6443\"",
+            "required": true
+          },
+          {
+            "key": "Via",
+            "label": "Via",
+            "kind": "select",
+            "options": [
+              {
+                "value": "cloudflare-tunnel",
+                "label": "Cloudflare Tunnel"
+              },
+              {
+                "value": "tailscale-funnel",
+                "label": "Tailscale Funnel"
+              },
+              {
+                "value": "lan",
+                "label": "your LAN"
+              }
+            ],
+            "default": "cloudflare-tunnel",
+            "required": true
+          }
+        ]
+      }
+    },
+    {
+      "label": "Stop sharing",
+      "on": "row",
+      "rows": [
+        "linux-3:8080"
+      ],
+      "confirm": {
+        "question": "Stop sharing linux-3's port 8080?",
+        "lines": [
+          {
+            "kind": "text",
+            "text": "Its link stops working on Tailscale, and reserved port 40001 is let go."
+          }
+        ],
+        "danger": true,
+        "yes": "Stop sharing",
+        "no": "Cancel"
+      },
+      "priority": 3,
+      "mutates": true,
+      "id": "stop-sharing:linux-3:8080",
+      "run": {
+        "call": "ports.stop-sharing",
+        "in": {
+          "Confirm": "yes",
+          "Mac": "\"mac-mini\"",
+          "Port": "\"8080\"",
+          "VM": "\"linux-3\""
+        }
+      }
+    }
+  ]
+}

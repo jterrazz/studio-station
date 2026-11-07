@@ -1,0 +1,410 @@
+{
+  "schema": "station.page/v1",
+  "id": "menubar.awake",
+  "command": "awake",
+  "context": {
+    "machine": "macbook-pro",
+    "kind": "mac"
+  },
+  "state": "ready",
+  "sections": [
+    {
+      "id": "this-mac",
+      "title": "This Mac",
+      "columns": [
+        {
+          "key": "name",
+          "kind": "text",
+          "keep": 100
+        },
+        {
+          "key": "mode",
+          "kind": "text",
+          "keep": 100
+        }
+      ],
+      "items": [
+        {
+          "row": {
+            "id": "macbook-pro",
+            "mark": "ok",
+            "label": "macbook-pro",
+            "short": "This Mac",
+            "cells": [
+              {
+                "kind": "list",
+                "items": [
+                  {
+                    "kind": "text",
+                    "text": "until 18:00"
+                  },
+                  {
+                    "kind": "text",
+                    "text": "lid closed"
+                  },
+                  {
+                    "kind": "text",
+                    "text": "7h 30m left"
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "uncounted": true
+    },
+    {
+      "id": "guards",
+      "title": "Guards",
+      "columns": [
+        {
+          "key": "name",
+          "kind": "text",
+          "keep": 100
+        },
+        {
+          "key": "mode",
+          "kind": "text",
+          "keep": 100
+        }
+      ],
+      "items": [
+        {
+          "fact": {
+            "key": "Temperature",
+            "value": {
+              "kind": "text",
+              "text": "normal"
+            }
+          }
+        },
+        {
+          "fact": {
+            "key": "Battery",
+            "value": {
+              "kind": "text",
+              "text": "80 %"
+            }
+          }
+        },
+        {
+          "fact": {
+            "key": "The screen",
+            "value": {
+              "kind": "list",
+              "items": [
+                {
+                  "kind": "text",
+                  "text": "always turns off"
+                },
+                {
+                  "kind": "text",
+                  "text": "protects the display"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "note": {
+            "text": "Awake stops by itself if the Mac gets too hot."
+          }
+        }
+      ],
+      "uncounted": true
+    },
+    {
+      "id": "other-macs",
+      "title": "Other Macs",
+      "columns": [
+        {
+          "key": "name",
+          "kind": "text",
+          "keep": 100
+        },
+        {
+          "key": "mode",
+          "kind": "text",
+          "keep": 100
+        }
+      ],
+      "items": [
+        {
+          "row": {
+            "id": "mac-mini",
+            "mark": "ok",
+            "label": "mac-mini",
+            "short": "mac-mini",
+            "cells": [
+              {
+                "kind": "list",
+                "items": [
+                  {
+                    "kind": "text",
+                    "text": "Never sleeps"
+                  },
+                  {
+                    "kind": "text",
+                    "text": "always-on Mac policy"
+                  }
+                ]
+              }
+            ],
+            "detail": {
+              "kind": "list",
+              "items": [
+                {
+                  "kind": "text",
+                  "text": "last slept: never in 21d"
+                },
+                {
+                  "kind": "text",
+                  "text": "hosts infra (server)"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "row": {
+            "id": "macbook-air",
+            "mark": "absent",
+            "label": "macbook-air",
+            "short": "air",
+            "cells": [
+              {
+                "kind": "text",
+                "text": "Sleeps normally"
+              }
+            ]
+          }
+        },
+        {
+          "note": {
+            "text": "VMs are not listed: they follow their Mac."
+          }
+        }
+      ],
+      "uncounted": true
+    }
+  ],
+  "actions": [
+    {
+      "label": "1 h",
+      "on": "row",
+      "rows": [
+        "macbook-pro"
+      ],
+      "priority": 1,
+      "mutates": true,
+      "id": "keep:1h",
+      "run": {
+        "call": "awake.keep",
+        "in": {
+          "Battery": "false",
+          "By": "the menu bar",
+          "For": "3600000000000",
+          "Lid": "true"
+        }
+      }
+    },
+    {
+      "label": "4 h",
+      "on": "row",
+      "rows": [
+        "macbook-pro"
+      ],
+      "priority": 1,
+      "mutates": true,
+      "id": "keep:4h",
+      "run": {
+        "call": "awake.keep",
+        "in": {
+          "Battery": "false",
+          "By": "the menu bar",
+          "For": "14400000000000",
+          "Lid": "true"
+        }
+      }
+    },
+    {
+      "label": "Until 18:00",
+      "on": "row",
+      "rows": [
+        "macbook-pro"
+      ],
+      "priority": 1,
+      "mutates": true,
+      "id": "keep-until",
+      "run": {
+        "call": "awake.keep",
+        "in": {
+          "Battery": "false",
+          "By": "the menu bar",
+          "Lid": "true"
+        }
+      },
+      "form": {
+        "title": "Keep awake until",
+        "fields": [
+          {
+            "key": "Until",
+            "label": "Until",
+            "kind": "select",
+            "options": [
+              {
+                "value": "\"2026-11-07T11:00:00Z\"",
+                "label": "11:00"
+              },
+              {
+                "value": "\"2026-11-07T12:00:00Z\"",
+                "label": "12:00"
+              },
+              {
+                "value": "\"2026-11-07T13:00:00Z\"",
+                "label": "13:00"
+              },
+              {
+                "value": "\"2026-11-07T14:00:00Z\"",
+                "label": "14:00"
+              },
+              {
+                "value": "\"2026-11-07T15:00:00Z\"",
+                "label": "15:00"
+              },
+              {
+                "value": "\"2026-11-07T16:00:00Z\"",
+                "label": "16:00"
+              },
+              {
+                "value": "\"2026-11-07T17:00:00Z\"",
+                "label": "17:00"
+              },
+              {
+                "value": "\"2026-11-07T18:00:00Z\"",
+                "label": "18:00"
+              }
+            ],
+            "default": "\"2026-11-07T15:00:00Z\""
+          }
+        ]
+      },
+      "picked": true
+    },
+    {
+      "label": "Lid closed",
+      "on": "row",
+      "rows": [
+        "macbook-pro"
+      ],
+      "priority": 2,
+      "mutates": true,
+      "id": "lid",
+      "run": {
+        "call": "awake.keep",
+        "in": {
+          "Battery": "false",
+          "By": "the menu bar",
+          "Lid": "false",
+          "Until": "\"2026-11-07T18:00:00Z\""
+        }
+      }
+    },
+    {
+      "label": "On battery",
+      "on": "row",
+      "rows": [
+        "macbook-pro"
+      ],
+      "priority": 2,
+      "mutates": true,
+      "id": "battery",
+      "run": {
+        "call": "awake.keep",
+        "in": {
+          "Battery": "true",
+          "By": "the menu bar",
+          "Lid": "true",
+          "Until": "\"2026-11-07T18:00:00Z\""
+        }
+      }
+    },
+    {
+      "label": "Let it sleep",
+      "on": "row",
+      "rows": [
+        "macbook-pro"
+      ],
+      "priority": 3,
+      "mutates": true,
+      "id": "let-sleep",
+      "run": {
+        "call": "awake.off"
+      }
+    },
+    {
+      "label": "Change",
+      "on": "row",
+      "rows": [
+        "mac-mini"
+      ],
+      "confirm": {
+        "question": "Let mac-mini sleep again?",
+        "lines": [
+          {
+            "kind": "text",
+            "text": "It hosts infra (server): infra pauses while mac-mini sleeps."
+          }
+        ],
+        "danger": true,
+        "yes": "Allow sleep",
+        "no": "Keep it awake"
+      },
+      "priority": 2,
+      "mutates": true,
+      "id": "change:mac-mini",
+      "run": {
+        "call": "settings.off",
+        "in": {
+          "Confirm": "yes",
+          "Names": "[\"never-sleeps\"]"
+        },
+        "target": {
+          "name": "mac-mini"
+        }
+      }
+    },
+    {
+      "label": "Change",
+      "on": "row",
+      "rows": [
+        "macbook-air"
+      ],
+      "confirm": {
+        "question": "Keep air awake for good?",
+        "lines": [
+          {
+            "kind": "text",
+            "text": "Never sleeps: the always-on Mac policy, until you change it again."
+          }
+        ],
+        "yes": "Never sleep",
+        "no": "Cancel"
+      },
+      "priority": 2,
+      "mutates": true,
+      "id": "change:macbook-air",
+      "run": {
+        "call": "settings.apply",
+        "in": {
+          "Confirm": "yes",
+          "Names": "[\"never-sleeps\"]"
+        },
+        "target": {
+          "name": "macbook-air"
+        }
+      }
+    }
+  ]
+}

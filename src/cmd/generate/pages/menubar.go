@@ -28,13 +28,17 @@ func samples() []activity.Reading {
 // value: 16 readings 2 s apart of a machine with this memory and disk,
 // its CPU climbing and falling as vision 07's sparkline draws it.
 func readings(memory, disk, free int64) []activity.Reading {
+	return readingsAt(keepAwakeNow, memory, disk, free)
+}
+
+func readingsAt(now time.Time, memory, disk, free int64) []activity.Reading {
 	cpu := []float64{12, 18, 25, 34, 30, 22, 41, 55, 48, 36, 28, 31, 44, 38, 29, 34}
 	top := activity.Busiest{
 		CPU:    []activity.Process{{PID: 812, Name: "station", Value: cpu[len(cpu)-1]}},
 		Memory: []activity.Process{{PID: 812, Name: catalog.HypervisorApp, Value: 12.4e9}},
 	}
 	used := memory * 31 / 40
-	at := func(i int) time.Time { return keepAwakeNow.Add(time.Duration(i-len(cpu)) * 2 * time.Second) }
+	at := func(i int) time.Time { return now.Add(time.Duration(i-len(cpu)) * 2 * time.Second) }
 	out := make([]activity.Reading, 0, len(cpu)+1)
 	out = append(out, activity.Reading{Sample: activity.Sample{At: at(0), CPUTotal: 1000, MemUsed: used, MemTotal: memory, DiskTotal: disk, DiskFree: free}, Top: top})
 	for i, c := range cpu {

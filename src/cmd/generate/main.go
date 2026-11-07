@@ -30,6 +30,7 @@ func main() {
 	fixtures := flag.String("pages", pagesDir, "the folder the page fixtures are written to")
 	stream := flag.String("stream", streamPath, "the recorded menubar stream, rewritten whole")
 	catalogue := flag.String("calls", callsPath, "calls.json, the registry's catalogue, rewritten whole")
+	stories := flag.String("stories", storiesDir, "the folder the story worlds' pages are written to")
 	flag.Parse()
 	current, err := os.ReadFile(*path)
 	if err != nil {
@@ -50,6 +51,9 @@ func main() {
 			panic(err)
 		}
 	}
+	if err := rewrite(*stories, storyPages()); err != nil {
+		panic(err)
+	}
 	if err := os.MkdirAll(filepath.Dir(*stream), 0o750); err != nil {
 		panic(err)
 	}
@@ -62,6 +66,18 @@ func main() {
 	if err := os.WriteFile(*catalogue, calls(), 0o600); err != nil {
 		panic(err)
 	}
+}
+
+func rewrite(dir string, files map[string][]byte) error {
+	if err := os.MkdirAll(dir, 0o750); err != nil {
+		return err
+	}
+	for name, body := range files {
+		if err := os.WriteFile(filepath.Join(dir, name), body, 0o600); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func render(source string) (string, error) {

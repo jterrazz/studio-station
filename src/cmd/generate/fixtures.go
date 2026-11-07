@@ -12,6 +12,7 @@ const (
 	pagesDir   = "src/ui/testdata/pages"
 	streamPath = "src/ui/testdata/stream/menubar.jsonl"
 	eventsPath = "src/ui/testdata/stream/events.jsonl"
+	storiesDir = "apps/menubar/stories/pages"
 )
 
 // invariant: a fixture is written only after the page passes Seal's checks, so
@@ -20,6 +21,18 @@ func pageFixtures() map[string][]byte {
 	pages.Levels = levels
 	out := map[string][]byte{}
 	for _, f := range pages.All() {
+		if err := page.Check(f.Page); err != nil {
+			panic(f.Name + ": " + err.Error())
+		}
+		out[f.Name+".json"] = pagejson.Render(f.Page)
+	}
+	return out
+}
+
+func storyPages() map[string][]byte {
+	pages.Levels = levels
+	out := map[string][]byte{}
+	for _, f := range pages.StoryPages() {
 		if err := page.Check(f.Page); err != nil {
 			panic(f.Name + ": " + err.Error())
 		}
