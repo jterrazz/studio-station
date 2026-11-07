@@ -7,6 +7,7 @@ import (
 
 	"github.com/jterrazz/studio-station/src/accounts"
 	"github.com/jterrazz/studio-station/src/activity"
+	"github.com/jterrazz/studio-station/src/agents"
 	"github.com/jterrazz/studio-station/src/awake"
 	"github.com/jterrazz/studio-station/src/background"
 	"github.com/jterrazz/studio-station/src/catalog"
@@ -269,6 +270,21 @@ type VM struct {
 	// value: the containers run inside the VM, each with the ports
 	// it publishes.
 	Containers []Container `json:"containers,omitempty"`
+	// value: the coding agents inside the VM, what their hooks wrote.
+	Agents *Agents `json:"agents,omitempty"`
+}
+
+type Agents struct {
+	// value: the journal the hooks write, by session.
+	Journal map[string]agents.Agent `json:"journal,omitempty"`
+}
+
+func (v *VM) Agentic() *Agents {
+	// invariant: the agents of a VM, made empty the first time they are asked.
+	if v.Agents == nil {
+		v.Agents = &Agents{}
+	}
+	return v.Agents
 }
 
 type Container struct {
