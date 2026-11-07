@@ -37,6 +37,7 @@ func TestCheckRefusesWhatThePanelCannotDraw(t *testing.T) {
 		"its verb \"stop\" is no action":               panel(page.Page{Sections: []page.Section{panelSection(marked(page.Row{Verb: "stop"}))}}),
 		"its quick slot \"stop\" is no action":         panel(page.Page{Sections: []page.Section{panelSection(marked(page.Row{Quick: "stop"}))}}),
 		"its menu's \"stop\" is no action":             panel(page.Page{Sections: []page.Section{panelSection(marked(page.Row{Menu: []string{"copy", "-", "stop"}}))}}),
+		"row g: its verb \"stop\" is no action":        panel(page.Page{Sections: []page.Section{panelSection(page.Item{Group: &page.Group{Head: page.Row{ID: "g", Mark: page.OK, Verb: "stop"}, Items: []page.Item{marked(page.Row{})}}})}}),
 		"its trail \"cpu\" is no column":               panel(page.Page{Sections: []page.Section{panelSection(marked(page.Row{Trail: "cpu"}))}}),
 		"live key \"cpu:infra\" is no live key":        panel(page.Page{Sections: []page.Section{panelSection(marked(page.Row{Cells: []page.Value{{Kind: page.KindPercent, Live: "cpu:infra"}}}))}}),
 		"ring \"cpu:mac-mini\" is no live key":         panel(page.Page{Header: &page.Header{Glyph: page.Glyph{Kind: "desktop", Ring: "cpu:mac-mini"}}}),
@@ -61,6 +62,10 @@ func TestCheckRefusesWhatThePanelCannotDraw(t *testing.T) {
 	}
 	if err := page.Check(panel(page.Page{Actions: []page.Action{{ID: "why", Sheet: page.SheetHint + "full-disk-access"}}})); err != nil {
 		t.Errorf("a hint sheet shows its hint and asks nothing, yet Check refused it: %v", err)
+	}
+	picked := page.Section{ID: "w", Title: "Window", Picker: []page.Action{{ID: "window-6m", Label: "6 min", Run: &page.Run{Call: "activity.window"}}}}
+	if err := page.Check(panel(page.Page{Sections: []page.Section{picked, panelSection(marked(page.Row{Quick: "window-6m"}))}})); err != nil {
+		t.Errorf("a row may name a section picker's action, yet Check refused it: %v", err)
 	}
 }
 
