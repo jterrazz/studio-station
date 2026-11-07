@@ -76,14 +76,15 @@ public struct TypedField: View {
 }
 
 // value: where a sheet sits: under a divider, in the flow of the page,
-// never a card of its own.
+// never a card of its own; scrolled into sight, it keeps the panel's
+// margin under its buttons.
 struct SheetGround: ViewModifier {
     func body(content: Content) -> some View {
         VStack(alignment: .leading, spacing: 10) {
             SectionDivider()
             content
         }
-        .id(PanelScroll.sheetID)
+        .background { Color.clear.id(PanelScroll.sheetID).padding(.bottom, -Token.Space.margin) }
     }
 }
 

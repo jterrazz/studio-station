@@ -220,7 +220,7 @@ public struct Popover: View {
             }
         }
         .padding(Token.Space.margin)
-        .frame(width: Token.Space.width, alignment: .topLeading)
+        .stationWidth(scrolls)
         .stationScroll(scrolls, key: "\(state.openings)/\(state.shown?.id ?? "")/\(state.shown?.context?.machine ?? "")", sheet: state.confirming, status: state.status != nil || state.connection == .connecting)
         .stationStatus { statusLine }
         .background { BackKey(state: state, handlers: handlers) }
