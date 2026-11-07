@@ -770,6 +770,7 @@ struct PanelScroll: ViewModifier {
     var reserve: CGFloat = 0
     static let sheetID = "station.sheet"
     @Environment(\.stationStill) private var still
+    @Environment(\.stationPanelWidth) private var width
     @State private var height: CGFloat = 0
     @State private var offset: CGFloat = 0
     @State private var position = ScrollPosition(edge: .top)
@@ -830,7 +831,7 @@ struct PanelScroll: ViewModifier {
             }
             .scrollBounceBehavior(.basedOnSize)
             .scrollIndicators(scrolled ? .automatic : .never)
-            .frame(width: Token.Space.width + scroller, height: height > 0 ? min(height, Self.room - reserve) : nil)
+            .frame(width: width + scroller, height: height > 0 ? min(height, Self.room - reserve) : nil)
         }
     }
 }
@@ -840,10 +841,11 @@ struct PanelScroll: ViewModifier {
 struct PanelWidth: ViewModifier {
     let scrolls: Bool
     @Environment(\.stationStill) private var still
+    @Environment(\.stationPanelWidth) private var width
 
     func body(content: Content) -> some View {
         if still || !scrolls {
-            content.frame(width: Token.Space.width, alignment: .topLeading)
+            content.frame(width: width, alignment: .topLeading)
         } else {
             content.frame(maxWidth: .infinity, alignment: .topLeading)
         }

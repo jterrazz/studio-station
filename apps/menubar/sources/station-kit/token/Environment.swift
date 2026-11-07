@@ -12,6 +12,10 @@ private struct ReduceMotionKey: EnvironmentKey {
     static let defaultValue = false
 }
 
+private struct PanelWidthKey: EnvironmentKey {
+    static let defaultValue = Token.Space.width
+}
+
 extension EnvironmentValues {
     public var stationContrast: ColorSchemeContrast {
         get { self[ContrastKey.self] }
@@ -26,6 +30,11 @@ extension EnvironmentValues {
     public var stationReduceMotion: Bool {
         get { self[ReduceMotionKey.self] }
         set { self[ReduceMotionKey.self] = newValue }
+    }
+
+    public var stationPanelWidth: CGFloat {
+        get { self[PanelWidthKey.self] }
+        set { self[PanelWidthKey.self] = newValue }
     }
 }
 
