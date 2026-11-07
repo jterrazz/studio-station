@@ -21,7 +21,7 @@ func everyField() page.Page {
 		Split:   []string{"create-only"},
 	}
 	agentRow := page.Row{
-		ID: "claude", Mark: page.Attention, Label: "claude", Short: "cl", Sentence: true,
+		ID: "agent-7f", Mark: page.Attention, Label: "agent-7f", Short: "a7", Sentence: true,
 		Cells:  []page.Value{cpu},
 		Detail: page.List(on, since), Reason: page.Waiting, Hint: hint,
 		Glyph: page.Glyph{Kind: "agent", Signal: page.SignalWaits, Dot: page.DotPing, Ring: "cpu:linux-1", Spin: true, Progress: 400},
@@ -77,7 +77,7 @@ func everyField() page.Page {
 		Hints:    []page.Hint{{Command: "open -a Terminal", External: true}},
 		Error:    &page.Error{Message: "partly read", Hint: "station machines linux-1"},
 		Actions: []page.Action{
-			{ID: "copy", Key: "cmd+c", Label: "Copy the address", On: page.OnRow, Rows: []string{"claude"}, Priority: 1, Icon: "doc.on.doc",
+			{ID: "copy", Key: "cmd+c", Label: "Copy the address", On: page.OnRow, Rows: []string{"agent-7f"}, Priority: 1, Icon: "doc.on.doc",
 				Run: &page.Run{Copy: "linux-1.local"}, Hud: &page.Value{Kind: page.KindText, Text: "Copied linux-1.local"}},
 			{ID: "reply", Label: "Reply", Default: true, Busy: "Sending", Run: &page.Run{Call: "agents.reply", Target: &page.Target{Name: "linux-1", On: "mac-mini"}}},
 			{ID: "delete", Label: "Delete", Mutates: true, Destructive: true, Run: &page.Run{Terminal: true, Argv: []string{"machines", "delete", "linux-1"}},

@@ -95,10 +95,10 @@
       "items": [
         {
           "row": {
-            "id": "claude",
+            "id": "agent-7f",
             "mark": "attention",
-            "label": "claude",
-            "short": "cl",
+            "label": "agent-7f",
+            "short": "a7",
             "sentence": true,
             "cells": [
               {
@@ -448,7 +448,7 @@
       "label": "Copy the address",
       "on": "row",
       "rows": [
-        "claude"
+        "agent-7f"
       ],
       "priority": 1,
       "id": "copy",
