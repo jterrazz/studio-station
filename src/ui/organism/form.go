@@ -56,7 +56,7 @@ func ConfirmField(c page.Confirm) *huh.Confirm {
 func Fields(f page.Form) (fields []huh.Field, read func() map[string]string) {
 	fields = make([]huh.Field, 0, len(f.Fields))
 	getters := make(map[string]func() string, len(f.Fields))
-	for _, fd := range f.Fields {
+	for _, fd := range unfolded(f.Fields) {
 		field, get := Field(fd)
 		fields = append(fields, field)
 		getters[fd.Key] = get
@@ -70,10 +70,22 @@ func Fields(f page.Form) (fields []huh.Field, read func() map[string]string) {
 	}
 }
 
+func unfolded(fields []page.Field) []page.Field {
+	out := make([]page.Field, 0, len(fields))
+	for _, f := range fields {
+		if f.Kind == page.FieldDisclosure {
+			out = append(out, unfolded(f.Fields)...)
+			continue
+		}
+		out = append(out, f)
+	}
+	return out
+}
+
 func Field(f page.Field) (field huh.Field, read func() string) {
 	value := f.Default
 	switch f.Kind {
-	case page.FieldSelect:
+	case page.FieldSelect, page.FieldSegmented:
 		if value == "" && len(f.Options) > 0 {
 			value = f.Options[0].Value
 		}
@@ -125,7 +137,7 @@ func Field(f page.Field) (field huh.Field, read func() string) {
 		return c, func() string { return strconv.FormatBool(answer) }
 	case page.FieldSecret:
 		return input(f, &value).EchoMode(huh.EchoModePassword), func() string { return value }
-	case page.FieldText:
+	case page.FieldText, page.FieldSlider, page.FieldDisclosure:
 	}
 	return input(f, &value), func() string { return value }
 }
